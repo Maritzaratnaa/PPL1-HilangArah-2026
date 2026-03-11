@@ -1,28 +1,30 @@
 name: Backend CI Pipeline
 
+# Mengatur KAPAN pipeline ini berjalan
 on:
   push:
-    branches: [ "main", "backend"]
-    # Hanya jalan jika ada file di dalam folder backend yang berubah
+    branches: [ "main", "backend" ]
     paths:
       - 'backend/**' 
+      - '.github/workflows/**' # Tambahkan ini agar saat file workflow ini diedit, CI-nya ikut jalan!
   pull_request:
     branches: [ "main" ]
     paths:
       - 'backend/**'
+  
+  # Ini dari template GitHub: Mengizinkan kamu menjalankan CI secara manual lewat tombol!
+  workflow_dispatch: 
 
 jobs:
   build-and-test:
-    # Runner: Server virtual yang digunakan GitHub
     runs-on: ubuntu-latest
 
-    # Setup agar semua perintah di bawah ini dijalankan di dalam folder backend
+    # Setup agar semua perintah dijalankan di dalam folder backend
     defaults:
       run:
         working-directory: ./backend
 
     steps:
-    # 1. Mengambil kode dari repository kamu
     - name: Checkout repository
       uses: actions/checkout@v4
 
@@ -36,6 +38,5 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    # 4. Menjalankan pengujian (script test yang kita ubah tadi)
     - name: Run tests
       run: npm test
