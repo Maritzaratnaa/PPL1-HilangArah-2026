@@ -1,25 +1,22 @@
 name: Backend CI Pipeline
 
-# Mengatur KAPAN pipeline ini berjalan
 on:
   push:
     branches: [ "main", "backend" ]
     paths:
       - 'backend/**' 
-      - '.github/workflows/**' # Tambahkan ini agar saat file workflow ini diedit, CI-nya ikut jalan!
+      - '.github/workflows/**' 
   pull_request:
     branches: [ "main" ]
     paths:
       - 'backend/**'
-  
-  # Ini dari template GitHub: Mengizinkan kamu menjalankan CI secara manual lewat tombol!
+
   workflow_dispatch: 
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # Setup agar semua perintah dijalankan di dalam folder backend
     defaults:
       run:
         working-directory: ./backend
@@ -31,7 +28,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '24'
+        node-version: '20'
         cache: 'npm'
         cache-dependency-path: './backend/package-lock.json'
 
