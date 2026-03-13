@@ -15,12 +15,16 @@ const register = async (req, res) => {
             return res.status(400).json({ message: "Username, email, password, dan nama lengkap wajib diisi!" });
         }
 
+        if (password.length < 6) {
+            return res.status(400).json({ message: "Password harus memiliki minimal 6 karakter!" });
+        }
+
         await connection.beginTransaction();
 
         const [existingUsers] = await connection.query('SELECT * FROM users WHERE email = ?', [email]);
         if (existingUsers.length > 0) {
             await connection.rollback();
-            return res.status(409).json({ message: "Email sudah digunakan!" });
+            return res.status(409).json({ message: "Email sudah terdaftar, silakan gunakan email lain!" });
         }
 
         const user_id = crypto.randomUUID();
@@ -46,8 +50,8 @@ const register = async (req, res) => {
 
     } catch (error) {
         await connection.rollback();
-        console.error(error);
-        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+        console.error("Error saat register:", error);
+        res.status(500).json({ message: "Terjadi kesalahan internal pada server." });
     } finally {
         connection.release();
     }
@@ -64,7 +68,14 @@ const login = async (req, res) => {
             return res.status(400).json({ message: "Email dan password harus diisi!" });
         }
 
-        const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        const query = `
+            SELECT u.*, p.full_name, p.category_status 
+            FROM users u 
+            LEFT JOIN profiles p ON u.user_id = p.user_id 
+            WHERE u.email = ?
+        `;
+        const [users] = await pool.query(query, [email]);
+        
         if (users.length === 0) {
             return res.status(401).json({ message: "Email atau password salah!" });
         }
@@ -72,7 +83,7 @@ const login = async (req, res) => {
         const user = users[0];
 
         if (!user.is_Active) {
-            return res.status(403).json({ message: "Akun ini sudah dinonaktifkan." });
+            return res.status(403).json({ message: "Akun ini sudah dinonaktifkan. Silakan hubungi admin." });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -86,11 +97,22 @@ const login = async (req, res) => {
             { expiresIn: '24h' }
         );
 
-        res.status(200).json({ message: "Login berhasil!", token: token });
+        res.status(200).json({ 
+            message: "Login berhasil!", 
+            token: token,
+            user: {
+                id: user.user_id,
+                username: user.username,
+                email: user.email,
+                full_name: user.full_name,
+                role: user.role,
+                category: user.category_status
+            }
+        });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+        console.error("Error saat login:", error);
+        res.status(500).json({ message: "Terjadi kesalahan internal pada server." });
     }
 };
 
