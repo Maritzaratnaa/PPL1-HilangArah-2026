@@ -1,4 +1,4 @@
--- Active: 1773420604143@@127.0.0.1@3306@arahin_db
+-- Active: 1773420604143@@127.0.0.1@3306
 CREATE TABLE users (
     user_id CHAR(36) PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
