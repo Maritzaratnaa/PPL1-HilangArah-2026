@@ -1,3 +1,4 @@
+-- Active: 1773420604143@@127.0.0.1@3306
 CREATE TABLE users (
     user_id CHAR(36) PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -59,7 +60,7 @@ CREATE TABLE trans (
     trans_id CHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     type ENUM('Bus', 'Train', 'LRT', 'MRT'),
-    is_low entry BOOLEAN DEFAULT FALSE,
+    is_low_entry BOOLEAN DEFAULT FALSE,
     has_wheelchair_slot BOOLEAN DEFAULT FALSE,
     has_priority_seat BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE
@@ -73,7 +74,7 @@ CREATE TABLE stops (
     longitude DECIMAL(11,8),
     has_ramp BOOLEAN DEFAULT FALSE,
     has_elevator BOOLEAN DEFAULT FALSE,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE routes (
@@ -89,13 +90,13 @@ CREATE TABLE routes (
 );
 
 CREATE TABLE route_stops (
-    route stop_id CHAR(36) PRIMARY KEY.
+    route_stop_id CHAR(36) PRIMARY KEY,
     route_id CHAR(36),
     stop_id CHAR(36),
     stop_order INT,
     est_time_minutes INT,
     FOREIGN KEY (route_id) REFERENCES routes(route_id),
-    FOREIGN_KEY (stop_id) REFERENCES stop(stop_id)
+    FOREIGN KEY (stop_id) REFERENCES stops(stop_id)
 );
 
 CREATE TABLE reports (

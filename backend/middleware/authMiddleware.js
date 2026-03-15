@@ -16,3 +16,5 @@ const authMiddleware = (req, res, next) => {
         res.status(400).json({message: "Token tidak valid!"});
     }
 };
+
+module.exports = authMiddleware;
