@@ -35,8 +35,7 @@ jobs:
 
       - name: Start Backend Server (Background)
         working-directory: ./backend
-        # Kita pakai 'npm start' sesuai package.json backend kamu
-        run: npm start & 
+        run: npm run dev & 
         env:
           DB_HOST: 127.0.0.1
           DB_USER: root
