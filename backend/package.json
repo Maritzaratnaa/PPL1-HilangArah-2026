@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "dev": "node index.js", 
     "test": "echo \"Menjalankan pengujian dasar... Sukses!\" && exit 0"
   },
   "dependencies": {

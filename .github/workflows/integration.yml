@@ -1,0 +1,81 @@
+name: Full Integration CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1. JALANKAN DATABASE (VIA DOCKER)
+      - name: Start Database (MySQL)
+        working-directory: ./backend
+        run: |
+          docker compose up -d
+          # Tunggu agak lama sedikit agar MySQL benar-benar siap
+          sleep 20 
+
+      # 2. SETUP & JALANKAN BACKEND NODE.JS
+      - name: Setup Node for Backend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+          
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Start Backend Server (Background)
+        working-directory: ./backend
+        run: npm run dev & 
+        # INI BAGIAN YANG DISESUAIKAN DENGAN .ENV KAMU
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASS: rootpassword
+          DB_NAME: arahin_db
+          PORT: 3000
+          JWT_SECRET: bebop
+
+      # 3. SETUP & JALANKAN FRONTEND
+      - name: Install pnpm for Frontend
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node for Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: './FrontEnd/pnpm-lock.yaml'
+
+      - name: Install Frontend Dependencies
+        working-directory: ./FrontEnd
+        run: pnpm install
+
+      - name: Start Frontend (Background)
+        working-directory: ./FrontEnd
+        run: pnpm run dev &
+        env:
+          # Pastikan frontend menembak ke port 3000 sesuai setting backend
+          VITE_API_URL: http://localhost:3000 
+
+      # 4. CEK INTEGRASI SEDERHANA
+      - name: Run Integration Check
+        run: |
+          # Tunggu sebentar agar backend dan frontend selesai kompilasi awal
+          sleep 15 
+          
+          # Cek backend di port 3000
+          curl -f http://localhost:3000 || exit 1 
+          
+          # Cek frontend di port default Vite (5173)
+          curl -f http://localhost:5173 || exit 1
