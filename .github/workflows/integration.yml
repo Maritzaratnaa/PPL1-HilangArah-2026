@@ -3,7 +3,7 @@ name: Full Integration CI
 on:
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch: # Agar kamu bisa jalankan manual dari tab Actions
+  workflow_dispatch: 
 
 jobs:
   integration-test:
