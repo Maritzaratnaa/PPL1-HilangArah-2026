@@ -14,32 +14,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository agar runner bisa akses file project
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. SETUP DATABASE (MySQL)
+      # 1. SETUP DATABASE (Tanpa working-directory karena docker-compose.yml ada di luar)
       - name: Start Database
-        working-directory: ./backend
         run: |
           docker compose up -d
-          sleep 20 # Menunggu MySQL siap
+          sleep 20 
 
-      # 3. SETUP & JALANKAN BACKEND
+      # 2. SETUP & JALANKAN BACKEND
       - name: Setup Node.js (Backend)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: './backend/package-lock.json'
+          cache-dependency-path: 'backend/package-lock.json'
           
       - name: Install Backend Deps
-        working-directory: ./backend
+        working-directory: backend # Masuk ke folder backend karena package.json ada di sini
         run: npm install
 
       - name: Run Backend Server
-        working-directory: ./backend
-        run: npm run dev & # Pastikan sudah tambah script "dev" di package.json
+        working-directory: backend
+        run: npm start & 
         env:
           DB_HOST: 127.0.0.1
           DB_USER: root
@@ -48,7 +46,7 @@ jobs:
           PORT: 3000
           JWT_SECRET: bebop
 
-      # 4. SETUP & JALANKAN FRONTEND
+      # 3. SETUP & JALANKAN FRONTEND
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -59,26 +57,21 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
-          cache-dependency-path: './FrontEnd/pnpm-lock.yaml'
+          cache-dependency-path: 'FrontEnd/pnpm-lock.yaml'
 
       - name: Install Frontend Deps
-        working-directory: ./FrontEnd
+        working-directory: FrontEnd # Pastikan huruf besar-kecilnya benar (FrontEnd)
         run: pnpm install
 
       - name: Run Frontend Server
-        working-directory: ./FrontEnd
+        working-directory: FrontEnd
         run: pnpm run dev &
         env:
           VITE_API_URL: http://localhost:3000
 
-      # 5. FINAL CHECK (INTEGRASI)
+      # 4. FINAL CHECK
       - name: Verify Integration
         run: |
           sleep 15
-          echo "Testing Backend Connection..."
           curl -f http://localhost:3000 || exit 1
-          
-          echo "Testing Frontend Connection..."
           curl -f http://localhost:5173 || exit 1
-          
-          echo "✅ CI SUCCESS: Backend and Frontend are integrated!"
