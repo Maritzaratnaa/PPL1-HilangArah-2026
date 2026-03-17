@@ -3,7 +3,7 @@ import { Navbar } from '@/components/Navbar';
 import { MapPin, AlertCircle, Star, UserCheck, ArrowRight, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// ── Data dummy ──
+// ── Data dummy ── /
 const recommendedRoutes = [
   { icon: '🚇', name: 'Sudirman → RS Cipto', meta: 'MRT + TransJakarta · 45 mnt', accessible: true, duration: '45 mnt' },
   { icon: '🚌', name: 'Blok M → Kota', meta: 'TransJakarta Kor. 1 · 60 mnt', accessible: true, duration: '60 mnt' },
