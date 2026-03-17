@@ -1,0 +1,85 @@
+name: Full Integration CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Agar kamu bisa jalankan manual dari tab Actions
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1. NYALAKAN DATABASE (MYSQL)
+      - name: Start Database (MySQL)
+        working-directory: ./backend
+        run: |
+          docker compose up -d
+          # Tunggu 20 detik agar MySQL benar-benar siap menerima koneksi
+          sleep 20 
+
+      # 2. SETUP & JALANKAN BACKEND
+      - name: Setup Node for Backend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+          
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Start Backend Server (Background)
+        working-directory: ./backend
+        # Kita pakai 'npm start' sesuai package.json backend kamu
+        run: npm start & 
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASS: rootpassword
+          DB_NAME: arahin_db
+          PORT: 3000
+          JWT_SECRET: dummy_secret_key_for_ci_test
+
+      # 3. SETUP & JALANKAN FRONTEND
+      - name: Install pnpm for Frontend
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node for Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: './FrontEnd/pnpm-lock.yaml'
+
+      - name: Install Frontend Dependencies
+        working-directory: ./FrontEnd
+        run: pnpm install
+
+      - name: Start Frontend (Background)
+        working-directory: ./FrontEnd
+        # Pakai 'pnpm run dev' karena di package.json frontend kamu "dev": "vite"
+        run: pnpm run dev &
+        env:
+          VITE_API_URL: http://localhost:3000
+
+      # 4. CEK APAKAH SEMUANYA TERINTEGRASI
+      - name: Run Integration Check
+        run: |
+          # Tunggu sebentar agar server backend & frontend selesai booting
+          sleep 15 
+          
+          echo "Checking Backend Connection..."
+          curl -f http://localhost:3000 || (echo "Backend is DOWN" && exit 1)
+          
+          echo "Checking Frontend Connection..."
+          # Vite default port 5173
+          curl -f http://localhost:5173 || (echo "Frontend is DOWN" && exit 1)
+          
+          echo "✅ Integration is SAFE! Both services are talking to each other."
