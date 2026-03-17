@@ -43,7 +43,7 @@ jobs:
           DB_PASS: rootpassword
           DB_NAME: arahin_db
           PORT: 3000
-          JWT_SECRET: dummy_secret_key_for_ci_test
+          JWT_SECRET: bebop
 
       # 3. SETUP & JALANKAN FRONTEND
       - name: Install pnpm for Frontend
