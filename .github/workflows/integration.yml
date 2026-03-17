@@ -1,4 +1,4 @@
-name: CI # Nama ini yang akan muncul di badge atau tab Actions
+name: Integration Test # Nama ini yang akan muncul di badge atau tab Actions
 
 # Controls when the workflow will run
 on:
