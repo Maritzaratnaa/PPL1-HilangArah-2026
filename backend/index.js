@@ -8,6 +8,11 @@ const searchRoutes = require('./routes/searchRoutes');
 const app = express();
 app.use(express.json()); 
 
+app.get('/', (req, res) => {
+    res.status(200).send('Backend API ARAHIN is running!');
+});
+// ------------------------------------------------
+
 app.use('/api', authRoutes);
 app.use('/api/profile', profileRoutes); 
 app.use('/api/search-routes', searchRoutes);
