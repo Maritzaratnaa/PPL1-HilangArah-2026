@@ -2,10 +2,6 @@ name: Integration Test # Nama ini yang akan muncul di badge atau tab Actions
 
 # Controls when the workflow will run
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch: # Memungkinkan menjalankan manual
 
 jobs:
