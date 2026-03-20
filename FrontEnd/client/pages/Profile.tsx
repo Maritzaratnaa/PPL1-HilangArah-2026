@@ -1,16 +1,10 @@
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useRef, useState, useEffect } from 'react';
 import { Pencil, Mail, Shield, User, Camera, Phone, ArrowLeft } from 'lucide-react';
 
-const user = {
-  name: 'Budi Santoso',
-  email: 'budi.santoso@email.com',
-  phone: '+62 812 3456 7890',
-  joinDate: 'Maret 2025',
-  status: ['Penyandang Disabilitas'],
-};
+const BASE_URL = 'http://localhost:3000';
 
 const allStatuses = [
   { label: 'Penyandang Disabilitas', icon: '♿', color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800' },
@@ -20,10 +14,53 @@ const allStatuses = [
   { label: 'Situasi Rentan', icon: '🛡️', color: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800' },
 ];
 
+interface UserProfile {
+  email: string;
+  full_name: string;
+  phone_number: string;
+  category_status: string;
+  font_size_pref: string;
+}
+
 export default function Profile() {
-  // ← state dan fungsi di sini, sebelum return
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      try {
+        const res = await fetch(`${BASE_URL}/api/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (res.status === 401) {
+          navigate('/login');
+          return;
+        }
+        const json = await res.json();
+        if (res.ok) {
+          setProfile(json.data);
+        } else {
+          setError(json.message);
+        }
+      } catch (err) {
+        setError('Gagal menghubungi server.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [navigate]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -33,6 +70,32 @@ export default function Profile() {
       reader.readAsDataURL(file);
     }
   };
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-muted-foreground text-sm">Memuat profil...</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-destructive text-sm">{error}</div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -71,7 +134,7 @@ export default function Profile() {
                     text-white text-2xl font-bold shadow-md overflow-hidden">
                     {avatar
                       ? <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
-                      : 'BS'
+                      : initials
                     }
                   </div>
                   <button
@@ -95,8 +158,8 @@ export default function Profile() {
 
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-bold mb-1">{user.name}</h2>
-                  <p className="text-sm text-muted-foreground">Bergabung sejak {user.joinDate}</p>
+                  <h2 className="text-xl font-bold mb-1">{profile?.full_name}</h2>
+                  <p className="text-sm text-muted-foreground">{profile?.email}</p>
                 </div>
                 <div className="px-3 py-1 rounded-full text-xs font-semibold
                   bg-emerald-100 text-emerald-700 border border-emerald-200
@@ -120,16 +183,16 @@ export default function Profile() {
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Nama Lengkap</div>
-                  <div className="text-sm font-semibold">{user.name}</div>
+                  <div className="text-sm font-semibold">{profile?.full_name}</div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 py-3">
+              <div className="flex items-center gap-3 py-3 border-b border-border">
                 <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Email</div>
-                  <div className="text-sm font-semibold">{user.email}</div>
+                  <div className="text-sm font-semibold">{profile?.email}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 py-3">
@@ -138,7 +201,7 @@ export default function Profile() {
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Nomor Telepon</div>
-                  <div className="text-sm font-semibold">{user.phone || '-'}</div>
+                  <div className="text-sm font-semibold">{profile?.phone_number || '-'}</div>
                 </div>
               </div>
             </div>
@@ -155,7 +218,7 @@ export default function Profile() {
             </p>
             <div className="flex flex-wrap gap-2">
               {allStatuses.map((s) => {
-                const isActive = user.status.includes(s.label);
+                const isActive = profile?.category_status === s.label;
                 return (
                   <div key={s.label}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-all

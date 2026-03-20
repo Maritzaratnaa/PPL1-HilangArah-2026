@@ -16,6 +16,7 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('token', 'dummy-token');
     navigate('/home');
   };
 
