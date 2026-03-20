@@ -1,48 +1,73 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Eye, EyeOff } from 'lucide-react';
+} from "@/components/ui/select";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [userCategory, setUserCategory] = useState<string>('');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [userCategory, setUserCategory] = useState<string>("");
 
   const userCategories = [
-    { value: 'disability', label: 'Person with Disability' },
-    { value: 'elderly', label: 'Elderly (60+)' },
-    { value: 'pregnant', label: 'Pregnant Women' },
-    { value: 'vulnerable-illness', label: 'Vulnerable Illness' },
-    { value: 'children', label: 'Children' },
-    { value: 'women', label: 'Women' },
-    { value: 'general', label: 'General Traveler' },
+    { value: "disability", label: "Person with Disability" },
+    { value: "elderly", label: "Elderly (60+)" },
+    { value: "pregnant", label: "Pregnant Women" },
+    { value: "vulnerable-illness", label: "Vulnerable Illness" },
+    { value: "children", label: "Children" },
+    { value: "women", label: "Women" },
+    { value: "general", label: "General Traveler" },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle registration logic here
-    console.log('Register attempt:', {
-      fullName,
-      email,
-      password,
-      userCategory,
-    });
+    if (password !== confirmPassword) {
+      alert("Password dan konfirmasi password tidak sama!");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3000/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: email,
+          email,
+          password,
+          full_name: fullName,
+          category_status: userCategory,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        alert("Registrasi berhasil! Silakan login.");
+        navigate("/login");
+      } else {
+        alert(json.message);
+      }
+    } catch (err) {
+      alert("Gagal menghubungi server.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -127,7 +152,7 @@ export default function Register() {
                 <div className="relative">
                   <Input
                     id="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="Create a strong password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -140,7 +165,7 @@ export default function Register() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground h-10 w-10 flex items-center justify-center high-contrast:border high-contrast:border-primary"
                     aria-label={
-                      showPassword ? 'Hide password' : 'Show password'
+                      showPassword ? "Hide password" : "Show password"
                     }
                   >
                     {showPassword ? (
@@ -163,7 +188,7 @@ export default function Register() {
                 <div className="relative">
                   <Input
                     id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -173,14 +198,10 @@ export default function Register() {
                   />
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
-                    }
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground h-10 w-10 flex items-center justify-center high-contrast:border high-contrast:border-primary"
                     aria-label={
-                      showConfirmPassword
-                        ? 'Hide password'
-                        : 'Show password'
+                      showConfirmPassword ? "Hide password" : "Show password"
                     }
                   >
                     {showConfirmPassword ? (
@@ -213,16 +234,17 @@ export default function Register() {
               <Button
                 type="submit"
                 size="lg"
+                disabled={loading}
                 className="w-full h-12 text-base font-semibold high-contrast:border-2 high-contrast:border-primary"
               >
-                Create Account
+                {loading ? "Memproses..." : "Create Account"}
               </Button>
             </form>
 
             {/* Login Link */}
             <div className="mt-6 text-center">
               <p className="text-muted-foreground">
-                Already have an account?{' '}
+                Already have an account?{" "}
                 <Link
                   to="/login"
                   className="text-primary font-semibold hover:underline underline-offset-2"
