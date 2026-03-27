@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
@@ -6,6 +7,11 @@ const profileRoutes = require('./routes/profileRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 
 const app = express();
+app.use(cors( {
+    origin: "http://localhost:8080",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json()); 
 
 app.get('/', (req, res) => {

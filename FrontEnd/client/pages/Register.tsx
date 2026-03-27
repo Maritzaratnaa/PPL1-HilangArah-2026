@@ -60,7 +60,8 @@ export default function Register() {
         alert(json.message);
       }
     } catch (err) {
-      alert("Gagal menghubungi server.");
+      //alert("Gagal menghubungi server.");
+      alert("Error detail: " + err.message);
     } finally {
       setLoading(false);
     }
