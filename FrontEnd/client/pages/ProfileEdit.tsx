@@ -3,38 +3,116 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+
+const BASE_URL = 'http://localhost:3000';
 
 const userCategories = [
-  { value: 'disability', label: 'Penyandang Disabilitas' },
-  { value: 'elderly', label: 'Lansia (60+)' },
-  { value: 'pregnant', label: 'Perempuan Hamil' },
-  { value: 'vulnerable-illness', label: 'Situasi Rentan' },
-  { value: 'children', label: 'Anak-Anak' },
-  { value: 'women', label: 'Perempuan' },
-  { value: 'general', label: 'Traveler Umum' },
+  { value: 'Disabilitas', label: 'Penyandang Disabilitas' },
+  { value: 'Lansia', label: 'Lansia (60+)' },
+  { value: 'Ibu Hamil', label: 'Perempuan Hamil' },
+  { value: 'Penyakit Rentan', label: 'Penyakit Rentan' },
+  { value: 'Anak', label: 'Anak-Anak' },
+  { value: 'Perempuan', label: 'Perempuan' }
 ];
 
 export default function ProfileEdit() {
-  const [fullName, setFullName] = useState('Budi Santoso');
-  const [email, setEmail] = useState('budi.santoso@email.com');
-  const [category, setCategory] = useState('disability');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [category, setCategory] = useState('');
   const [phone, setPhone] = useState('');
+  
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
+  const navigate = useNavigate();
 
-  const handleSave = () => {
-    // Simple validation
-    if (!fullName.trim() || !email.trim() || !category) {
-      alert('Mohon isi semua field yang diperlukan');
+  // 1. AMBIL DATA SAAT HALAMAN DIBUKA
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      try {
+        const res = await fetch(`${BASE_URL}/api/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const json = await res.json();
+        
+        if (res.ok) {
+          setFullName(json.data.full_name);
+          setEmail(json.data.email);
+          setPhone(json.data.phone_number || '');
+          setCategory(json.data.category_status || '');
+        } else {
+          setErrorMsg(json.message);
+        }
+      } catch (err) {
+        setErrorMsg('Gagal terhubung ke server.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [navigate]);
+
+  // 2. SIMPAN DATA KE DATABASE
+  const handleSave = async () => {
+    if (!fullName.trim() || !category) {
+      setErrorMsg('Nama lengkap dan kategori wajib diisi!');
       return;
     }
 
-    // Show success message
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    setIsSaving(true);
+    setErrorMsg(null);
+    const token = localStorage.getItem('token');
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          full_name: fullName,
+          phone_number: phone,
+          category_status: category,
+          font_size_pref: 'Medium' // Default sementara
+        }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        setSavedSuccess(true);
+        setTimeout(() => setSavedSuccess(false), 3000);
+      } else {
+        setErrorMsg(json.message || 'Gagal menyimpan profil.');
+      }
+    } catch (err) {
+      setErrorMsg('Terjadi kesalahan jaringan.');
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -61,6 +139,14 @@ export default function ProfileEdit() {
             </div>
           )}
 
+          {errorMsg && (
+            <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 flex items-center gap-3">
+              <span className="text-sm font-medium text-red-700">
+                {errorMsg}
+              </span>
+            </div>
+          )}
+
           <div className="rounded-2xl border border-border bg-card p-8 high-contrast:border-2 high-contrast:border-primary">
             <div className="space-y-6">
 
@@ -76,11 +162,10 @@ export default function ProfileEdit() {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Masukkan nama lengkap"
                   className="h-12 text-base high-contrast:border-2 high-contrast:border-primary"
-                  aria-required="true"
                 />
               </div>
 
-              {/* Email */}
+              {/* Email (Disabled karena tidak bisa diubah di sini) */}
               <div>
                 <Label htmlFor="email" className="text-base font-semibold mb-2 block">
                   Email
@@ -89,11 +174,10 @@ export default function ProfileEdit() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Masukkan email"
-                  className="h-12 text-base high-contrast:border-2 high-contrast:border-primary"
-                  aria-required="true"
+                  disabled
+                  className="h-12 text-base bg-muted text-muted-foreground cursor-not-allowed"
                 />
+                <p className="text-xs text-muted-foreground mt-1">Email tidak dapat diubah.</p>
               </div>
 
               {/* Nomor Telepon */}
@@ -120,7 +204,6 @@ export default function ProfileEdit() {
                   <SelectTrigger 
                     id="category"
                     className="h-12 text-base high-contrast:border-2 high-contrast:border-primary"
-                    aria-required="true"
                   >
                     <SelectValue placeholder="Pilih kategori pengguna" />
                   </SelectTrigger>
@@ -133,7 +216,7 @@ export default function ProfileEdit() {
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Kategori ini membantu kami memberikan rekomendasi rute yang sesuai dengan kebutuhan Anda.
+                  Kategori ini membantu kami memberikan rekomendasi rute yang sesuai.
                 </p>
               </div>
 
@@ -143,6 +226,7 @@ export default function ProfileEdit() {
                   <Button 
                     variant="outline" 
                     className="w-full h-12 high-contrast:border-2 high-contrast:border-primary"
+                    disabled={isSaving}
                   >
                     Batal
                   </Button>
@@ -150,7 +234,11 @@ export default function ProfileEdit() {
                 <Button 
                   onClick={handleSave}
                   className="flex-1 h-12"
+                  disabled={isSaving}
                 >
+                  {isSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
                   Simpan Perubahan
                 </Button>
               </div>
