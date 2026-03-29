@@ -14,7 +14,7 @@ CREATE TABLE profiles (
     user_id CHAR(36) UNIQUE,
     full_name VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20),
-    category_status ENUM('Disabilitas', 'Lansia', 'Ibu Hamil', 'Penyakit Rentan', 'Anak', 'Perempuan'),
+    category_status ENUM('disability', 'elderly', 'pregnant', 'vulnerable-illness', 'children', 'women', 'general'),
     font_size_pref ENUM ('Small', 'Medium', 'Large') DEFAULT 'Medium',
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
