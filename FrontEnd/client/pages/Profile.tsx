@@ -7,12 +7,13 @@ import { Pencil, Mail, Shield, User, Camera, Phone, ArrowLeft } from 'lucide-rea
 const BASE_URL = 'http://localhost:3000';
 
 const allStatuses = [
-  { label: 'Disabilitas', icon: '♿', color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800' },
-  { label: 'Lansia', icon: '👴', color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800' },
-  { label: 'Ibu Hamil', icon: '🤰', color: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300 dark:border-pink-800' },
-  { label: 'Penyakit Rentan', icon: '🛡️', color: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800' },
-  { label: 'Anak', icon: '👦', color: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800' },
-  { label: 'Perempuan', icon: '👩', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800' },
+  { value: 'disability', label: 'Person with Disability', icon: '♿', color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800' },
+  { value: 'elderly', label: 'Elderly (60+)', icon: '👴', color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800' },
+  { value: 'pregnant', label: 'Pregnant Women', icon: '🤰', color: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300 dark:border-pink-800' },
+  { value: 'vulnerable-illness', label: 'Vulnerable Illness', icon: '🛡️', color: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800' },
+  { value: 'children', label: 'Children', icon: '👦', color: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800' },
+  { value: 'women', label: 'Women', icon: '👩', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800' },
+  { value: 'general', label: 'General Traveler', icon: '🚶', color: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/30 dark:text-slate-300 dark:border-slate-800' },
 ];
 
 interface UserProfile {
@@ -165,7 +166,7 @@ export default function Profile() {
                 <div className="px-3 py-1 rounded-full text-xs font-semibold
                   bg-emerald-100 text-emerald-700 border border-emerald-200
                   dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800">
-                  ⭐ Subscriber Aktif
+                  Subscriber Aktif
                 </div>
               </div>
             </div>
@@ -219,9 +220,10 @@ export default function Profile() {
             </p>
             <div className="flex flex-wrap gap-2">
               {allStatuses.map((s) => {
-                const isActive = profile?.category_status === s.label;
+                // Mengecek kecocokan berdasarkan value (opsional fallback ke label jika db menyimpan label)
+                const isActive = profile?.category_status === s.value || profile?.category_status === s.label;
                 return (
-                  <div key={s.label}
+                  <div key={s.value}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-all
                       ${isActive
                         ? s.color
