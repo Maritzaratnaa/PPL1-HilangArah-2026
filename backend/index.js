@@ -5,6 +5,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes'); 
 const searchRoutes = require('./routes/searchRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 app.use(cors( {
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 app.use('/api', authRoutes);
 app.use('/api/profile', profileRoutes); 
 app.use('/api/search-routes', searchRoutes);
+app.use('/api/reports', reportRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
