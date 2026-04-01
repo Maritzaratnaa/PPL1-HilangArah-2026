@@ -155,10 +155,10 @@ export default function RouteResults() {
         />
 
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 relative z-10">
-          <Link to="/route-search">
+          <Link to="/home">
             <button className="flex items-center gap-2 text-white/70 hover:text-white text-sm mb-4 transition-colors">
               <ArrowLeft className="h-4 w-4" />
-              Cari rute lain
+              Kembali
             </button>
           </Link>
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">

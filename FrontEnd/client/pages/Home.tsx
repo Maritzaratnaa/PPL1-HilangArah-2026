@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import {
@@ -120,7 +121,7 @@ function Badge({ status }: { status: string }) {
 export default function Home() {
   const [userName, setUserName] = useState("Pengguna");
   const [userCategory, setUserCategory] = useState("");
-  const [currentDate, setCurrentDate] = useState('');
+  const [currentDate, setCurrentDate] = useState("");
 
   useEffect(() => {
     const name = localStorage.getItem("userName") || "Pengguna";
@@ -130,13 +131,24 @@ export default function Home() {
 
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     };
-    setCurrentDate(now.toLocaleDateString('id-ID', options));
+    setCurrentDate(now.toLocaleDateString("id-ID", options));
   }, []);
+
+  const navigate = useNavigate();
+  const [origin, setOrigin] = useState("");
+  const [destination, setDestination] = useState("");
+
+  const handleSearch = () => {
+    if (!origin || !destination) return;
+    sessionStorage.setItem("originName", origin);
+    sessionStorage.setItem("destinationName", destination);
+    navigate("/route-results");
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -218,9 +230,12 @@ export default function Home() {
                     }}
                   >
                     <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
-                    <span className="text-white/50 text-sm">
-                      📍 Lokasi saat ini
-                    </span>
+                    <input
+                      value={origin}
+                      onChange={(e) => setOrigin(e.target.value)}
+                      placeholder="📍 Halte asal..."
+                      className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40"
+                    />
                   </div>
                   <span className="text-white/30 text-lg">→</span>
                   <div
@@ -231,16 +246,21 @@ export default function Home() {
                     }}
                   >
                     <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
-                    <span className="text-white/50 text-sm">🏁 Tujuan...</span>
+                    <input
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                      placeholder="🏁 Halte tujuan..."
+                      className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40"
+                    />
                   </div>
-                  <Link to="/route-search">
-                    <Button
-                      className="bg-white font-bold text-sm px-5 h-10 rounded-lg hover:-translate-y-0.5 transition-all"
-                      style={{ color: "hsl(186 100% 27%)" }}
-                    >
-                      Cari Rute
-                    </Button>
-                  </Link>
+                  <Button
+                    onClick={handleSearch}
+                    disabled={!origin || !destination}
+                    className="bg-white font-bold text-sm px-5 h-10 rounded-lg hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                    style={{ color: "hsl(186 100% 27%)" }}
+                  >
+                    Cari Rute
+                  </Button>
                 </div>
               </div>
             </div>
