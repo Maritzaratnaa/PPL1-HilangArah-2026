@@ -17,6 +17,7 @@ import RouteResults from "./pages/RouteResults";
 import Subscription from "./pages/Subscription";
 import Reporting from "./pages/Reporting";
 import NotFound from "./pages/NotFound";
+import RouteMap from "./pages/RouteMap";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/route-results" element={<RouteResults />} />
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/reporting" element={<Reporting />} />
+          <Route path="/route-map" element={<RouteMap />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -145,9 +145,8 @@ export default function Home() {
 
   const handleSearch = () => {
     if (!origin || !destination) return;
-    sessionStorage.setItem("originName", origin);
-    sessionStorage.setItem("destinationName", destination);
-    navigate("/route-results");
+    // Mengirim teks nama halte yang diketik ke halaman hasil
+    navigate(`/route-results?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`);
   };
 
   return (
