@@ -19,9 +19,11 @@ export default function RouteMap() {
   const [response, setResponse] = useState<google.maps.DirectionsResult | null>(null);
 
   // Load Google Maps Script
+  const isMapsEnabled = import.meta.env.VITE_ENABLE_MAPS === 'true';
   const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: "AIzaSyB4CMpdrMz4FCvhLXif57QdN2NkElD87PY"
+    // 2. Logika: Kalau isMapsEnabled false, jangan kasih API Key (biar hemat)
+    googleMapsApiKey: isMapsEnabled ? import.meta.env.VITE_GOOGLE_MAPS_API_KEY : "",
+    libraries: ["places"],
   });
 
   // Fungsi callback untuk menangkap hasil pencarian rute

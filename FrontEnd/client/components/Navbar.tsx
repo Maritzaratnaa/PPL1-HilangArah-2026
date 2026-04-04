@@ -22,7 +22,7 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between gap-4 md:gap-8">
           {/* Logo */}
           <Link
-            to="/"
+            to="/home"
             className="flex items-center gap-2 font-bold text-xl text-primary hover:opacity-80 transition-opacity flex-shrink-0 high-contrast:border high-contrast:border-primary high-contrast:px-2 high-contrast:py-1"
           >
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
