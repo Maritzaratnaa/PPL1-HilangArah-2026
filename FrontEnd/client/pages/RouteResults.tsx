@@ -2,12 +2,25 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, MapPin, Bus, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  Bus,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 interface Facility {
   low_entry: boolean;
   wheelchair_slot: boolean;
   priority_seat: boolean;
+}
+
+interface TransitStop {
+  stop_name: string;
+  has_ramp: boolean;
+  has_elevator: boolean;
 }
 
 interface RouteResult {
@@ -20,9 +33,14 @@ interface RouteResult {
   };
   journey: {
     origin_stop: string;
+    origin_has_ramp?: boolean;
+    origin_has_elevator?: boolean;
     destination_stop: string;
+    dest_has_ramp?: boolean;
+    dest_has_elevator?: boolean;
     stops_passed: number;
     estimated_time_minutes: number;
+    transit_stops?: TransitStop[];
     origin_lat?: number;
     origin_lng?: number;
     dest_lat?: number;
@@ -30,25 +48,87 @@ interface RouteResult {
   };
 }
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = "http://localhost:3000";
+
+// Dummy fasilitas halte asal & tujuan per route_id
+// Hapus ini kalau backend sudah return origin_has_ramp, origin_has_elevator, dst
+const dummyStopFacilities: Record<string, {
+  origin_has_ramp: boolean;
+  origin_has_elevator: boolean;
+  dest_has_ramp: boolean;
+  dest_has_elevator: boolean;
+  transit_stops: TransitStop[];
+}> = {
+  // key diisi route_id dari backend nanti
+  // sementara pakai fallback default semua false
+};
+
+function getFacilityTips(category: string, facilities: Facility) {
+  const tips: { icon: string; label: string; color: string }[] = [];
+  if (facilities?.low_entry) tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
+  if (facilities?.wheelchair_slot) tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
+  if (facilities?.priority_seat) tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+  if (category === "women" || category === "pregnant") tips.push({ icon: "👩", label: "Gerbong Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+  return tips;
+}
+
+function getCategoryAdvice(category: string, facilities: Facility): string | null {
+  switch (category) {
+    case "disability":
+      if (facilities?.wheelchair_slot) return "✅ Transportasi ini memiliki slot khusus kursi roda di dekat pintu.";
+      if (facilities?.low_entry) return "✅ Transportasi ini menggunakan low entry sehingga mudah dinaiki.";
+      return null;
+    case "elderly":
+      if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk lansia. Tunjukkan kartu identitas jika diperlukan.";
+      return null;
+    case "pregnant":
+      if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk ibu hamil.";
+      if (facilities?.low_entry) return "✅ Transportasi low entry memudahkan ibu hamil untuk naik turun.";
+      return null;
+    case "women":
+      return "✅ Tersedia gerbong khusus wanita. Biasanya berada di gerbong paling depan atau belakang.";
+    case "children":
+      if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas. Anak di bawah 3 tahun gratis dan tidak memerlukan tempat duduk terpisah.";
+      return null;
+    case "vulnerable-illness":
+      if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk penumpang dengan kondisi kesehatan tertentu.";
+      return null;
+    default:
+      return null;
+  }
+}
+
+function StopBadges({ has_ramp, has_elevator }: { has_ramp: boolean; has_elevator: boolean }) {
+  const badges = [];
+  if (has_ramp) badges.push({ icon: "♿", label: "Ramp", color: "bg-emerald-100 text-emerald-700" });
+  if (has_elevator) badges.push({ icon: "🛗", label: "Elevator", color: "bg-blue-100 text-blue-700" });
+  if (!has_ramp && !has_elevator) badges.push({ icon: "⚠️", label: "Tanpa Fasilitas", color: "bg-muted text-muted-foreground" });
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {badges.map((b, i) => (
+        <span key={i} className={`text-xs px-2 py-0.5 rounded-full font-semibold ${b.color}`}>
+          {b.icon} {b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export default function RouteResults() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Ambil parameter dari URL (misal: ?origin=Sudirman&destination=Kota)
   const originQuery = searchParams.get("origin") || "";
   const destQuery = searchParams.get("destination") || "";
 
-  // State untuk form input di bagian atas (agar user bisa cari ulang)
   const [originName, setOriginName] = useState(originQuery);
   const [destinationName, setDestinationName] = useState(destQuery);
 
-  // State untuk data API
   const [routes, setRoutes] = useState<RouteResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [filterInfo, setFilterInfo] = useState("Memuat...");
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -69,15 +149,12 @@ export default function RouteResults() {
       try {
         const res = await fetch(
           `${BASE_URL}/api/search-routes?origin=${encodeURIComponent(originQuery)}&destination=${encodeURIComponent(destQuery)}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         const json = await res.json();
-
         if (res.ok) {
           setRoutes(json.data);
-          setFilterInfo(json.filter_applied); // Mengambil kategori profil dari backend
+          setFilterInfo(json.filter_applied);
         } else {
           setErrorMsg(json.message);
         }
@@ -91,17 +168,13 @@ export default function RouteResults() {
     fetchRoutes();
   }, [originQuery, destQuery, navigate]);
 
-  // Fungsi untuk mencari ulang langsung dari halaman ini
   const handleSearchAgain = () => {
     if (!originName || !destinationName) return;
     navigate(`/route-results?origin=${encodeURIComponent(originName)}&destination=${encodeURIComponent(destinationName)}`);
   };
 
-  // FUNGSI UNTUK PINDAH KE HALAMAN MAP
   const handleSelectRoute = (route: RouteResult) => {
-    navigate('/route-map', { 
-      state: { selectedRoute: route } 
-    });
+    navigate("/route-map", { state: { selectedRoute: route } });
   };
 
   const getTransportIcon = (type: string) => {
@@ -111,15 +184,9 @@ export default function RouteResults() {
 
   const getAccessibilityBadge = (facilities: Facility) => {
     if (facilities?.wheelchair_slot && facilities?.low_entry) {
-      return {
-        label: "♿ Aksesibel Penuh",
-        color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
-      };
+      return { label: "♿ Aksesibel Penuh", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" };
     } else if (facilities?.priority_seat) {
-      return {
-        label: "🪑 Sebagian Aksesibel",
-        color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
-      };
+      return { label: "🪑 Sebagian Aksesibel", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" };
     }
     return { label: "Standar", color: "bg-muted text-muted-foreground" };
   };
@@ -129,72 +196,39 @@ export default function RouteResults() {
       <Navbar />
 
       {/* Hero */}
-      <section
-        className="relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)",
-        }}
-      >
-        <div
-          className="absolute top-0 right-0 w-64 h-64 rounded-full -translate-y-1/2 translate-x-1/2"
-          style={{ background: "rgba(255,255,255,0.05)" }}
-          aria-hidden="true"
-        />
+      <section className="relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)" }}>
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full -translate-y-1/2 translate-x-1/2"
+          style={{ background: "rgba(255,255,255,0.05)" }} aria-hidden="true" />
 
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 relative z-10">
           <Link to="/home">
             <button className="flex items-center gap-2 text-white/70 hover:text-white text-sm mb-4 transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-              Kembali
+              <ArrowLeft className="h-4 w-4" />Kembali
             </button>
           </Link>
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">
-            Hasil Rekomendasi
-          </h1>
-          <div
-            className="rounded-xl p-4 mt-4"
-            style={{
-              background: "rgba(255,255,255,0.1)",
-              border: "1.5px solid rgba(255,255,255,0.18)",
-            }}
-          >
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">Hasil Rekomendasi</h1>
+          <div className="rounded-xl p-4 mt-4"
+            style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" }}>
             <div className="flex items-center gap-3">
-              <div
-                className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5"
-                style={{
-                  background: "rgba(255,255,255,0.12)",
-                  border: "1.5px solid rgba(255,255,255,0.2)",
-                }}
-              >
+              <div className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5"
+                style={{ background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" }}>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
-                <input
-                  value={originName}
-                  onChange={(e) => setOriginName(e.target.value)}
+                <input value={originName} onChange={(e) => setOriginName(e.target.value)}
                   placeholder="Ketik halte asal..."
-                  className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40"
-                />
+                  className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40" />
               </div>
               <span className="text-white/40 text-lg flex-shrink-0">→</span>
-              <div
-                className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5"
-                style={{
-                  background: "rgba(255,255,255,0.12)",
-                  border: "1.5px solid rgba(255,255,255,0.2)",
-                }}
-              >
+              <div className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5"
+                style={{ background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" }}>
                 <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
-                <input
-                  value={destinationName}
-                  onChange={(e) => setDestinationName(e.target.value)}
+                <input value={destinationName} onChange={(e) => setDestinationName(e.target.value)}
                   placeholder="Ketik halte tujuan..."
-                  className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40"
-                />
+                  className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40" />
               </div>
-              <button
-                onClick={handleSearchAgain}
+              <button onClick={handleSearchAgain}
                 className="bg-white font-bold text-sm px-5 py-2.5 rounded-lg hover:-translate-y-0.5 transition-all flex-shrink-0"
-                style={{ color: "hsl(186 100% 27%)" }}
-              >
+                style={{ color: "hsl(186 100% 27%)" }}>
                 Cari Rute
               </button>
             </div>
@@ -216,130 +250,165 @@ export default function RouteResults() {
             <div className="text-center py-16">
               <div className="text-4xl mb-4">🔍</div>
               <div className="font-bold text-lg mb-2 text-rose-500">{errorMsg}</div>
-              <div className="text-sm text-muted-foreground mb-6">
-                Silakan periksa kembali nama halte yang Anda ketik.
-              </div>
-              <Link to="/home">
-                <Button variant="outline">Kembali ke Beranda</Button>
-              </Link>
+              <div className="text-sm text-muted-foreground mb-6">Silakan periksa kembali nama halte yang Anda ketik.</div>
+              <Link to="/home"><Button variant="outline">Kembali ke Beranda</Button></Link>
             </div>
           ) : (
             <>
-              {/* Summary bar */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">
-                    {routes.length} rute ditemukan
-                  </span>
+                  <span className="text-sm font-semibold">{routes.length} rute ditemukan</span>
                   <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold">
                     Filter: {filterInfo}
                   </span>
                 </div>
               </div>
 
-              {/* Route cards */}
               <div className="space-y-4">
                 {routes.map((route) => {
                   const accessBadge = getAccessibilityBadge(route.transport.facilities);
+                  const facilityTips = getFacilityTips(filterInfo, route.transport.facilities);
+                  const categoryAdvice = getCategoryAdvice(filterInfo, route.transport.facilities);
+                  const isExpanded = expandedCard === route.route_id;
+
+                  // Ambil dari backend kalau ada, fallback ke dummy/default
+                  const dummyFacilities = dummyStopFacilities[route.route_id];
+                  const originHasRamp = route.journey.origin_has_ramp ?? dummyFacilities?.origin_has_ramp ?? false;
+                  const originHasElevator = route.journey.origin_has_elevator ?? dummyFacilities?.origin_has_elevator ?? false;
+                  const destHasRamp = route.journey.dest_has_ramp ?? dummyFacilities?.dest_has_ramp ?? false;
+                  const destHasElevator = route.journey.dest_has_elevator ?? dummyFacilities?.dest_has_elevator ?? false;
+                  const transitStops = route.journey.transit_stops ?? dummyFacilities?.transit_stops ?? [];
+
                   return (
-                    <div
-                      key={route.route_id}
-                      className="bg-card rounded-2xl border border-border p-6 shadow-sm
-                        hover:shadow-md hover:-translate-y-0.5 transition-all
-                        high-contrast:border-2 high-contrast:border-primary"
-                    >
-                      {/* Top row */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/30
-                            flex items-center justify-center text-2xl flex-shrink-0"
-                          >
-                            {getTransportIcon(route.transport.type)}
+                    <div key={route.route_id}
+                      className="bg-card rounded-2xl border border-border shadow-sm hover:shadow-md transition-all high-contrast:border-2 high-contrast:border-primary">
+
+                      <div className="p-6">
+                        {/* Top row */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center text-2xl flex-shrink-0">
+                              {getTransportIcon(route.transport.type)}
+                            </div>
+                            <div>
+                              <div className="font-bold text-base">{route.route_name}</div>
+                              <div className="text-sm text-muted-foreground">{route.transport.name} · {route.transport.type}</div>
+                            </div>
                           </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-2xl font-bold text-primary">{route.journey.estimated_time_minutes} mnt</div>
+                            <div className="text-xs text-muted-foreground">{route.journey.stops_passed} halte</div>
+                          </div>
+                        </div>
+
+                        {/* Journey line */}
+                        <div className="flex items-center gap-2 mb-4 text-sm">
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                            <span className="font-medium">{route.journey.origin_stop}</span>
+                          </div>
+                          <div className="flex-1 border-t-2 border-dashed border-border mx-2" />
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0" />
+                            <span className="font-medium">{route.journey.destination_stop}</span>
+                          </div>
+                        </div>
+
+                        {/* Facilities badges */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${accessBadge.color}`}>{accessBadge.label}</span>
+                          {facilityTips.map((tip, i) => (
+                            <span key={i} className={`text-xs px-2.5 py-1 rounded-full font-semibold ${tip.color}`}>{tip.icon} {tip.label}</span>
+                          ))}
+                        </div>
+
+                        {/* Bottom row */}
+                        <div className="flex items-center justify-between pt-4 border-t border-border">
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{route.journey.estimated_time_minutes} menit</div>
+                            <span>·</span>
+                            <div className="flex items-center gap-1"><Bus className="h-3.5 w-3.5" />{route.journey.stops_passed} halte</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setExpandedCard(isExpanded ? null : route.route_id)}
+                              className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
+                              {isExpanded
+                                ? <><ChevronUp className="h-3.5 w-3.5" />Sembunyikan</>
+                                : <><ChevronDown className="h-3.5 w-3.5" />Lihat Detail</>
+                              }
+                            </button>
+                            <Button onClick={() => handleSelectRoute(route)} size="sm"
+                              className="h-8 px-5 text-xs font-bold high-contrast:border-2 high-contrast:border-primary">
+                              Pilih Rute
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Dropdown detail */}
+                      {isExpanded && (
+                        <div className="border-t border-border px-6 py-5 bg-muted/30 rounded-b-2xl">
+                          {categoryAdvice && (
+                            <div className="mb-4 p-3 rounded-xl bg-primary/5 border border-primary/15 text-sm text-primary font-medium">
+                              {categoryAdvice}
+                            </div>
+                          )}
                           <div>
-                            <div className="font-bold text-base">
-                              {route.route_name}
+                            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                              Rute Perjalanan
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {route.transport.name} · {route.transport.type}
+                            <div className="relative">
+                              <div className="absolute left-[9px] top-3 bottom-3 w-px bg-border" />
+                              <div className="space-y-2">
+
+                                {/* Halte asal */}
+                                <div className="flex items-start gap-3 relative">
+                                  <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 z-10 flex items-center justify-center mt-1">
+                                    <span className="w-2 h-2 rounded-full bg-white" />
+                                  </span>
+                                  <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1">
+                                    <div className="text-xs text-muted-foreground">Halte Asal</div>
+                                    <div className="text-sm font-semibold">{route.journey.origin_stop}</div>
+                                    <StopBadges has_ramp={originHasRamp} has_elevator={originHasElevator} />
+                                  </div>
+                                </div>
+
+                                {/* Halte transit */}
+                                {transitStops.length > 0 ? transitStops.map((stop, idx) => (
+                                  <div key={idx} className="flex items-start gap-3 relative">
+                                    <span className="w-5 h-5 rounded-full bg-primary/20 border-2 border-primary flex-shrink-0 z-10 flex items-center justify-center mt-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    </span>
+                                    <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1">
+                                      <div className="text-xs text-muted-foreground">Transit</div>
+                                      <div className="text-sm font-semibold">{stop.stop_name}</div>
+                                      <StopBadges has_ramp={stop.has_ramp} has_elevator={stop.has_elevator} />
+                                    </div>
+                                  </div>
+                                )) : (
+                                  <div className="flex items-center gap-3 ml-1 py-1">
+                                    <div className="w-px h-5 bg-border ml-1" />
+                                    <span className="text-xs text-muted-foreground italic">Tidak ada transit — langsung ke tujuan</span>
+                                  </div>
+                                )}
+
+                                {/* Halte tujuan */}
+                                <div className="flex items-start gap-3 relative">
+                                  <span className="w-5 h-5 rounded-full bg-rose-500 flex-shrink-0 z-10 flex items-center justify-center mt-1">
+                                    <span className="w-2 h-2 rounded-full bg-white" />
+                                  </span>
+                                  <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1">
+                                    <div className="text-xs text-muted-foreground">Halte Tujuan</div>
+                                    <div className="text-sm font-semibold">{route.journey.destination_stop}</div>
+                                    <StopBadges has_ramp={destHasRamp} has_elevator={destHasElevator} />
+                                  </div>
+                                </div>
+
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-2xl font-bold text-primary">
-                            {route.journey.estimated_time_minutes} mnt
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {route.journey.stops_passed} halte
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Journey line */}
-                      <div className="flex items-center gap-2 mb-4 text-sm">
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                          <span className="font-medium">
-                            {route.journey.origin_stop}
-                          </span>
-                        </div>
-                        <div className="flex-1 border-t-2 border-dashed border-border mx-2" />
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0" />
-                          <span className="font-medium">
-                            {route.journey.destination_stop}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Facilities */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <span
-                          className={`text-xs px-2.5 py-1 rounded-full font-semibold ${accessBadge.color}`}
-                        >
-                          {accessBadge.label}
-                        </span>
-                        {route.transport.facilities.low_entry && (
-                          <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 px-2.5 py-1 rounded-full font-semibold">
-                            🚌 Low Entry
-                          </span>
-                        )}
-                        {route.transport.facilities.wheelchair_slot && (
-                          <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300 px-2.5 py-1 rounded-full font-semibold">
-                            ♿ Slot Kursi Roda
-                          </span>
-                        )}
-                        {route.transport.facilities.priority_seat && (
-                          <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 px-2.5 py-1 rounded-full font-semibold">
-                            🪑 Kursi Prioritas
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Bottom row */}
-                      <div className="flex items-center justify-between pt-4 border-t border-border">
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
-                            {route.journey.estimated_time_minutes} menit
-                          </div>
-                          <span>·</span>
-                          <div className="flex items-center gap-1">
-                            <Bus className="h-3.5 w-3.5" />
-                            {route.journey.stops_passed} halte
-                          </div>
-                        </div>
-                        
-                        {/* TOMBOL PILIH RUTE */}
-                        <Button
-                          onClick={() => handleSelectRoute(route)}
-                          size="sm"
-                          className="h-8 px-5 text-xs font-bold high-contrast:border-2 high-contrast:border-primary"
-                        >
-                          Pilih Rute
-                        </Button>
-                      </div>
+                      )}
                     </div>
                   );
                 })}
