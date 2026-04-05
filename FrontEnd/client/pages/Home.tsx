@@ -66,22 +66,6 @@ const reports = [
 
 const quickActions = [
   {
-    icon: <MapPin className="h-6 w-6" />,
-    label: "Cari Rute",
-    sub: "Rute aksesibel",
-    bg: "bg-emerald-50 dark:bg-emerald-950/30",
-    color: "text-emerald-600",
-    href: "/route-search",
-  },
-  {
-    icon: <UserCheck className="h-6 w-6" />,
-    label: "Pesan Pemandu",
-    sub: "Tersedia sekarang",
-    bg: "bg-amber-50 dark:bg-amber-950/30",
-    color: "text-amber-600",
-    href: "#",
-  },
-  {
     icon: <AlertCircle className="h-6 w-6" />,
     label: "Buat Laporan",
     sub: "Laporkan hambatan",
@@ -383,143 +367,38 @@ export default function Home() {
       <section className="bg-background py-10 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-lg font-bold mb-5">Akses Cepat</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             {quickActions.map((qa, i) => (
-              <Link key={i} to={qa.href}>
+              <Link
+                key={i}
+                to={qa.href}
+                className="w-[calc(50%-0.5rem)] md:w-56"
+              >
                 <div
-                  className="bg-background rounded-xl border border-border p-5
-                  hover:shadow-md hover:-translate-y-0.5 transition-all text-center
-                  high-contrast:border-2 high-contrast:border-primary"
+                  className="bg-background rounded-xl border border-border p-5 
+        hover:shadow-md hover:-translate-y-0.5 transition-all text-center
+        high-contrast:border-2 high-contrast:border-primary h-full"
                 >
+                  {/* Icon Container */}
                   <div
-                    className={`w-12 h-12 rounded-xl ${qa.bg} ${qa.color}
-                    flex items-center justify-center mx-auto mb-3`}
+                    className={`w-12 h-12 rounded-xl ${qa.bg} ${qa.color} 
+          flex items-center justify-center mx-auto mb-3`}
                   >
                     {qa.icon}
                   </div>
+
+                  {/* Label Text */}
                   <div className="text-sm font-bold text-foreground">
                     {qa.label}
                   </div>
+
+                  {/* Subtitle/Description */}
                   <div className="text-xs text-muted-foreground mt-1">
                     {qa.sub}
                   </div>
                 </div>
               </Link>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── RUTE + LAPORAN ── */}
-      <section className="bg-muted/50 py-10 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Rekomendasi Rute */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold">🗺️ Rekomendasi Rute</h2>
-                <Link
-                  to="/route-search"
-                  className="text-sm font-bold text-primary flex items-center gap-1 hover:underline"
-                >
-                  Cari Rute <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-              <div
-                className="bg-background rounded-xl border border-border divide-y divide-border
-    high-contrast:border-2 high-contrast:border-primary"
-              >
-                {recommendedRoutes.map((r, i) => (
-                  <Link key={i} to="/route-search">
-                    <div className="flex items-center gap-3 p-4 hover:bg-muted/40 transition-colors">
-                      <div
-                        className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30
-            flex items-center justify-center text-lg flex-shrink-0"
-                      >
-                        {r.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold truncate">
-                          {r.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {r.meta}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-muted-foreground">
-                          {r.duration}
-                        </span>
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            r.accessible
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                              : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                          }`}
-                        >
-                          {r.accessible ? "♿ Aksesibel" : "⚠ Sebagian"}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Laporan saya */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold">📢 Laporan Saya</h2>
-                <Link
-                  to="/reporting"
-                  className="text-sm font-bold text-primary flex items-center gap-1 hover:underline"
-                >
-                  Lihat Semua <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-              <div
-                className="bg-background rounded-xl border border-border divide-y divide-border
-                high-contrast:border-2 high-contrast:border-primary"
-              >
-                {reports.map((r, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 p-4 hover:bg-muted/40 transition-colors"
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0 ${
-                        r.statusColor === "green"
-                          ? "bg-emerald-50 dark:bg-emerald-950/30"
-                          : r.statusColor === "yellow"
-                            ? "bg-amber-50 dark:bg-amber-950/30"
-                            : "bg-rose-50 dark:bg-rose-950/30"
-                      }`}
-                    >
-                      {r.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold truncate">
-                        {r.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        📍 {r.location} · {r.time}
-                      </div>
-                    </div>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${
-                        r.statusColor === "green"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                      }`}
-                    >
-                      {r.statusColor === "green"
-                        ? "✅ Selesai"
-                        : `⏳ ${r.status}`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </section>
