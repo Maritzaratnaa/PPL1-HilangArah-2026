@@ -1,19 +1,70 @@
-import { Navbar } from '@/components/Navbar';
-import { Button } from '@/components/ui/button';
-import { Link, useNavigate } from 'react-router-dom';
-import { useRef, useState, useEffect } from 'react';
-import { Pencil, Mail, Shield, User, Camera, Phone, ArrowLeft } from 'lucide-react';
+import { Navbar } from "@/components/Navbar";
+import { Button } from "@/components/ui/button";
+import { Link, useNavigate } from "react-router-dom";
+import { useRef, useState, useEffect } from "react";
+import {
+  Pencil,
+  Mail,
+  Shield,
+  User,
+  Camera,
+  Phone,
+  ArrowLeft,
+  LogOut,
+} from "lucide-react";
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = "http://localhost:3000";
 
 const allStatuses = [
-  { value: 'disability', label: 'Person with Disability', icon: '♿', color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800' },
-  { value: 'elderly', label: 'Elderly (60+)', icon: '👴', color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800' },
-  { value: 'pregnant', label: 'Pregnant Women', icon: '🤰', color: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300 dark:border-pink-800' },
-  { value: 'vulnerable-illness', label: 'Vulnerable Illness', icon: '🛡️', color: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800' },
-  { value: 'children', label: 'Children', icon: '👦', color: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800' },
-  { value: 'women', label: 'Women', icon: '👩', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800' },
-  { value: 'general', label: 'General Traveler', icon: '🚶', color: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/30 dark:text-slate-300 dark:border-slate-800' },
+  {
+    value: "disability",
+    label: "Person with Disability",
+    icon: "♿",
+    color:
+      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800",
+  },
+  {
+    value: "elderly",
+    label: "Elderly (60+)",
+    icon: "👴",
+    color:
+      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800",
+  },
+  {
+    value: "pregnant",
+    label: "Pregnant Women",
+    icon: "🤰",
+    color:
+      "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300 dark:border-pink-800",
+  },
+  {
+    value: "vulnerable-illness",
+    label: "Vulnerable Illness",
+    icon: "🛡️",
+    color:
+      "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800",
+  },
+  {
+    value: "children",
+    label: "Children",
+    icon: "👦",
+    color:
+      "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800",
+  },
+  {
+    value: "women",
+    label: "Women",
+    icon: "👩",
+    color:
+      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800",
+  },
+  {
+    value: "general",
+    label: "General Traveler",
+    icon: "🚶",
+    color:
+      "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/30 dark:text-slate-300 dark:border-slate-800",
+  },
 ];
 
 interface UserProfile {
@@ -34,19 +85,19 @@ export default function Profile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        navigate('/login');
+        navigate("/login");
         return;
       }
       try {
         const res = await fetch(`${BASE_URL}/api/profile`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         if (res.status === 401) {
-          navigate('/login');
+          navigate("/login");
           return;
         }
         const json = await res.json();
@@ -56,7 +107,7 @@ export default function Profile() {
           setError(json.message);
         }
       } catch (err) {
-        setError('Gagal menghubungi server.');
+        setError("Gagal menghubungi server.");
       } finally {
         setLoading(false);
       }
@@ -73,9 +124,22 @@ export default function Profile() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userCategory");
+    navigate("/login");
+  };
+
   const initials = profile?.full_name
-    ? profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-    : '?';
+    ? profile.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "?";
 
   if (loading) {
     return (
@@ -105,7 +169,6 @@ export default function Profile() {
 
       <main className="flex-grow px-4 py-12">
         <div className="mx-auto max-w-2xl">
-
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <Link to="/home">
@@ -116,28 +179,45 @@ export default function Profile() {
               <h1 className="text-2xl font-bold">Profil Saya</h1>
             </div>
             <Link to="/profile/edit">
-              <Button variant="outline" className="gap-2 high-contrast:border-2 high-contrast:border-primary">
+              <Button
+                variant="outline"
+                className="gap-2 high-contrast:border-2 high-contrast:border-primary"
+              >
                 <Pencil className="h-4 w-4" />
                 Edit Profil
               </Button>
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card overflow-hidden mb-5
-            high-contrast:border-2 high-contrast:border-primary">
-            <div className="h-24 w-full"
-              style={{ background: 'linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)' }} />
+          <div
+            className="rounded-2xl border border-border bg-card overflow-hidden mb-5
+            high-contrast:border-2 high-contrast:border-primary"
+          >
+            <div
+              className="h-24 w-full"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)",
+              }}
+            />
 
             <div className="px-6 pb-6">
               <div className="-mt-10 mb-4">
                 <div className="relative w-20 h-20">
-                  <div className="w-20 h-20 rounded-full border-4 border-background
+                  <div
+                    className="w-20 h-20 rounded-full border-4 border-background
                     bg-primary flex items-center justify-center
-                    text-white text-2xl font-bold shadow-md overflow-hidden">
-                    {avatar
-                      ? <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
-                      : initials
-                    }
+                    text-white text-2xl font-bold shadow-md overflow-hidden"
+                  >
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      initials
+                    )}
                   </div>
                   <button
                     onClick={() => fileInputRef.current?.click()}
@@ -145,7 +225,8 @@ export default function Profile() {
                       bg-primary border-2 border-background
                       flex items-center justify-center
                       hover:opacity-90 transition-opacity shadow-sm"
-                    aria-label="Ganti foto profil">
+                    aria-label="Ganti foto profil"
+                  >
                     <Camera className="h-3.5 w-3.5 text-white" />
                   </button>
                   <input
@@ -160,20 +241,28 @@ export default function Profile() {
 
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-bold mb-1">{profile?.full_name}</h2>
-                  <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                  <h2 className="text-xl font-bold mb-1">
+                    {profile?.full_name}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {profile?.email}
+                  </p>
                 </div>
-                <div className="px-3 py-1 rounded-full text-xs font-semibold
+                <div
+                  className="px-3 py-1 rounded-full text-xs font-semibold
                   bg-emerald-100 text-emerald-700 border border-emerald-200
-                  dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800">
+                  dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
+                >
                   Subscriber Aktif
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-6 mb-5
-            high-contrast:border-2 high-contrast:border-primary">
+          <div
+            className="rounded-2xl border border-border bg-card p-6 mb-5
+            high-contrast:border-2 high-contrast:border-primary"
+          >
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
               <User className="h-4 w-4" />
               Informasi Akun
@@ -184,8 +273,12 @@ export default function Profile() {
                   <User className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">Nama Lengkap</div>
-                  <div className="text-sm font-semibold">{profile?.full_name}</div>
+                  <div className="text-xs text-muted-foreground mb-0.5">
+                    Nama Lengkap
+                  </div>
+                  <div className="text-sm font-semibold">
+                    {profile?.full_name}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3 py-3 border-b border-border">
@@ -193,7 +286,9 @@ export default function Profile() {
                   <Mail className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">Email</div>
+                  <div className="text-xs text-muted-foreground mb-0.5">
+                    Email
+                  </div>
                   <div className="text-sm font-semibold">{profile?.email}</div>
                 </div>
               </div>
@@ -202,45 +297,67 @@ export default function Profile() {
                   <Phone className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">Nomor Telepon</div>
-                  <div className="text-sm font-semibold">{profile?.phone_number || '-'}</div>
+                  <div className="text-xs text-muted-foreground mb-0.5">
+                    Nomor Telepon
+                  </div>
+                  <div className="text-sm font-semibold">
+                    {profile?.phone_number || "-"}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-6
-            high-contrast:border-2 high-contrast:border-primary">
+          <div
+            className="rounded-2xl border border-border bg-card p-6
+            high-contrast:border-2 high-contrast:border-primary"
+          >
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Status Pengguna
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Status ini menentukan rekomendasi rute dan fitur aksesibilitas yang kamu dapatkan.
+              Status ini menentukan rekomendasi rute dan fitur aksesibilitas
+              yang kamu dapatkan.
             </p>
             <div className="flex flex-wrap gap-2">
               {allStatuses.map((s) => {
                 // Mengecek kecocokan berdasarkan value (opsional fallback ke label jika db menyimpan label)
-                const isActive = profile?.category_status === s.value || profile?.category_status === s.label;
+                const isActive =
+                  profile?.category_status === s.value ||
+                  profile?.category_status === s.label;
                 return (
-                  <div key={s.value}
+                  <div
+                    key={s.value}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-all
-                      ${isActive
-                        ? s.color
-                        : 'bg-muted/50 text-muted-foreground border-border opacity-40'
-                      }`}>
+                      ${
+                        isActive
+                          ? s.color
+                          : "bg-muted/50 text-muted-foreground border-border opacity-40"
+                      }`}
+                  >
                     <span>{s.icon}</span>
                     {s.label}
-                    {isActive && <span className="w-1.5 h-1.5 rounded-full bg-current ml-1" />}
+                    {isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-current ml-1" />
+                    )}
                   </div>
                 );
               })}
             </div>
             <p className="text-xs text-muted-foreground mt-4">
-              Untuk mengubah status, klik tombol <strong>Edit Profil</strong> di atas.
+              Untuk mengubah status, klik tombol <strong>Edit Profil</strong> di
+              atas.
             </p>
           </div>
-
+          <Button
+            variant="outline"
+            className="mt-6 gap-2 text-rose-600 border-rose-200 hover:bg-rose-50 high-contrast:border-2 high-contrast:border-primary"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4" />
+            Keluar
+          </Button>
         </div>
       </main>
     </div>
