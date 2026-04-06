@@ -7,6 +7,7 @@ import {
   Shield,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useIsHighContrast } from "@/hooks/useTheme";
 
 interface Feature {
   icon: LucideIcon;
@@ -168,6 +169,7 @@ function DotGrid({ color }: { color: string }) {
 }
 
 export function Features() {
+  const isHC = useIsHighContrast();
   return (
     <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-muted/50">
       <div className="mx-auto max-w-6xl">
@@ -184,47 +186,66 @@ export function Features() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <div key={index} className={`
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {features.map((feature, index) => {
+          const Icon = feature.icon;
+          return (
+            <div 
+              key={index} 
+              className={`
                 relative overflow-hidden p-6 rounded-xl border
-                ${feature.bgLight} ${feature.borderAccent}
                 hover:shadow-lg hover:-translate-y-1
                 transition-all duration-300 ease-out group
-                high-contrast:border-2 high-contrast:border-primary
-              `}>
-                <DotGrid color={feature.accent} />
-                <CardPattern type={feature.pattern} accent={feature.accent} />
+                ${isHC 
+                  ? 'bg-black border-2 border-[#ffff00]' // 2. Paksa Hitam & Kuning Neon
+                  : `${feature.bgLight} ${feature.borderAccent}` // Warna pastel default
+                }
+              `}
+            >
+              {/* Sembunyikan pattern dekorasi saat HC agar lebih bersih/readable */}
+              {!isHC && <DotGrid color={feature.accent} />}
+              {!isHC && <CardPattern type={feature.pattern} accent={feature.accent} />}
 
-                <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`
-                      ${feature.iconBg} w-12 h-12 rounded-xl
-                      flex items-center justify-center
-                      group-hover:scale-110 transition-transform duration-300
-                      ring-1 ring-inset ring-black/5
-                    `}>
-                      <Icon className={`h-6 w-6 ${feature.iconColor}`} />
-                    </div>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${feature.tagColor}`}>
-                      {feature.tag}
-                    </span>
+              <div className="relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`
+                    w-12 h-12 rounded-xl flex items-center justify-center
+                    ${isHC 
+                      ? 'bg-black border-2 border-[#ffff00]' 
+                      : `${feature.iconBg}`
+                    }
+                  `}>
+                    <Icon className={`h-6 w-6 ${isHC ? 'text-[#ffff00]' : feature.iconColor}`} />
                   </div>
-
-                  <h3 className="text-lg font-bold mb-2 text-foreground">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
-
-                  <div
-                    className="mt-5 h-0.5 w-8 rounded-full group-hover:w-16 transition-all duration-300"
-                    style={{ backgroundColor: feature.accent, opacity: 0.5 }}
-                  />
+                  
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full 
+                    ${isHC 
+                      ? 'bg-black border border-[#ffff00] text-[#ffff00]' 
+                      : feature.tagColor
+                    }`}>
+                    {feature.tag}
+                  </span>
                 </div>
+
+                <h3 className={`text-lg font-bold mb-2 ${isHC ? 'text-[#ffff00]' : 'text-foreground'}`}>
+                  {feature.title}
+                </h3>
+                <p className={`text-sm leading-relaxed ${isHC ? 'text-white' : 'text-muted-foreground'}`}>
+                  {feature.description}
+                </p>
+
+                <div
+                  className="mt-5 h-0.5 w-8 rounded-full group-hover:w-16 transition-all duration-300"
+                  style={{ 
+                    backgroundColor: isHC ? "#ffff00" : feature.accent, 
+                    opacity: isHC ? 1 : 0.5 
+                  }}
+                />
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
+      </div>
 
         <div className="mt-12 text-center">
           <p className="text-sm text-muted-foreground mb-4">
