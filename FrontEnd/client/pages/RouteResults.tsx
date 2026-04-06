@@ -190,7 +190,7 @@ export default function RouteResults() {
       : { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" };
 
     const searchInputStyle = isHC
-      ? { background: "#000000", border: "2px solid #ffffff" } 
+      ? { background: "#000000", border: "2px solid #ffff00" } 
       : { background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" };
 
   return (
@@ -229,9 +229,13 @@ export default function RouteResults() {
                   placeholder="Ketik halte tujuan..."
                   className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40" />
               </div>
-              <button onClick={handleSearchAgain}
-                className={`font-bold text-sm px-5 py-2.5 rounded-lg hover:-translate-y-0.5 transition-all flex-shrink-0 ${isHC ? 'bg-white text-black border-2 border-black' : 'bg-white'}`}
-                style={isHC ? {} : { color: "hsl(186 100% 27%)" }}>
+              <button 
+                onClick={handleSearchAgain}
+                className={`font-bold text-sm px-5 py-2.5 rounded-lg hover:-translate-y-0.5 transition-all flex-shrink-0 ${
+                  isHC ? 'bg-[#ffff00] text-black' : 'bg-white'
+                }`}
+                style={isHC ? {} : { color: "hsl(186 100% 27%)" }}
+              >
                 Cari Rute
               </button>
             </div>
