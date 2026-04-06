@@ -15,6 +15,7 @@ interface Facility {
   low_entry: boolean;
   wheelchair_slot: boolean;
   priority_seat: boolean;
+  has_women_area?: boolean;
 }
 
 interface TransitStop {
@@ -52,10 +53,21 @@ const BASE_URL = "http://localhost:3000";
 
 function getFacilityTips(category: string, facilities: Facility) {
   const tips: { icon: string; label: string; color: string }[] = [];
-  if (facilities?.low_entry) tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
-  if (facilities?.wheelchair_slot) tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
-  if (facilities?.priority_seat) tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
-  if (category === "women" || category === "pregnant") tips.push({ icon: "👩", label: "Gerbong Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+  if (category === "disability") {
+    if (facilities?.low_entry) {
+      tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
+    }
+    if (facilities?.wheelchair_slot) {
+      tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
+    }
+  }
+  const needsPriority = ["elderly", "pregnant", "vulnerable-illness", "children"].includes(category);
+  if (needsPriority && facilities?.priority_seat) {
+    tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+  }
+  if ((category === "women" || category === "pregnant") && (facilities as any).has_women_area) {
+    tips.push({ icon: "👩", label: "Gerbong Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+  }
   return tips;
 }
 

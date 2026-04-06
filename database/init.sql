@@ -64,6 +64,7 @@ CREATE TABLE trans (
     is_low_entry BOOLEAN DEFAULT FALSE,
     has_wheelchair_slot BOOLEAN DEFAULT FALSE,
     has_priority_seat BOOLEAN DEFAULT FALSE,
+    has_women_area BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE
 );
 

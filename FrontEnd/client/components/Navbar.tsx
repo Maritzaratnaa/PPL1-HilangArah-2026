@@ -8,21 +8,33 @@ import { useNavigate } from 'react-router-dom';
 export function Navbar() {
     const navigate = useNavigate();
 
-    const handleProfileClick = () => {
+    const handleLogoClick = (e: React.MouseEvent) => {
+      e.preventDefault();
       const token = localStorage.getItem('isLoggedIn');
+      if (token) {
+        navigate('/home');
+      } else {
+        navigate('/');
+      }
+    };
+
+    const handleProfileClick = () => {
+    const token = localStorage.getItem('isLoggedIn');
       if (!token) {
         navigate('/login');
       } else {
         navigate('/profile');
       }
     };
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 high-contrast:border-4">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4 md:gap-8">
           {/* Logo */}
           <Link
-            to="/home"
+            to="/"
+            onClick={handleLogoClick}
             className="flex items-center gap-2 font-bold text-xl text-primary hover:opacity-80 transition-opacity flex-shrink-0 high-contrast:border high-contrast:border-primary high-contrast:px-2 high-contrast:py-1"
           >
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">

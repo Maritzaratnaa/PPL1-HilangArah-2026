@@ -26,6 +26,7 @@ const searchRoutes = async (req, res) => {
                 t.is_low_entry,
                 t.has_wheelchair_slot,
                 t.has_priority_seat,
+                t.has_women_area,
                 
                 os.name AS origin_stop_name, 
                 os.latitude AS origin_lat, 
@@ -110,7 +111,8 @@ const searchRoutes = async (req, res) => {
                     facilities: {
                         low_entry: route.is_low_entry === 1,
                         wheelchair_slot: route.has_wheelchair_slot === 1,
-                        priority_seat: route.has_priority_seat === 1
+                        priority_seat: route.has_priority_seat === 1,
+                        women_area: route.has_women_area === 1
                     }
                 },
                 journey: {
