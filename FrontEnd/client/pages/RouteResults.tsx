@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { useIsHighContrast } from "@/hooks/useTheme";
 import {
   ArrowLeft,
   Clock,
@@ -178,44 +179,59 @@ export default function RouteResults() {
     return { label: "Standar", color: "bg-muted text-muted-foreground" };
   };
 
+  const isHC = useIsHighContrast();
+
+    const heroStyle = isHC
+      ? { background: "#000000", borderBottom: "4px solid #ffff00" } 
+      : { background: "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)" };
+
+    const searchBoxStyle = isHC
+      ? { background: "#000000", border: "2px solid #ffff00" } 
+      : { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" };
+
+    const searchInputStyle = isHC
+      ? { background: "#000000", border: "2px solid #ffffff" } 
+      : { background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
       {/* Hero */}
-      <section className="relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)" }}>
+      <section className="relative overflow-hidden" style={heroStyle}>
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full -translate-y-1/2 translate-x-1/2"
           style={{ background: "rgba(255,255,255,0.05)" }} aria-hidden="true" />
 
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 relative z-10">
           <Link to="/home">
-            <button className="flex items-center gap-2 text-white/70 hover:text-white text-sm mb-4 transition-colors">
+            <button className={`flex items-center gap-2 text-sm mb-4 transition-colors ${isHC ? 'text-[#ffff00]' : 'text-white/70 hover:text-white'}`}>
               <ArrowLeft className="h-4 w-4" />Kembali
             </button>
           </Link>
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">Hasil Rekomendasi</h1>
-          <div className="rounded-xl p-4 mt-4"
-            style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" }}>
+          <h1 className={`text-2xl md:text-3xl font-bold mb-3 ${isHC ? 'text-[#ffff00]' : 'text-white'}`}>
+            Hasil Rekomendasi
+          </h1>
+          <div className="rounded-xl p-4 mt-4" style={searchBoxStyle}>
             <div className="flex items-center gap-3">
-              <div className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5"
-                style={{ background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" }}>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
-                <input value={originName} onChange={(e) => setOriginName(e.target.value)}
+              <div className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5" style={searchInputStyle}>
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isHC ? 'bg-[#ffff00]' : 'bg-emerald-400'}`} />
+                <input 
+                  value={originName} 
+                  onChange={(e) => setOriginName(e.target.value)}
                   placeholder="Ketik halte asal..."
-                  className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40" />
+                  className={`bg-transparent text-sm outline-none w-full ${isHC ? 'text-white placeholder:text-white/60' : 'text-white placeholder:text-white/40'}`} 
+                />
               </div>
               <span className="text-white/40 text-lg flex-shrink-0">→</span>
-              <div className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5"
-                style={{ background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" }}>
+              <div className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5" style={searchInputStyle}>
                 <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
                 <input value={destinationName} onChange={(e) => setDestinationName(e.target.value)}
                   placeholder="Ketik halte tujuan..."
                   className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40" />
               </div>
               <button onClick={handleSearchAgain}
-                className="bg-white font-bold text-sm px-5 py-2.5 rounded-lg hover:-translate-y-0.5 transition-all flex-shrink-0"
-                style={{ color: "hsl(186 100% 27%)" }}>
+                className={`font-bold text-sm px-5 py-2.5 rounded-lg hover:-translate-y-0.5 transition-all flex-shrink-0 ${isHC ? 'bg-white text-black border-2 border-black' : 'bg-white'}`}
+                style={isHC ? {} : { color: "hsl(186 100% 27%)" }}>
                 Cari Rute
               </button>
             </div>
