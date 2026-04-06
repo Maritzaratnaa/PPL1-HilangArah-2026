@@ -13,6 +13,7 @@ interface Facility {
   low_entry: boolean;
   wheelchair_slot: boolean;
   priority_seat: boolean;
+  women_area?: boolean; // Menyamakan dengan Backend
 }
 
 function getTransportIcon(type: string) {
@@ -20,7 +21,12 @@ function getTransportIcon(type: string) {
   return icons[type] || "🚍";
 }
 
-function getAccessibilityBadge(facilities: Facility) {
+function getAccessibilityBadge(facilities: Facility, category: string) {
+  const safeCategory = (category || "").trim().toLowerCase();
+  
+  // Sembunyikan badge aksesibel penuh/sebagian jika kategori wanita
+  if (safeCategory === "wanita" || safeCategory === "perempuan" || safeCategory === "women") return null;
+
   if (facilities?.wheelchair_slot && facilities?.low_entry) {
     return { label: "♿ Aksesibel Penuh", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" };
   } else if (facilities?.priority_seat) {
@@ -31,31 +37,62 @@ function getAccessibilityBadge(facilities: Facility) {
 
 function getFacilityTips(category: string, facilities: Facility) {
   const tips: { icon: string; label: string; color: string }[] = [];
-  if (facilities?.low_entry) tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
-  if (facilities?.wheelchair_slot) tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
-  if (facilities?.priority_seat) tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
-  if (category === "women" || category === "pregnant") tips.push({ icon: "👩", label: "Gerbong Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+  
+  const safeCategory = (category || "").trim().toLowerCase();
+  const isWomanOnly = safeCategory === "wanita" || safeCategory === "perempuan" || safeCategory === "women";
+
+  // 1. RINGKASAN TRANSPORTASI: Tampilkan badge Wanita di atas jika armada mendukung
+  if ((isWomanOnly || safeCategory === "ibu hamil" || safeCategory === "pregnant") && facilities?.women_area) {
+    tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+  }
+
+  // JIKA PROFILNYA HANYA WANITA, hentikan di sini.
+  if (isWomanOnly) {
+    return tips; 
+  }
+
+  // 2. KATEGORI LAIN
+  if (safeCategory === "disabilitas" || safeCategory === "disability") {
+    if (facilities?.low_entry) tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
+    if (facilities?.wheelchair_slot) tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
+  }
+  
+  const needsPriority = ["lansia", "elderly", "ibu hamil", "pregnant", "penyakit rentan", "vulnerable-illness", "anak-anak", "children"].includes(safeCategory);
+  if (needsPriority && facilities?.priority_seat) {
+    tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+  }
+  
   return tips;
 }
 
 function getCategoryAdvice(category: string, facilities: Facility): string | null {
-  switch (category) {
+  const safeCategory = (category || "").trim().toLowerCase();
+
+  switch (safeCategory) {
+    case "disabilitas":
     case "disability":
       if (facilities?.wheelchair_slot) return "✅ Transportasi ini memiliki slot khusus kursi roda di dekat pintu.";
       if (facilities?.low_entry) return "✅ Transportasi ini menggunakan low entry sehingga mudah dinaiki.";
       return null;
+    case "lansia":
     case "elderly":
       if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk lansia. Tunjukkan kartu identitas jika diperlukan.";
       return null;
+    case "ibu hamil":
     case "pregnant":
       if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk ibu hamil.";
       if (facilities?.low_entry) return "✅ Transportasi low entry memudahkan ibu hamil untuk naik turun.";
       return null;
+    case "wanita":
+    case "perempuan":
     case "women":
-      return "✅ Tersedia gerbong khusus wanita. Biasanya berada di gerbong paling depan atau belakang.";
+      if (facilities?.women_area) return "✅ Tersedia area khusus wanita pada armada transportasi ini.";
+      return null;
+    case "anak-anak":
     case "children":
       if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas. Anak di bawah 3 tahun gratis dan tidak memerlukan tempat duduk terpisah.";
       return null;
+    case "penyakit rentan":
     case "vulnerable-illness":
       if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk penumpang dengan kondisi kesehatan tertentu.";
       return null;
@@ -64,7 +101,13 @@ function getCategoryAdvice(category: string, facilities: Facility): string | nul
   }
 }
 
-function StopBadges({ has_ramp, has_elevator }: { has_ramp?: boolean; has_elevator?: boolean }) {
+function StopBadges({ has_ramp, has_elevator, category }: { has_ramp?: boolean; has_elevator?: boolean; category: string }) {
+  const safeCategory = (category || "").trim().toLowerCase();
+  
+  // Sembunyikan badge fisik halte jika usernya wanita
+  const isWomanOnly = safeCategory === "wanita" || safeCategory === "perempuan" || safeCategory === "women";
+  if (isWomanOnly) return null; 
+
   const badges = [];
   if (has_ramp) badges.push({ icon: "♿", label: "Ramp", color: "bg-emerald-100 text-emerald-700" });
   if (has_elevator) badges.push({ icon: "🛗", label: "Elevator", color: "bg-blue-100 text-blue-700" });
@@ -167,7 +210,8 @@ export default function RouteMap() {
   const facilities: Facility = selectedRoute.transport.facilities;
   const filterCategory: string = selectedRoute.filter_applied || "";
 
-  const accessBadge = getAccessibilityBadge(facilities);
+  // Pemanggilan badge sekarang menyertakan filterCategory
+  const accessBadge = getAccessibilityBadge(facilities, filterCategory);
   const facilityTips = getFacilityTips(filterCategory, facilities);
   const categoryAdvice = getCategoryAdvice(filterCategory, facilities);
 
@@ -188,7 +232,7 @@ export default function RouteMap() {
               <ArrowLeft className="h-4 w-4 mr-2" /> Kembali ke Hasil
             </Button>
 
-            {/* Transport card — matches RouteResults top row */}
+            {/* Transport card */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center text-2xl flex-shrink-0">
@@ -205,7 +249,7 @@ export default function RouteMap() {
               </div>
             </div>
 
-            {/* Journey line — origin → destination */}
+            {/* Journey line */}
             <div className="flex items-center gap-2 mb-4 text-sm">
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
@@ -220,9 +264,11 @@ export default function RouteMap() {
 
             {/* Facility badges */}
             <div className="flex flex-wrap gap-1.5">
-              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${accessBadge.color}`}>
-                {accessBadge.label}
-              </span>
+              {accessBadge && (
+                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${accessBadge.color}`}>
+                  {accessBadge.label}
+                </span>
+              )}
               {facilityTips.map((tip, i) => (
                 <span key={i} className={`text-xs px-2.5 py-1 rounded-full font-semibold ${tip.color}`}>
                   {tip.icon} {tip.label}
@@ -263,9 +309,34 @@ export default function RouteMap() {
                     <StopBadges
                       has_ramp={selectedRoute.journey.origin_has_ramp}
                       has_elevator={selectedRoute.journey.origin_has_elevator}
+                      category={filterCategory}
                     />
                   </div>
                 </div>
+
+                {/* ========================================== */}
+                {/* 2. KENDARAAN YANG DINAIKI (TAMBAHKAN INI!) */}
+                {/* ========================================== */}
+                <div className="flex items-start gap-3 relative py-1">
+                  <span className="w-5 h-5 rounded-full bg-primary/10 border border-primary/20 flex-shrink-0 z-10 flex items-center justify-center mt-1">
+                    <span className="text-[10px] leading-none">{getTransportIcon(selectedRoute.transport.type)}</span>
+                  </span>
+                  <div className="bg-primary/5 rounded-xl px-3 py-3 border border-primary/20 flex-1 shadow-sm">
+                    <div className="text-xs font-bold text-primary mb-0.5">Naik Armada</div>
+                    <div className="text-sm font-bold text-foreground">{selectedRoute.transport.name}</div>
+                    <div className="text-xs text-muted-foreground mb-2">{selectedRoute.transport.type}</div>
+                    
+                    {/* Badge fasilitas kendaraan (Area Wanita, dll) muncul di sini */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {facilityTips.map((tip, i) => (
+                        <span key={i} className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold ${tip.color}`}>
+                          {tip.icon} {tip.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {/* ========================================== */}
 
                 {/* Halte Transit */}
                 {transitStops.length > 0 ? transitStops.map((stop: any, idx: number) => (
@@ -276,7 +347,7 @@ export default function RouteMap() {
                     <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1 shadow-sm">
                       <div className="text-xs text-muted-foreground">Transit</div>
                       <div className="text-sm font-semibold leading-tight">{stop.stop_name}</div>
-                      <StopBadges has_ramp={stop.has_ramp} has_elevator={stop.has_elevator} />
+                      <StopBadges has_ramp={stop.has_ramp} has_elevator={stop.has_elevator} category={filterCategory} />
                     </div>
                   </div>
                 )) : (
@@ -297,6 +368,7 @@ export default function RouteMap() {
                     <StopBadges
                       has_ramp={selectedRoute.journey.dest_has_ramp}
                       has_elevator={selectedRoute.journey.dest_has_elevator}
+                      category={filterCategory}
                     />
                   </div>
                 </div>

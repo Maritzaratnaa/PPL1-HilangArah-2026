@@ -10,13 +10,14 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  AlertCircle
 } from "lucide-react";
 
 interface Facility {
   low_entry: boolean;
   wheelchair_slot: boolean;
   priority_seat: boolean;
-  has_women_area?: boolean;
+  women_area?: boolean; // Sesuai nama dari Backend
 }
 
 interface TransitStop {
@@ -27,6 +28,7 @@ interface TransitStop {
 
 interface RouteResult {
   route_id: string;
+  is_recommended: boolean;
   route_name: string;
   transport: {
     name: string;
@@ -54,42 +56,63 @@ const BASE_URL = "http://localhost:3000";
 
 function getFacilityTips(category: string, facilities: Facility) {
   const tips: { icon: string; label: string; color: string }[] = [];
-  if (category === "disability") {
-    if (facilities?.low_entry) {
-      tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
-    }
-    if (facilities?.wheelchair_slot) {
-      tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
-    }
+  
+  // Amankan string agar kebal huruf besar/kecil
+  const safeCategory = (category || "").trim().toLowerCase();
+  const isWomanOnly = safeCategory === "wanita" || safeCategory === "perempuan" || safeCategory === "women";
+
+  // 1. RINGKASAN TRANSPORTASI: Tampilkan badge Wanita di atas jika armada mendukung
+  if ((isWomanOnly || safeCategory === "ibu hamil" || safeCategory === "pregnant") && facilities?.women_area) {
+    tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
   }
-  const needsPriority = ["elderly", "pregnant", "vulnerable-illness", "children"].includes(category);
+
+  // JIKA PROFILNYA HANYA WANITA, hentikan di sini.
+  if (isWomanOnly) {
+    return tips; 
+  }
+
+  // 2. KATEGORI LAIN
+  if (safeCategory === "disabilitas" || safeCategory === "disability") {
+    if (facilities?.low_entry) tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
+    if (facilities?.wheelchair_slot) tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
+  }
+  
+  const needsPriority = ["lansia", "elderly", "ibu hamil", "pregnant", "penyakit rentan", "vulnerable-illness", "anak-anak", "children"].includes(safeCategory);
   if (needsPriority && facilities?.priority_seat) {
     tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
   }
-  if ((category === "women" || category === "pregnant") && (facilities as any).has_women_area) {
-    tips.push({ icon: "👩", label: "Gerbong Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
-  }
+  
   return tips;
 }
 
 function getCategoryAdvice(category: string, facilities: Facility): string | null {
-  switch (category) {
+  const safeCategory = (category || "").trim().toLowerCase();
+
+  switch (safeCategory) {
+    case "disabilitas":
     case "disability":
       if (facilities?.wheelchair_slot) return "✅ Transportasi ini memiliki slot khusus kursi roda di dekat pintu.";
       if (facilities?.low_entry) return "✅ Transportasi ini menggunakan low entry sehingga mudah dinaiki.";
       return null;
+    case "lansia":
     case "elderly":
       if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk lansia. Tunjukkan kartu identitas jika diperlukan.";
       return null;
+    case "ibu hamil":
     case "pregnant":
       if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk ibu hamil.";
       if (facilities?.low_entry) return "✅ Transportasi low entry memudahkan ibu hamil untuk naik turun.";
       return null;
+    case "wanita":
+    case "perempuan":
     case "women":
-      return "✅ Tersedia gerbong khusus wanita. Biasanya berada di gerbong paling depan atau belakang.";
+      if (facilities?.women_area) return "✅ Tersedia area khusus wanita pada armada transportasi ini.";
+      return null;
+    case "anak-anak":
     case "children":
       if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas. Anak di bawah 3 tahun gratis dan tidak memerlukan tempat duduk terpisah.";
       return null;
+    case "penyakit rentan":
     case "vulnerable-illness":
       if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk penumpang dengan kondisi kesehatan tertentu.";
       return null;
@@ -98,11 +121,21 @@ function getCategoryAdvice(category: string, facilities: Facility): string | nul
   }
 }
 
-function StopBadges({ has_ramp, has_elevator }: { has_ramp: boolean; has_elevator: boolean }) {
+function StopBadges({ has_ramp, has_elevator, category }: { has_ramp: boolean; has_elevator: boolean; category: string }) {
+  const safeCategory = (category || "").trim().toLowerCase();
+  
+  // Jika kategori hanya wanita, sembunyikan informasi fasilitas fisik halte (Ramp/Elevator)
+  const isWomanOnly = safeCategory === "wanita" || safeCategory === "perempuan" || safeCategory === "women";
+  if (isWomanOnly) return null; 
+
   const badges = [];
   if (has_ramp) badges.push({ icon: "♿", label: "Ramp", color: "bg-emerald-100 text-emerald-700" });
   if (has_elevator) badges.push({ icon: "🛗", label: "Elevator", color: "bg-blue-100 text-blue-700" });
-  if (!has_ramp && !has_elevator) badges.push({ icon: "⚠️", label: "Tanpa Fasilitas", color: "bg-muted text-muted-foreground" });
+  
+  if (badges.length === 0) {
+     badges.push({ icon: "⚠️", label: "Tanpa Fasilitas", color: "bg-muted text-muted-foreground" });
+  }
+
   return (
     <div className="flex flex-wrap gap-1 mt-1">
       {badges.map((b, i) => (
@@ -182,28 +215,33 @@ export default function RouteResults() {
     return icons[type] || "🚍";
   };
 
-  const getAccessibilityBadge = (facilities: Facility) => {
-    if (facilities?.wheelchair_slot && facilities?.low_entry) {
-      return { label: "♿ Aksesibel Penuh", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" };
-    } else if (facilities?.priority_seat) {
-      return { label: "🪑 Sebagian Aksesibel", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" };
-    }
-    return { label: "Standar", color: "bg-muted text-muted-foreground" };
-  };
+  const getAccessibilityBadge = (facilities: Facility, category: string) => {
+      const safeCategory = (category || "").trim().toLowerCase();
+      
+      // Sembunyikan badge aksesibel penuh/sebagian jika kategori wanita
+      if (safeCategory === "wanita" || safeCategory === "perempuan" || safeCategory === "women") return null;
+
+      if (facilities?.wheelchair_slot && facilities?.low_entry) {
+        return { label: "♿ Aksesibel Penuh", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" };
+      } else if (facilities?.priority_seat) {
+        return { label: "🪑 Sebagian Aksesibel", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" };
+      }
+      return { label: "Standar", color: "bg-muted text-muted-foreground" };
+    };
 
   const isHC = useIsHighContrast();
 
-    const heroStyle = isHC
-      ? { background: "#000000", borderBottom: "4px solid #ffff00" } 
-      : { background: "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)" };
+  const heroStyle = isHC
+    ? { background: "#000000", borderBottom: "4px solid #ffff00" } 
+    : { background: "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)" };
 
-    const searchBoxStyle = isHC
-      ? { background: "#000000", border: "2px solid #ffff00" } 
-      : { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" };
+  const searchBoxStyle = isHC
+    ? { background: "#000000", border: "2px solid #ffff00" } 
+    : { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" };
 
-    const searchInputStyle = isHC
-      ? { background: "#000000", border: "2px solid #ffff00" } 
-      : { background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" };
+  const searchInputStyle = isHC
+    ? { background: "#000000", border: "2px solid #ffff00" } 
+    : { background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -285,7 +323,7 @@ export default function RouteResults() {
 
               <div className="space-y-4">
                 {routes.map((route) => {
-                  const accessBadge = getAccessibilityBadge(route.transport.facilities);
+                  const accessBadge = getAccessibilityBadge(route.transport.facilities, filterInfo);
                   const facilityTips = getFacilityTips(filterInfo, route.transport.facilities);
                   const categoryAdvice = getCategoryAdvice(filterInfo, route.transport.facilities);
                   const isExpanded = expandedCard === route.route_id;
@@ -299,7 +337,15 @@ export default function RouteResults() {
 
                   return (
                     <div key={route.route_id}
-                      className="bg-card rounded-2xl border border-border shadow-sm hover:shadow-md transition-all high-contrast:border-2 high-contrast:border-primary">
+                      className="bg-card rounded-2xl border border-border shadow-sm hover:shadow-md transition-all high-contrast:border-2 high-contrast:border-primary overflow-hidden">
+
+                      {/* Pita Peringatan Rute Alternatif */}
+                      {!route.is_recommended && (
+                        <div className="bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 text-xs px-5 py-2 font-bold border-b border-rose-200 dark:border-rose-900/50 flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                          Rute alternatif: Kurang memenuhi kriteria profil aksesibilitas Anda.
+                        </div>
+                      )}
 
                       <div className="p-6">
                         {/* Top row */}
@@ -334,7 +380,11 @@ export default function RouteResults() {
 
                         {/* Facilities badges */}
                         <div className="flex flex-wrap gap-2 mb-4">
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${accessBadge.color}`}>{accessBadge.label}</span>
+                          {accessBadge && (
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${accessBadge.color}`}>
+                              {accessBadge.label}
+                            </span>
+                          )}
                           {facilityTips.map((tip, i) => (
                             <span key={i} className={`text-xs px-2.5 py-1 rounded-full font-semibold ${tip.color}`}>{tip.icon} {tip.label}</span>
                           ))}
@@ -387,7 +437,7 @@ export default function RouteResults() {
                                   <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1">
                                     <div className="text-xs text-muted-foreground">Halte Asal</div>
                                     <div className="text-sm font-semibold">{route.journey.origin_stop}</div>
-                                    <StopBadges has_ramp={originHasRamp} has_elevator={originHasElevator} />
+                                    <StopBadges has_ramp={originHasRamp} has_elevator={originHasElevator} category={filterInfo} />
                                   </div>
                                 </div>
 
@@ -400,7 +450,7 @@ export default function RouteResults() {
                                     <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1">
                                       <div className="text-xs text-muted-foreground">Transit</div>
                                       <div className="text-sm font-semibold">{stop.stop_name}</div>
-                                      <StopBadges has_ramp={stop.has_ramp} has_elevator={stop.has_elevator} />
+                                      <StopBadges has_ramp={stop.has_ramp} has_elevator={stop.has_elevator} category={filterInfo} />
                                     </div>
                                   </div>
                                 )) : (
@@ -418,7 +468,7 @@ export default function RouteResults() {
                                   <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1">
                                     <div className="text-xs text-muted-foreground">Halte Tujuan</div>
                                     <div className="text-sm font-semibold">{route.journey.destination_stop}</div>
-                                    <StopBadges has_ramp={destHasRamp} has_elevator={destHasElevator} />
+                                    <StopBadges has_ramp={destHasRamp} has_elevator={destHasElevator} category={filterInfo} />
                                   </div>
                                 </div>
 
