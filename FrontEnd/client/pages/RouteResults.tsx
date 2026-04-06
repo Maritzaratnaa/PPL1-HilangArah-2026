@@ -50,19 +50,6 @@ interface RouteResult {
 
 const BASE_URL = "http://localhost:3000";
 
-// Dummy fasilitas halte asal & tujuan per route_id
-// Hapus ini kalau backend sudah return origin_has_ramp, origin_has_elevator, dst
-const dummyStopFacilities: Record<string, {
-  origin_has_ramp: boolean;
-  origin_has_elevator: boolean;
-  dest_has_ramp: boolean;
-  dest_has_elevator: boolean;
-  transit_stops: TransitStop[];
-}> = {
-  // key diisi route_id dari backend nanti
-  // sementara pakai fallback default semua false
-};
-
 function getFacilityTips(category: string, facilities: Facility) {
   const tips: { icon: string; label: string; color: string }[] = [];
   if (facilities?.low_entry) tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
@@ -271,13 +258,12 @@ export default function RouteResults() {
                   const categoryAdvice = getCategoryAdvice(filterInfo, route.transport.facilities);
                   const isExpanded = expandedCard === route.route_id;
 
-                  // Ambil dari backend kalau ada, fallback ke dummy/default
-                  const dummyFacilities = dummyStopFacilities[route.route_id];
-                  const originHasRamp = route.journey.origin_has_ramp ?? dummyFacilities?.origin_has_ramp ?? false;
-                  const originHasElevator = route.journey.origin_has_elevator ?? dummyFacilities?.origin_has_elevator ?? false;
-                  const destHasRamp = route.journey.dest_has_ramp ?? dummyFacilities?.dest_has_ramp ?? false;
-                  const destHasElevator = route.journey.dest_has_elevator ?? dummyFacilities?.dest_has_elevator ?? false;
-                  const transitStops = route.journey.transit_stops ?? dummyFacilities?.transit_stops ?? [];
+                  // Integrasi langsung dengan API Backend
+                  const originHasRamp = route.journey.origin_has_ramp ?? false;
+                  const originHasElevator = route.journey.origin_has_elevator ?? false;
+                  const destHasRamp = route.journey.dest_has_ramp ?? false;
+                  const destHasElevator = route.journey.dest_has_elevator ?? false;
+                  const transitStops = route.journey.transit_stops ?? [];
 
                   return (
                     <div key={route.route_id}
