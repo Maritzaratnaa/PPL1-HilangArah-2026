@@ -43,6 +43,8 @@ services:
     restart: always
     ports:
       - "8080:8080" # Sesuaikan dengan port yang digunakan Vite di Dockerfile
+    env_file:
+      - ./FrontEnd/.env 
     depends_on:
       - backend # Tunggu backend nyala dulu
     networks:
