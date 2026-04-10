@@ -1,4 +1,5 @@
 const pool = require('../db');
+
 const searchRoutes = async (req, res) => {
     try {
         const userId = req.user.user_id; 
@@ -15,7 +16,7 @@ const searchRoutes = async (req, res) => {
         
         const userCategory = profiles[0].category_status;
 
-        // 1. QUERY SQL: Mengambil daftar armada sebagai JSON Array menggunakan subquery
+        // 1. QUERY SQL: Alias disesuaikan agar SAMA PERSIS dengan Logika Javascript
         let query = `
             SELECT 
                 r.route_id, 
@@ -36,7 +37,7 @@ const searchRoutes = async (req, res) => {
                 (d_rs.stop_order - o_rs.stop_order) AS total_stops,
                 (d_rs.est_time_minutes - o_rs.est_time_minutes) AS estimated_time_minutes,
                 
-                /* MENGAMBIL DAFTAR KENDARAAN (Bisa lebih dari 1) */
+                /* MENGAMBIL DAFTAR KENDARAAN SEBAGAI JSON */
                 (SELECT CONCAT('[', GROUP_CONCAT(
                     JSON_OBJECT(
                         'name', t.name, 
@@ -54,7 +55,7 @@ const searchRoutes = async (req, res) => {
                  WHERE rt.route_id = r.route_id
                 ) AS transports_json,
                 
-                /* MENGAMBIL DAFTAR TRANSIT HALTE */
+                /* MENGAMBIL DAFTAR HALTE TRANSIT SEBAGAI JSON */
                 (SELECT CONCAT('[', GROUP_CONCAT(
                     JSON_OBJECT(
                         'stop_name', s.name, 
@@ -77,7 +78,7 @@ const searchRoutes = async (req, res) => {
             WHERE os.name LIKE ? 
               AND ds.name LIKE ? 
               AND o_rs.stop_order < d_rs.stop_order 
-              AND r.is_active = TRUE
+              AND r.is_active = 1
         `;
 
         const searchOrigin = `%${origin}%`;
@@ -91,7 +92,7 @@ const searchRoutes = async (req, res) => {
             });
         }
 
-        // 2. LOGIKA JAVASCRIPT
+        // 2. LOGIKA JAVASCRIPT: Membungkus data sesuai format yang diminta Frontend
         const processedRoutes = routes.map(route => {
             const parsedTransports = route.transports_json ? JSON.parse(route.transports_json) : [];
             let isRecommended = false;
@@ -100,19 +101,16 @@ const searchRoutes = async (req, res) => {
             if (userCategory === 'Disabilitas') {
                 const originAccessible = route.origin_has_ramp || route.origin_has_elevator;
                 const destAccessible = route.dest_has_ramp || route.dest_has_elevator;
-                // Cek apakah setiap kendaraan punya akses kursi roda / low entry
                 const transportsAccessible = parsedTransports.every(t => t.facilities.low_entry || t.facilities.wheelchair_slot);
                 
                 if (originAccessible && destAccessible && transportsAccessible) {
                     isRecommended = true;
                 }
             } else if (['Lansia', 'Ibu Hamil', 'Penyakit Rentan'].includes(userCategory)) {
-                // Cek apakah setiap kendaraan punya kursi prioritas
                 if (parsedTransports.every(t => t.facilities.priority_seat)) {
                     isRecommended = true;
                 }
             } else if (['Ibu Hamil', 'Wanita', 'Perempuan'].includes(userCategory)) {
-                 // Cek apakah setiap kendaraan punya gerbong wanita
                  if (parsedTransports.every(t => t.facilities.women_area)) {
                      isRecommended = true;
                  }
@@ -124,7 +122,7 @@ const searchRoutes = async (req, res) => {
                 route_id: route.route_id,
                 is_recommended: isRecommended,
                 route_name: route.route_name,
-                transports: parsedTransports, // SEKARANG MENGIRIM ARRAY TRANSPORTS []
+                transports: parsedTransports, 
                 journey: {
                     origin_stop: route.origin_stop_name,
                     origin_has_ramp: route.origin_has_ramp === 1,
