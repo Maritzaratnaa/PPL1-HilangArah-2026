@@ -1,0 +1,82 @@
+name: Feature Branch CI
+
+on:
+  push:
+    # Trigger CI setiap ada push ke branch fitur atau fix
+    branches:
+      - 'feat/backend-*'
+      - 'feat/frontend-*'
+      - 'fix/**'
+
+jobs:
+  # -------------------------------------------
+  # 1. PENGECEKAN BACKEND (Menggunakan npm)
+  # -------------------------------------------
+  backend-checks:
+    name: Backend Checks
+    runs-on: ubuntu-latest
+    # Hanya jalan jika branch diawali 'feat/backend-' atau 'fix/'
+    if: startsWith(github.ref, 'refs/heads/feat/backend-') || startsWith(github.ref, 'refs/heads/fix/')
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: npm install
+
+      # CATATAN: Pastikan di backend/package.json kamu sudah ada script "lint" dan "test". 
+      # Jika belum ada, biarkan di-comment (#) dulu agar CI tidak error.
+      # - name: Run Linter
+      #   working-directory: backend
+      #   run: npm run lint
+      #
+      # - name: Run Unit Tests
+      #   working-directory: backend
+      #   run: npm run test
+
+  # -------------------------------------------
+  # 2. PENGECEKAN FRONTEND (Menggunakan pnpm)
+  # -------------------------------------------
+  frontend-checks:
+    name: Frontend Checks
+    runs-on: ubuntu-latest
+    # Hanya jalan jika branch diawali 'feat/frontend-' atau 'fix/'
+    if: startsWith(github.ref, 'refs/heads/feat/frontend-') || startsWith(github.ref, 'refs/heads/fix/')
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: 'FrontEnd/pnpm-lock.yaml'
+
+      - name: Install Dependencies
+        working-directory: FrontEnd
+        run: pnpm install
+
+      # - name: Run Linter
+      #   working-directory: FrontEnd
+      #   run: pnpm run lint
+
+      # Build test sangat penting di frontend untuk mengecek error sintaks sebelum di-merge
+      - name: Test Build
+        working-directory: FrontEnd
+        run: pnpm run build
