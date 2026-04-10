@@ -2,20 +2,20 @@ version: '3.8'
 
 services:
   # 1. DATABASE MYSQL
-  db:
-    image: mysql:8.0
-    container_name: arahin_db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: arahin_db
-    ports:
-      - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./database:/docker-entrypoint-initdb.d
-    networks:
-      - arahin_network
+  # db:
+  #   image: mysql:8.0
+  #   container_name: arahin_db
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: rootpassword
+  #     MYSQL_DATABASE: arahin_db
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - db_data:/var/lib/mysql
+  #     - ./database:/docker-entrypoint-initdb.d
+  #   networks:
+  #     - arahin_network
 
   # 2. BACKEND NODE.JS
   backend:
@@ -24,15 +24,15 @@ services:
     restart: always
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
-      - DB_HOST=db  # PENTING: Mengubah localhost menjadi nama service 'db'
-      - DB_USER=root
-      - DB_PASSWORD=rootpassword
-      - DB_NAME=arahin_db
-      - JWT_SECRET=bebop
-      - PORT=3000
-    depends_on:
-      - db  # Tunggu database nyala dulu sebelum backend nyala
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - arahin_network
 
@@ -43,6 +43,8 @@ services:
     restart: always
     ports:
       - "8080:8080" # Sesuaikan dengan port yang digunakan Vite di Dockerfile
+    env_file:                  # <--- TAMBAHKAN BARIS INI
+      - ./FrontEnd/.env
     depends_on:
       - backend # Tunggu backend nyala dulu
     networks:
