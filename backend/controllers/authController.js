@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const pool = require('../db'); 
-
+//test
 // ==============================
 // LOGIKA REGISTER
 // ==============================

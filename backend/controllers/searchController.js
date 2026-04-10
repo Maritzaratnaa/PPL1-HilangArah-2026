@@ -10,108 +10,153 @@ const searchRoutes = async (req, res) => {
         }
 
         const [profiles] = await pool.query('SELECT category_status FROM profiles WHERE user_id = ?', [userId]);
-        const userCategory = profiles.length > 0 ? profiles[0].category_status : 'Umum';
+        if (profiles.length === 0) {
+            return res.status(404).json({ message: "Profil pengguna tidak ditemukan." });
+        }
+        
+        const userCategory = profiles[0].category_status;
 
-        const searchOrigin = `%${origin.trim()}%`;
-        const searchDest = `%${destination.trim()}%`;
-
-        // QUERY SQL: Menggunakan UNION agar rute Transit (Lebak Bulus - Cawang) bisa ketemu
+        // 1. QUERY SQL: Alias disesuaikan agar SAMA PERSIS dengan Logika Javascript
         let query = `
-            -- 1. RUTE LANGSUNG (DIRECT)
             SELECT 
                 r.route_id, 
-                r.route_name, 
-                GROUP_CONCAT(t.name ORDER BY rt.transport_order SEPARATOR ' + ') AS t_n, 
-                IF(COUNT(t.trans_id) > 1, 'Transit', MAX(t.type)) AS t_t,
-                MIN(t.is_low_entry) AS is_low_entry, 
-                MIN(t.has_wheelchair_slot) AS has_wheelchair_slot, 
-                MIN(t.has_priority_seat) AS has_priority_seat, 
-                MIN(t.has_women_area) AS has_women_area,
-                os.name AS o_s, os.latitude AS o_lat, os.longitude AS o_lng, os.has_ramp AS o_r, os.has_elevator AS o_e,
-                ds.name AS d_s, ds.latitude AS d_lat, ds.longitude AS d_lng, ds.has_ramp AS d_r, ds.has_elevator AS d_e,
-                (d_rs.stop_order - o_rs.stop_order) AS t_s,
-                (d_rs.est_time_minutes - o_rs.est_time_minutes) AS e_t,
-                (
-                    SELECT JSON_ARRAYAGG(JSON_OBJECT('stop_name', ms.name, 'has_ramp', ms.has_ramp=1, 'has_elevator', ms.has_elevator=1))
-                    FROM route_stops mrs
-                    JOIN stops ms ON mrs.stop_id = ms.stop_id
-                    WHERE mrs.route_id = r.route_id 
-                      AND mrs.stop_order > o_rs.stop_order 
-                      AND mrs.stop_order < d_rs.stop_order
-                ) AS transit_json
+                r.route_name,
+                
+                os.name AS origin_stop_name, 
+                os.latitude AS origin_lat, 
+                os.longitude AS origin_lng,
+                os.has_ramp AS origin_has_ramp,
+                os.has_elevator AS origin_has_elevator,
+                
+                ds.name AS destination_stop_name,
+                ds.latitude AS dest_lat,
+                ds.longitude AS dest_lng,
+                ds.has_ramp AS dest_has_ramp,
+                ds.has_elevator AS dest_has_elevator,
+                
+                (d_rs.stop_order - o_rs.stop_order) AS total_stops,
+                (d_rs.est_time_minutes - o_rs.est_time_minutes) AS estimated_time_minutes,
+                
+                /* MENGAMBIL DAFTAR KENDARAAN SEBAGAI JSON */
+                (SELECT CONCAT('[', GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'name', t.name, 
+                        'type', t.type,
+                        'facilities', JSON_OBJECT(
+                            'low_entry', IF(t.is_low_entry=1, true, false),
+                            'wheelchair_slot', IF(t.has_wheelchair_slot=1, true, false),
+                            'priority_seat', IF(t.has_priority_seat=1, true, false),
+                            'women_area', IF(t.has_women_area=1, true, false)
+                        )
+                    ) ORDER BY rt.transport_order ASC
+                ), ']')
+                 FROM route_transports rt
+                 JOIN trans t ON rt.trans_id = t.trans_id
+                 WHERE rt.route_id = r.route_id
+                ) AS transports_json,
+                
+                /* MENGAMBIL DAFTAR HALTE TRANSIT SEBAGAI JSON */
+                (SELECT CONCAT('[', GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'stop_name', s.name, 
+                        'has_ramp', IF(s.has_ramp=1, true, false), 
+                        'has_elevator', IF(s.has_elevator=1, true, false)
+                    ) ORDER BY rs.stop_order ASC
+                ), ']')
+                 FROM route_stops rs
+                 JOIN stops s ON rs.stop_id = s.stop_id
+                 WHERE rs.route_id = r.route_id 
+                   AND rs.stop_order > o_rs.stop_order 
+                   AND rs.stop_order < d_rs.stop_order
+                ) AS transit_stops_json
+
             FROM routes r
-            JOIN route_transports rt ON r.route_id = rt.route_id
-            JOIN trans t ON rt.trans_id = t.trans_id
             JOIN route_stops o_rs ON r.route_id = o_rs.route_id
             JOIN stops os ON o_rs.stop_id = os.stop_id
             JOIN route_stops d_rs ON r.route_id = d_rs.route_id
             JOIN stops ds ON d_rs.stop_id = ds.stop_id
-            WHERE os.name LIKE ? AND ds.name LIKE ? 
-              AND o_rs.stop_order < d_rs.stop_order AND r.is_active = TRUE
-            GROUP BY 
-                r.route_id, r.route_name, 
-                o_s, o_lat, o_lng, o_r, o_e,
-                d_s, d_lat, d_lng, d_r, d_e,
-                o_rs.stop_order, d_rs.stop_order, o_rs.est_time_minutes, d_rs.est_time_minutes
+            WHERE os.name LIKE ? 
+              AND ds.name LIKE ? 
+              AND o_rs.stop_order < d_rs.stop_order 
+              AND r.is_active = 1
         `;
 
-        const [dbRoutes] = await pool.query(query, [searchOrigin, searchDest, searchOrigin, searchDest]);
+        const searchOrigin = `%${origin}%`;
+        const searchDest = `%${destination}%`;
 
-        if (dbRoutes.length === 0) {
-            return res.status(404).json({ message: "Rute tidak ditemukan." });
+        const [routes] = await pool.query(query, [searchOrigin, searchDest]);
+
+        if (routes.length === 0) {
+            return res.status(404).json({ 
+                message: `Rute dari "${origin}" ke "${destination}" tidak ditemukan.` 
+            });
         }
 
-        const processedRoutes = dbRoutes.map(route => {
-            // Logika Rekomendasi
-            let recommended = false;
-            const cat = userCategory.toLowerCase();
-            const hasAcc = (route.o_r || route.o_e) && (route.is_low_entry || route.has_wheelchair_slot);
-            
-            if (cat === 'disabilitas') recommended = hasAcc;
-            else if (['lansia', 'ibu hamil', 'penyakit rentan'].includes(cat)) recommended = route.has_priority_seat === 1;
-            else recommended = true;
+        // 2. LOGIKA JAVASCRIPT: Membungkus data sesuai format yang diminta Frontend
+        const processedRoutes = routes.map(route => {
+            const parsedTransports = route.transports_json ? JSON.parse(route.transports_json) : [];
+            let isRecommended = false;
+
+            // Rute direkomendasikan jika SEMUA armada yang dipakai di rute itu memadai
+            if (userCategory === 'Disabilitas') {
+                const originAccessible = route.origin_has_ramp || route.origin_has_elevator;
+                const destAccessible = route.dest_has_ramp || route.dest_has_elevator;
+                const transportsAccessible = parsedTransports.every(t => t.facilities.low_entry || t.facilities.wheelchair_slot);
+                
+                if (originAccessible && destAccessible && transportsAccessible) {
+                    isRecommended = true;
+                }
+            } else if (['Lansia', 'Ibu Hamil', 'Penyakit Rentan'].includes(userCategory)) {
+                if (parsedTransports.every(t => t.facilities.priority_seat)) {
+                    isRecommended = true;
+                }
+            } else if (['Ibu Hamil', 'Wanita', 'Perempuan'].includes(userCategory)) {
+                 if (parsedTransports.every(t => t.facilities.women_area)) {
+                     isRecommended = true;
+                 }
+            } else {
+                isRecommended = true; 
+            }
 
             return {
-                route_id: String(route.route_id),
-                is_recommended: recommended,
+                route_id: route.route_id,
+                is_recommended: isRecommended,
                 route_name: route.route_name,
-                // DISESUAIKAN: transport (Objek Tunggal) sesuai interface RouteResult kamu
-                transport: {
-                    name: route.t_n,
-                    type: route.t_t,
-                    facilities: {
-                        low_entry: route.is_low_entry === 1,
-                        wheelchair_slot: route.has_wheelchair_slot === 1,
-                        priority_seat: route.has_priority_seat === 1,
-                        women_area: route.has_women_area === 1
-                    }
-                },
+                transports: parsedTransports, 
                 journey: {
-                    origin_stop: route.o_s,
-                    origin_has_ramp: route.o_r === 1,
-                    origin_has_elevator: route.o_e === 1,
-                    destination_stop: route.d_s,
-                    dest_has_ramp: route.d_r === 1,
-                    dest_has_elevator: route.d_e === 1,
-                    stops_passed: route.t_s,
-                    estimated_time_minutes: route.e_t,
-                    // Parse transit stops agar muncul di detail dropdown
-                    transit_stops: route.transit_json ? (typeof route.transit_json === 'string' ? JSON.parse(route.transit_json) : route.transit_json) : [],
-                    origin_lat: route.o_lat, origin_lng: route.o_lng,
-                    dest_lat: route.d_lat, dest_lng: route.d_lng
+                    origin_stop: route.origin_stop_name,
+                    origin_has_ramp: route.origin_has_ramp === 1,
+                    origin_has_elevator: route.origin_has_elevator === 1,
+                    destination_stop: route.destination_stop_name,
+                    dest_has_ramp: route.dest_has_ramp === 1,
+                    dest_has_elevator: route.dest_has_elevator === 1,
+                    stops_passed: route.total_stops,
+                    estimated_time_minutes: route.estimated_time_minutes,
+                    transit_stops: route.transit_stops_json ? JSON.parse(route.transit_stops_json) : [],
+                    origin_lat: route.origin_lat,
+                    origin_lng: route.origin_lng,
+                    dest_lat: route.dest_lat,
+                    dest_lng: route.dest_lng
                 }
             };
         });
 
+        // 3. SORTING
+        processedRoutes.sort((a, b) => {
+            if (a.is_recommended !== b.is_recommended) return a.is_recommended ? -1 : 1;
+            return a.journey.estimated_time_minutes - b.journey.estimated_time_minutes;
+        });
+
         res.status(200).json({
-            message: "Success",
+            message: "Rute berhasil ditemukan.",
             filter_applied: userCategory,
+            total_recommendations: processedRoutes.length,
             data: processedRoutes
         });
 
     } catch (error) {
-        console.error("LOG ERROR:", error);
-        res.status(500).json({ message: "Internal Server Error" });
+        console.error("Error Search Routes:", error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server saat mencari rute." });
     }
 };
 

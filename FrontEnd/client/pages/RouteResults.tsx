@@ -20,6 +20,12 @@ interface Facility {
   women_area?: boolean; // Sesuai nama dari Backend
 }
 
+interface Transport {
+  name: string;
+  type: string;
+  facilities: Facility;
+}
+
 interface TransitStop {
   stop_name: string;
   has_ramp: boolean;
@@ -30,11 +36,7 @@ interface RouteResult {
   route_id: string;
   is_recommended: boolean;
   route_name: string;
-  transport: {
-    name: string;
-    type: string;
-    facilities: Facility;
-  };
+  transports: Transport[];
   journey: {
     origin_stop: string;
     origin_has_ramp?: boolean;
@@ -85,37 +87,40 @@ function getFacilityTips(category: string, facilities: Facility) {
   return tips;
 }
 
-function getCategoryAdvice(category: string, facilities: Facility): string | null {
+// Ganti 'Facility' menjadi 'Transport[]' pada parameter kedua
+function getCategoryAdvice(category: string, transports: Transport[]): string | null {
   const safeCategory = (category || "").trim().toLowerCase();
+  
+  // Karena sekarang ada banyak kendaraan, kita cek kondisi semua armada di rute tersebut
+  const hasWomenAreaAll = transports.every(t => t.facilities.women_area);
+  const hasWheelchairAll = transports.every(t => t.facilities.wheelchair_slot);
+  const hasLowEntryAll = transports.every(t => t.facilities.low_entry);
+  const hasPriorityAll = transports.every(t => t.facilities.priority_seat);
 
   switch (safeCategory) {
     case "disabilitas":
     case "disability":
-      if (facilities?.wheelchair_slot) return "✅ Transportasi ini memiliki slot khusus kursi roda di dekat pintu.";
-      if (facilities?.low_entry) return "✅ Transportasi ini menggunakan low entry sehingga mudah dinaiki.";
-      return null;
+      if (hasWheelchairAll) return "✅ Seluruh armada rute ini memiliki slot khusus kursi roda.";
+      if (hasLowEntryAll) return "✅ Seluruh armada menggunakan low entry sehingga mudah dinaiki.";
+      return "✅ Rute ini telah disesuaikan dengan kriteria aksesibilitas.";
+      
     case "lansia":
     case "elderly":
-      if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk lansia. Tunjukkan kartu identitas jika diperlukan.";
-      return null;
     case "ibu hamil":
     case "pregnant":
-      if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk ibu hamil.";
-      if (facilities?.low_entry) return "✅ Transportasi low entry memudahkan ibu hamil untuk naik turun.";
-      return null;
+    case "penyakit rentan":
+    case "vulnerable-illness":
+    case "anak-anak":
+    case "children":
+      if (hasPriorityAll) return "✅ Tersedia kursi prioritas pada seluruh armada rute ini.";
+      return "✅ Tersedia kursi prioritas untuk kenyamanan perjalanan Anda.";
+      
     case "wanita":
     case "perempuan":
     case "women":
-      if (facilities?.women_area) return "✅ Tersedia area khusus wanita pada armada transportasi ini.";
-      return null;
-    case "anak-anak":
-    case "children":
-      if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas. Anak di bawah 3 tahun gratis dan tidak memerlukan tempat duduk terpisah.";
-      return null;
-    case "penyakit rentan":
-    case "vulnerable-illness":
-      if (facilities?.priority_seat) return "✅ Tersedia kursi prioritas untuk penumpang dengan kondisi kesehatan tertentu.";
-      return null;
+      if (hasWomenAreaAll) return "✅ Tersedia area khusus wanita pada seluruh armada rute ini.";
+      return "✅ Tersedia area khusus wanita (cek detail per armada).";
+      
     default:
       return null;
   }
@@ -207,7 +212,13 @@ export default function RouteResults() {
   };
 
   const handleSelectRoute = (route: RouteResult) => {
-    navigate("/route-map", { state: { selectedRoute: route } });
+    // TAMBAHKAN filterCategory: filterInfo di sini!
+    navigate("/route-map", { 
+      state: { 
+        selectedRoute: route, 
+        filterCategory: filterInfo // 👈 Ini yang tadinya ketinggalan!
+      } 
+    });
   };
 
   const getTransportIcon = (type: string) => {
@@ -323,9 +334,17 @@ export default function RouteResults() {
 
               <div className="space-y-4">
                 {routes.map((route) => {
-                  const accessBadge = getAccessibilityBadge(route.transport.facilities, filterInfo);
-                  const facilityTips = getFacilityTips(filterInfo, route.transport.facilities);
-                  const categoryAdvice = getCategoryAdvice(filterInfo, route.transport.facilities);
+                  // Logika gabungan: true hanya jika semua armada bernilai true
+                  const combinedFacilities = {
+                      low_entry: route.transports.every(t => t.facilities.low_entry),
+                      wheelchair_slot: route.transports.every(t => t.facilities.wheelchair_slot),
+                      priority_seat: route.transports.every(t => t.facilities.priority_seat),
+                      women_area: route.transports.every(t => t.facilities.women_area)
+                  };
+
+                  const accessBadge = getAccessibilityBadge(combinedFacilities, filterInfo);
+                  const facilityTips = getFacilityTips(filterInfo, combinedFacilities);
+                  const categoryAdvice = getCategoryAdvice(filterInfo, route.transports);
                   const isExpanded = expandedCard === route.route_id;
 
                   // Integrasi langsung dengan API Backend
@@ -346,22 +365,39 @@ export default function RouteResults() {
                           Rute alternatif: Kurang memenuhi kriteria profil aksesibilitas Anda.
                         </div>
                       )}
-
                       <div className="p-6">
                         {/* Top row */}
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center text-2xl flex-shrink-0">
-                              {getTransportIcon(route.transport.type)}
+                            {/* 1. LOOP IKON KENDARAAN (Berjejer) */}
+                            <div className="flex -space-x-3"> {/* Efek tumpang tindih sedikit agar keren */}
+                              {route.transports.map((t, i) => (
+                                <div 
+                                  key={i} 
+                                  className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center text-2xl flex-shrink-0 border-2 border-card shadow-sm"
+                                  title={t.name}
+                                >
+                                  {getTransportIcon(t.type)}
+                                </div>
+                              ))}
                             </div>
+
+                            {/* 2. NAMA RUTE & GABUNGAN NAMA KENDARAAN */}
                             <div>
-                              <div className="font-bold text-base">{route.route_name}</div>
-                              <div className="text-sm text-muted-foreground">{route.transport.name} · {route.transport.type}</div>
+                              <div className="font-bold text-base leading-tight">{route.route_name}</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {/* Menggabungkan nama: "TransJakarta ➔ MRT Jakarta" */}
+                                {route.transports.map(t => t.name).join(" ➔ ")}
+                              </div>
                             </div>
                           </div>
+
+                          {/* 3. ESTIMASI WAKTU (Tetap Sama) */}
                           <div className="text-right flex-shrink-0">
                             <div className="text-2xl font-bold text-primary">{route.journey.estimated_time_minutes} mnt</div>
-                            <div className="text-xs text-muted-foreground">{route.journey.stops_passed} halte</div>
+                            <div className="text-[10px] uppercase tracking-tighter text-muted-foreground">
+                              {route.journey.stops_passed} halte dilewati
+                            </div>
                           </div>
                         </div>
 

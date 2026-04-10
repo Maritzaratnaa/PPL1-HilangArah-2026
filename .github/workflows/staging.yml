@@ -1,12 +1,14 @@
-name: Integration Test # Nama ini yang akan muncul di badge atau tab Actions
+name: Staging CI/CD (Dev Branch) # Nama disesuaikan agar jelas ini untuk branch dev
 
-# Controls when the workflow will run
 on:
-  workflow_dispatch: # Memungkinkan menjalankan manual
+  push:
+    branches:
+      - dev # Workflow akan otomatis berjalan saat ada kode baru masuk ke dev
+  workflow_dispatch: # Tetap bisa dijalankan secara manual jika butuh
 
 jobs:
-  # Job tunggal untuk mengecek apakah integrasi FE & BE aman
   build-and-integrate:
+    name: Integration Test FE & BE
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +30,7 @@ jobs:
           cache-dependency-path: 'backend/package-lock.json'
           
       - name: Install Backend Deps
-        working-directory: backend # Masuk ke folder backend karena package.json ada di sini
+        working-directory: backend
         run: npm install
 
       - name: Run Backend Server
@@ -56,7 +58,7 @@ jobs:
           cache-dependency-path: 'FrontEnd/pnpm-lock.yaml'
 
       - name: Install Frontend Deps
-        working-directory: FrontEnd # Pastikan huruf besar-kecilnya benar (FrontEnd)
+        working-directory: FrontEnd
         run: pnpm install
 
       - name: Run Frontend Server
@@ -69,5 +71,7 @@ jobs:
       - name: Verify Integration
         run: |
           sleep 15
+          # Pastikan backend ARAHIN merespons
           curl -f http://localhost:3000 || exit 1
+          # Pastikan frontend Vite merespons
           curl -f http://localhost:8080 || exit 1

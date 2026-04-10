@@ -1,23 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. DATABASE MYSQL
-  # db:
-  #   image: mysql:8.0
-  #   container_name: arahin_db
-  #   restart: always
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: rootpassword
-  #     MYSQL_DATABASE: arahin_db
-  #   ports:
-  #     - "3306:3306"
-  #   volumes:
-  #     - db_data:/var/lib/mysql
-  #     - ./database:/docker-entrypoint-initdb.d
-  #   networks:
-  #     - arahin_network
-
-  # 2. BACKEND NODE.JS
+  # 1. BACKEND NODE.JS
   backend:
     build: ./backend  # Mengambil Dockerfile dari folder backend
     container_name: arahin_backend
@@ -36,15 +20,15 @@ services:
     networks:
       - arahin_network
 
-  # 3. FRONTEND REACT/VITE
+  # 2. FRONTEND REACT/VITE
   frontend:
     build: ./FrontEnd # Mengambil Dockerfile dari folder FrontEnd
     container_name: arahin_frontend
     restart: always
     ports:
       - "8080:8080" # Sesuaikan dengan port yang digunakan Vite di Dockerfile
-    env_file:                  # <--- TAMBAHKAN BARIS INI
-      - ./FrontEnd/.env
+    env_file:
+      - ./FrontEnd/.env 
     depends_on:
       - backend # Tunggu backend nyala dulu
     networks:
