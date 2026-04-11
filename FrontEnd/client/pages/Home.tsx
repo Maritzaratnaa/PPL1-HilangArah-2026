@@ -195,19 +195,27 @@ export default function Home() {
       <section className="bg-background py-10 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-lg font-bold mb-5">Akses Cepat</h2>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {quickActions.map((qa, i) => (
-              <Link key={i} to={qa.href} className="w-[calc(50%-0.5rem)] md:w-56">
-                <div className="bg-background rounded-xl border border-border p-5
-                  hover:shadow-md hover:-translate-y-0.5 transition-all text-center
-                  high-contrast:border-2 high-contrast:border-white h-full">
-                  <div className={`w-12 h-12 rounded-xl ${qa.bg} ${qa.color}
-                    flex items-center justify-center mx-auto mb-3
-                    high-contrast:bg-black high-contrast:border-2 high-contrast:border-white`}>
+              <Link key={i} to={qa.href} className="w-full">
+                <div
+                  className="bg-background rounded-xl border border-border p-5
+            hover:shadow-md hover:-translate-y-0.5 transition-all text-center
+            high-contrast:border-2 high-contrast:border-white h-full"
+                >
+                  <div
+                    className={`w-12 h-12 rounded-xl ${qa.bg} ${qa.color}
+              flex items-center justify-center mx-auto mb-3
+              high-contrast:bg-black high-contrast:border-2 high-contrast:border-white`}
+                  >
                     {qa.icon}
                   </div>
-                  <div className="text-sm font-bold text-foreground high-contrast:text-white">{qa.label}</div>
-                  <div className="text-xs text-muted-foreground mt-1 high-contrast:text-white">{qa.sub}</div>
+                  <div className="text-sm font-bold text-foreground high-contrast:text-white">
+                    {qa.label}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1 high-contrast:text-white">
+                    {qa.sub}
+                  </div>
                 </div>
               </Link>
             ))}
