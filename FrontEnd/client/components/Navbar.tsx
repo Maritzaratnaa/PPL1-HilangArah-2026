@@ -43,19 +43,6 @@ export function Navbar() {
             <span className="hidden sm:inline">ARAHIN</span>
           </Link>
 
-          {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-md">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search routes, guides..."
-                className="pl-10 h-10 high-contrast:border-2 high-contrast:border-primary high-contrast:bg-input"
-                aria-label="Search"
-              />
-            </div>
-          </div>
-
           {/* Icon Group */}
           <div className="flex items-center gap-2 ml-auto">
             {/* Profile */}
