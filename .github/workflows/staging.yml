@@ -16,10 +16,14 @@ jobs:
         uses: actions/checkout@v4
 
       # 1. SETUP DATABASE (Tanpa working-directory karena docker-compose.yml ada di luar)
-      - name: Start Database
+      - name: Create Env File
         run: |
-          docker compose up -d
-          sleep 20 
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
 
       # 2. SETUP & JALANKAN BACKEND
       - name: Setup Node.js (Backend)
@@ -37,12 +41,13 @@ jobs:
         working-directory: backend
         run: npm start & 
         env:
-          DB_HOST: 127.0.0.1
-          DB_USER: root
-          DB_PASS: rootpassword
-          DB_NAME: arahin_db
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PORT: ${{ secrets.DB_PORT }}
           PORT: 3000
-          JWT_SECRET: bebop
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
       # 3. SETUP & JALANKAN FRONTEND
       - name: Install pnpm
@@ -70,7 +75,8 @@ jobs:
       # 4. FINAL CHECK
       - name: Verify Integration
         run: |
-          sleep 15
+          echo "Menunggu server stabil..."
+          sleep 20
           # Pastikan backend ARAHIN merespons
           curl -f http://localhost:3000 || exit 1
           # Pastikan frontend Vite merespons
