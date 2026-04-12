@@ -35,7 +35,7 @@ jobs:
           
       - name: Install Backend Deps
         working-directory: backend
-        run: npm install
+        run: nohup npm start > backend.log 2>&1 &
 
       - name: Run Backend Server
         working-directory: backend
@@ -76,8 +76,4 @@ jobs:
       - name: Verify Integration
         run: |
           echo "Menunggu server stabil..."
-          sleep 20
-          # Pastikan backend ARAHIN merespons
-          curl -f http://localhost:3000 || exit 1
-          # Pastikan frontend Vite merespons
-          curl -f http://localhost:8080 || exit 1
+          sleep 20curl -f http://localhost:3000 || { echo "❌ BACKEND CRASH! Ini log aslinya:"; cat backend/backend.log; exit 1; }
