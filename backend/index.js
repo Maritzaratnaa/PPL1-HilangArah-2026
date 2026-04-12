@@ -6,6 +6,8 @@ const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes'); 
 const searchRoutes = require('./routes/searchRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
+
 
 const app = express();
 app.use(cors( {
