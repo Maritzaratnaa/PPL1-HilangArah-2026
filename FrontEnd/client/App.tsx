@@ -17,7 +17,7 @@ import RouteResults from "./pages/RouteResults";
 import Subscription from "./pages/Subscription";
 import SubscriptionForm from "./pages/SubscriptionForm";
 import SubscriptionConfirmation from "./pages/SubscriptionConfirmation";
-import SubscriptionPayment from "./pages/SubscriptionPayment;
+import SubscriptionPayment from "./pages/SubscriptionPayment";
 import SubscriptionProfile from "./pages/SubscriptionProfile";
 import Reporting from "./pages/Reporting";
 import NotFound from "./pages/NotFound";
