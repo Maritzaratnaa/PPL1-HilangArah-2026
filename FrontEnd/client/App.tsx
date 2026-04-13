@@ -15,6 +15,10 @@ import ProfileEdit from "./pages/ProfileEdit";
 import RouteSearch from "./pages/RouteSearch";
 import RouteResults from "./pages/RouteResults";  
 import Subscription from "./pages/Subscription";
+import SubscriptionForm from "./pages/SubscriptionForm";
+import SubscriptionConfirmation from "./pages/SubscriptionConfirmation";
+import SubscriptionPayment from "./pages/SubscriptionPayment;
+import SubscriptionProfile from "./pages/SubscriptionProfile";
 import Reporting from "./pages/Reporting";
 import NotFound from "./pages/NotFound";
 import RouteMap from "./pages/RouteMap";
@@ -37,6 +41,10 @@ const App = () => (
           <Route path="/route-search" element={<RouteSearch />} />
           <Route path="/route-results" element={<RouteResults />} />
           <Route path="/subscription" element={<Subscription />} />
+          <Route path="/subscription/Payment-Confirmation" element={<SubscriptionConfirmation />} />
+          <Route path="/subscription/Payment" element={<SubscriptionPayment />} />
+          <Route path="/subscription/Form" element={<SubscriptionForm />} />
+          <Route path="/subscription/Profile" element={<SubscriptionProfile />} />
           <Route path="/reporting" element={<Reporting />} />
           <Route path="/route-map" element={<RouteMap />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
