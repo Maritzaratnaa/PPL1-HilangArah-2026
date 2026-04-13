@@ -4,7 +4,7 @@ import { useIsHighContrast } from "@/hooks/useTheme";
 export function Footer() {
   const isHC = useIsHighContrast();
   return (
-      <footer className={`relative overflow-hidden border-t mt-16 ${isHC ? 'border-t-4 border-[#ffff00] bg-black' : 'border-border'}`}>
+      <footer className={`relative overflow-hidden border-t mt-0 ${isHC ? 'border-t-4 border-[#ffff00] bg-black' : 'border-border'}`}>
         
         {!isHC && (
           <div className="absolute inset-0 -z-10"
@@ -26,24 +26,6 @@ export function Footer() {
         )}
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-14 pb-8">
-          <div className={`rounded-2xl mb-12 px-8 py-7 flex flex-col sm:flex-row items-center justify-between gap-4 ${isHC ? 'bg-black border-2 border-[#ffff00]' : ''}`}
-            style={!isHC ? {
-              background: 'linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(207 100% 36%) 100%)',
-            } : {}}>
-            <div>
-              <div className={`font-bold text-lg mb-1 ${isHC ? 'text-[#ffff00]' : 'text-white'}`}>Siap memulai perjalanan inklusif?</div>
-              <div className={`text-sm ${isHC ? 'text-white' : 'text-white/75'}`}>Daftar gratis dan temukan rute aksesibel di sekitar Anda.</div>
-            </div>
-            <a href="/register"
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all shadow-lg hover:-translate-y-0.5
-                ${isHC 
-                  ? 'bg-[#ffff00] text-black hover:bg-[#ffff00]/90' 
-                  : 'bg-white text-primary hover:bg-white/90'
-                }`}>
-              Mulai Sekarang
-              <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
 
           {/* Main grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
