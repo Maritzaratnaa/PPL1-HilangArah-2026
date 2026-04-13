@@ -33,13 +33,21 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'backend/package-lock.json'
           
+    # 2. SETUP & JALANKAN BACKEND
+      - name: Setup Node.js (Backend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+          
       - name: Install Backend Deps
         working-directory: backend
-        run: nohup npm start > backend.log 2>&1 &
+        run: npm install 
 
       - name: Run Backend Server
         working-directory: backend
-        run: npm start & 
+        run: nohup npm start > backend.log 2>&1 & # 👈 PERBAIKAN 2: Pindahkan nohup ke sini
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_USER: ${{ secrets.DB_USER }}
