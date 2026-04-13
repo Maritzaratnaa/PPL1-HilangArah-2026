@@ -84,4 +84,5 @@ jobs:
       - name: Verify Integration
         run: |
           echo "Menunggu server stabil..."
-          sleep 20curl -f http://localhost:3000 || { echo "❌ BACKEND CRASH! Ini log aslinya:"; cat backend/backend.log; exit 1; }
+          sleep 20
+          curl -f http://localhost:3000 || { echo "❌ BACKEND CRASH! Ini log aslinya:"; cat backend/backend.log; exit 1; }
