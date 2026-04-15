@@ -3,20 +3,32 @@ import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useState, useEffect } from 'react';
-import { Clock, Check, ShoppingCart } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Clock, Check, ShoppingCart, Loader2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function SubscriptionPayment() {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Tangkap subs_id dari state (jika user mengakses langsung tanpa lewat form, ini akan undefined)
+  const subsId = location.state?.subs_id;
+
   const [selectedPayment, setSelectedPayment] = useState('gopay');
   const [timeRemaining, setTimeRemaining] = useState(23 * 60 + 45 * 60 + 30);
+  const [isProcessing, setIsProcessing] = useState(false); // State untuk efek loading
 
   useEffect(() => {
+    // Jika tidak ada subsId (user iseng ngetik URL manual), tendang balik ke form
+    if (!subsId) {
+      alert("Sesi pembayaran tidak valid atau sudah kadaluarsa.");
+      navigate('/subscription/form');
+    }
+
     const timer = setInterval(() => {
       setTimeRemaining((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [subsId, navigate]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -25,11 +37,50 @@ export default function SubscriptionPayment() {
     return `${hours.toString().padStart(2, '0')} : ${minutes.toString().padStart(2, '0')} : ${secs.toString().padStart(2, '0')}`;
   };
 
-  const handlePaymentConfirm = () => {
-    localStorage.setItem('subscriptionStatus', 'active');
-    localStorage.setItem('subscriptionStartDate', new Date().toISOString());
-    navigate('/subscription-confirmation');
+  // --- FUNGSI PEMBAYARAN DIUPDATE ---
+  const handlePaymentConfirm = async () => {
+    setIsProcessing(true);
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Sesi Anda telah habis. Silakan login kembali.");
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      
+      // Tembak API backend untuk mengubah status jadi Active
+      const res = await fetch(`${apiUrl}/api/subscription/activate`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ subs_id: subsId }) // Kirim ID langganan ke backend
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Jika sukses di-update di database, pindah ke halaman Konfirmasi
+        navigate('/subscription/Payment-Confirmation', { 
+          state: { subs_id: subsId } 
+        });
+      } else {
+        alert(data.message || "Gagal memproses pembayaran.");
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Terjadi kesalahan jaringan saat memproses pembayaran.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  // Jika subsId tidak ada (sedang proses redirect), render kosong agar tidak error
+  if (!subsId) return null; 
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground font-['Atkinson_Hyperlegible',_sans-serif]">
@@ -38,7 +89,7 @@ export default function SubscriptionPayment() {
       <main className="flex-grow px-6 py-10 lg:px-10">
         <div className="mx-auto max-w-6xl">
           
-          {/* STEPPER - Full Width sejajar kontainer max-w-6xl */}
+          {/* STEPPER */}
           <div className="mb-16 relative">
             <div className="absolute top-6 left-0 w-full h-[1px] bg-border z-0" />
             
@@ -79,7 +130,7 @@ export default function SubscriptionPayment() {
             </div>
           </div>
 
-          {/* Deadline Banner - Menggunakan Variabel Tema */}
+          {/* Deadline Banner */}
           <Card className="bg-amber-50 border-l-4 border-l-amber-400 rounded-[var(--radius)] p-6 mb-8 flex items-center gap-5 shadow-sm">
             <Clock className="h-8 w-8 text-amber-500 flex-shrink-0" />
             <div className="flex-1">
@@ -153,14 +204,22 @@ export default function SubscriptionPayment() {
                     <p className="text-[16px] text-muted-foreground font-medium">Ikuti instruksi pembayaran melalui aplikasi yang Anda pilih.</p>
                   </div>
 
-                  <Button onClick={handlePaymentConfirm} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-14 rounded-2xl font-bold text-[18px] mt-8 transition-all active:scale-[0.98]">
-                    Konfirmasi Pembayaran →
+                  <Button 
+                    onClick={handlePaymentConfirm} 
+                    disabled={isProcessing}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-14 rounded-2xl font-bold text-[18px] mt-8 transition-all active:scale-[0.98]"
+                  >
+                    {isProcessing ? (
+                      <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Memproses Pembayaran...</>
+                    ) : (
+                      "Konfirmasi Pembayaran →"
+                    )}
                   </Button>
                 </div>
               </Card>
             </div>
 
-            {/* Right Column - Order Summary (SAMA PERSIS DENGAN KONTEN ASLI ANDA) */}
+            {/* Right Column - Order Summary */}
             <div className="lg:col-span-1">
               <Card className="bg-card border-border rounded-[var(--radius)] p-6 sticky top-24 shadow-sm">
                 <h3 className="text-[18px] font-bold mb-6 flex items-center gap-2 text-foreground">
@@ -168,71 +227,46 @@ export default function SubscriptionPayment() {
                   Rincian Pembayaran
                 </h3>
 
-                {/* Customer Info */}
-                <div className="bg-muted/30 rounded-lg p-4 mb-6 border border-border">
-                  <p className="text-[16px]">
-                    <span className="font-bold text-foreground">Budi Santoso</span>
-                    <span className="text-muted-foreground ml-2">budi@email.com</span>
+                {/* ID Referensi Langganan */}
+                <div className="bg-muted/30 rounded-lg p-4 mb-6 border border-border text-center">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">ID Langganan</p>
+                  <p className="text-[14px] font-mono font-bold text-primary truncate">
+                    {subsId.split('-')[0].toUpperCase()}
                   </p>
                 </div>
 
                 {/* Price Breakdown */}
                 <div className="space-y-3 mb-6 pb-6 border-b border-border">
                   <div className="flex justify-between text-[16px]">
-                    <span className="text-muted-foreground font-medium">Paket Berlangganan Bulanan</span>
+                    <span className="text-muted-foreground font-medium">Paket Bulanan</span>
                     <span className="font-bold text-foreground">Rp 299.000</span>
                   </div>
                   <div className="flex justify-between text-[16px]">
-                    <span className="text-muted-foreground font-medium">Biaya Administrasi</span>
+                    <span className="text-muted-foreground font-medium">Biaya Admin</span>
                     <span className="font-bold text-foreground">Rp 10.000</span>
                   </div>
                   <div className="flex justify-between text-[16px]">
-                    <span className="text-muted-foreground font-medium">Diskon Pengguna Baru</span>
+                    <span className="text-muted-foreground font-medium">Diskon</span>
                     <span className="font-bold text-green-600">- Rp 30.900</span>
                   </div>
                 </div>
 
                 {/* Total */}
                 <div className="flex justify-between items-center mb-6 pb-6 border-b border-border">
-                  <span className="font-bold text-foreground text-[16px]">Total Pembayaran</span>
+                  <span className="font-bold text-foreground text-[16px]">Total</span>
                   <span className="text-[24px] font-bold text-primary">Rp 278.100</span>
-                </div>
-
-                {/* Subscription Period */}
-                <div className="space-y-3 mb-6 pb-6 border-b border-border">
-                  <div>
-                    <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Periode Aktif</p>
-                    <p className="font-bold text-foreground text-[16px]">1 Bulan</p>
-                  </div>
-                  <div>
-                    <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Berlaku Hingga</p>
-                    <p className="font-bold text-foreground text-[16px]">{new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('id-ID')}</p>
-                  </div>
                 </div>
 
                 {/* Security Badges */}
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center gap-2 text-[14px] font-medium text-muted-foreground">
                     <span className="text-lg">🔒</span>
-                    <span>SSL Secured</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[14px] font-medium text-muted-foreground">
-                    <span className="text-lg">✓</span>
-                    <span>Verified</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[14px] font-medium text-muted-foreground">
-                    <span className="text-lg">🛡️</span>
-                    <span>Protected</span>
+                    <span>SSL Secured & Verified</span>
                   </div>
                 </div>
 
-                {/* Terms */}
                 <p className="text-[12px] text-muted-foreground text-center font-medium leading-relaxed">
-                  Dengan melakukan pembayaran, Anda menyetujui{' '}
-                  <a href="#" className="text-primary font-bold hover:underline underline-offset-4">
-                    Syarat & Ketentuan
-                  </a>{' '}
-                  ARAHIN
+                  Dengan melakukan pembayaran, Anda menyetujui Syarat & Ketentuan ARAHIN
                 </p>
               </Card>
             </div>

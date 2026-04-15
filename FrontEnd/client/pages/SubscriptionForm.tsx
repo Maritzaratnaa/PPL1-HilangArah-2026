@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
 import { useState } from 'react';
-import { User, AlertCircle, ShieldCheck, ArrowRight, Heart, Check } from 'lucide-react';
+import { User, AlertCircle, ShieldCheck, ArrowRight, Heart, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function SubscriptionForm() {
@@ -22,17 +22,72 @@ export default function SubscriptionForm() {
   const [emergencyContactName, setEmergencyContactName] = useState('');
   const [emergencyContactPhone, setEmergencyContactPhone] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(false);
+  
+  // STATE BARU: Untuk menampilkan efek loading saat tombol diklik
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleProceedToPayment = () => {
-    if (!fullName || !phone || !gender || !domicile || !specificNeeds || !emergencyContactName || !emergencyContactPhone) {
-      alert('Mohon isi semua field yang diperlukan');
+  // FUNGSI INTEGRASI API DIUPDATE
+  const handleProceedToPayment = async () => {
+    // 1. Validasi Frontend
+    if (!fullName || !phone || !gender || !domicile || !emergencyContactName || !emergencyContactPhone) {
+      alert('Mohon isi semua field yang wajib (*)');
       return;
     }
     if (!termsAgreed) {
       alert('Anda harus menyetujui syarat dan ketentuan');
       return;
     }
-    navigate('/subscription-payment');
+
+    // 2. Ambil Token JWT
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Sesi Anda telah habis atau Anda belum login. Silakan login kembali.");
+      navigate("/login");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 3. Tembak API Backend
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiUrl}/api/subscription`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          // Pastikan nama key sesuai dengan yang ditangkap req.body di backend!
+          phone_number: phone,
+          emergency_contact_name: emergencyContactName,
+          emergency_contact_phone: emergencyContactPhone,
+          domicile: domicile,
+          specific_needs: specificNeeds
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // 4. Jika sukses (201), lempar subs_id ke halaman Payment
+        navigate('/subscription/Payment', { 
+          state: { subs_id: data.subs_id } 
+        });
+      } else {
+        // 5. Jika gagal (misal: 400 karena sudah punya langganan aktif)
+        alert(data.message);
+        // Opsi tambahan: Jika error-nya karena sudah punya, langsung lempar ke profil
+        if (data.message.includes('sudah memiliki langganan')) {
+          navigate('/subscription/profile');
+        }
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Terjadi kesalahan pada server. Silakan coba lagi nanti.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,7 +97,7 @@ export default function SubscriptionForm() {
       <main className="flex-grow px-6 py-10 lg:px-10">
         <div className="mx-auto max-w-6xl">
           
-          {/* STEPPER - Full Width sesuai container max-w-6xl */}
+          {/* STEPPER */}
           <div className="mb-16 relative">
             <div className="absolute top-6 left-0 w-full h-[1px] bg-border z-0" />
             
@@ -97,18 +152,18 @@ export default function SubscriptionForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label className="font-bold text-foreground text-[16px]">Nama Lengkap *</Label>
-                        <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Contoh: Budi Santoso" className="h-12 border-input rounded-xl font-medium text-[16px]" />
+                        <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Contoh: Budi Santoso" className="h-12 border-input rounded-xl font-medium text-[16px]" disabled={isSubmitting} />
                       </div>
                       <div className="space-y-2">
                         <Label className="font-bold text-foreground text-[16px]">Nomor Telepon *</Label>
                         <div className="relative">
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold border-r pr-3 text-[16px]">+62</span>
-                          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="812xxxxxx" className="h-12 pl-16 border-input rounded-xl font-medium text-[16px]" />
+                          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="812xxxxxx" className="h-12 pl-16 border-input rounded-xl font-medium text-[16px]" disabled={isSubmitting} />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label className="font-bold text-foreground text-[16px]">Jenis Kelamin *</Label>
-                        <Select value={gender} onValueChange={setGender}>
+                        <Select value={gender} onValueChange={setGender} disabled={isSubmitting}>
                           <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]">
                             <SelectValue placeholder="Pilih jenis kelamin" />
                           </SelectTrigger>
@@ -117,7 +172,7 @@ export default function SubscriptionForm() {
                       </div>
                       <div className="space-y-2">
                         <Label className="font-bold text-foreground text-[16px]">Domisili *</Label>
-                        <Input value={domicile} onChange={(e) => setDomicile(e.target.value)} placeholder="Contoh: Jakarta Pusat" className="h-12 border-input rounded-xl font-medium text-[16px]" />
+                        <Input value={domicile} onChange={(e) => setDomicile(e.target.value)} placeholder="Contoh: Jakarta Pusat" className="h-12 border-input rounded-xl font-medium text-[16px]" disabled={isSubmitting} />
                       </div>
                     </div>
                   </section>
@@ -129,7 +184,7 @@ export default function SubscriptionForm() {
                       <div className="p-2.5 bg-accent/10 rounded-xl text-primary"><AlertCircle size={24} /></div>
                       <h2 className="text-[20px] font-bold text-foreground">Detail Kebutuhan</h2>
                     </div>
-                    <Textarea value={specificNeeds} onChange={(e) => setSpecificNeeds(e.target.value)} placeholder="Ceritakan bantuan khusus yang Anda perlukan..." className="min-h-[120px] border-input rounded-xl p-4 font-medium text-[16px]" />
+                    <Textarea value={specificNeeds} onChange={(e) => setSpecificNeeds(e.target.value)} placeholder="Ceritakan bantuan khusus yang Anda perlukan..." className="min-h-[120px] border-input rounded-xl p-4 font-medium text-[16px]" disabled={isSubmitting} />
                   </section>
 
                   <hr className="border-border" />
@@ -142,13 +197,13 @@ export default function SubscriptionForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label className="font-bold text-foreground text-[16px]">Nama Kontak Darurat *</Label>
-                        <Input value={emergencyContactName} onChange={(e) => setEmergencyContactName(e.target.value)} placeholder="Nama keluarga" className="h-12 border-input rounded-xl font-medium text-[16px]" />
+                        <Input value={emergencyContactName} onChange={(e) => setEmergencyContactName(e.target.value)} placeholder="Nama keluarga" className="h-12 border-input rounded-xl font-medium text-[16px]" disabled={isSubmitting} />
                       </div>
                       <div className="space-y-2">
                         <Label className="font-bold text-foreground text-[16px]">Nomor Telepon Darurat *</Label>
                         <div className="relative">
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold border-r pr-3 text-[16px]">+62</span>
-                          <Input value={emergencyContactPhone} onChange={(e) => setEmergencyContactPhone(e.target.value)} placeholder="812xxxxxx" className="h-12 pl-16 border-input rounded-xl font-medium text-[16px]" />
+                          <Input value={emergencyContactPhone} onChange={(e) => setEmergencyContactPhone(e.target.value)} placeholder="812xxxxxx" className="h-12 pl-16 border-input rounded-xl font-medium text-[16px]" disabled={isSubmitting} />
                         </div>
                       </div>
                     </div>
@@ -156,13 +211,25 @@ export default function SubscriptionForm() {
 
                   <div className="space-y-6 pt-4">
                     <div className="flex items-start gap-4 bg-muted/30 p-6 rounded-2xl border border-border">
-                      <Checkbox id="terms" checked={termsAgreed} onCheckedChange={(c) => setTermsAgreed(c as boolean)} className="mt-1" />
+                      <Checkbox id="terms" checked={termsAgreed} onCheckedChange={(c) => setTermsAgreed(c as boolean)} className="mt-1" disabled={isSubmitting} />
                       <Label htmlFor="terms" className="font-medium text-muted-foreground text-[16px] cursor-pointer">
                         Saya menyetujui <span className="text-primary font-bold underline underline-offset-4">Syarat & Ketentuan</span> serta <span className="text-primary font-bold underline underline-offset-4">Kebijakan Privasi</span> ARAHIN.
                       </Label>
                     </div>
-                    <Button onClick={handleProceedToPayment} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-14 rounded-2xl font-bold text-[18px]">
-                      Konfirmasi & Lanjut ke Pembayaran <ArrowRight size={20} className="ml-2" />
+                    
+                    {/* TOMBOL KONFIRMASI DIUPDATE */}
+                    <Button 
+                      onClick={handleProceedToPayment} 
+                      disabled={isSubmitting}
+                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-14 rounded-2xl font-bold text-[18px]"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Memproses Data...
+                        </>
+                      ) : (
+                        <>Konfirmasi & Lanjut ke Pembayaran <ArrowRight size={20} className="ml-2" /></>
+                      )}
                     </Button>
                   </div>
                 </div>

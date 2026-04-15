@@ -6,71 +6,103 @@ import { AlertCircle, Star, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsHighContrast } from "@/hooks/useTheme";
 
-const quickActions = [
-  { icon: <AlertCircle className="h-6 w-6" />, label: "Buat Laporan", sub: "Laporkan hambatan", bg: "bg-rose-50 dark:bg-rose-950/30", color: "text-rose-600", href: "/reporting" },
-  { icon: <Star className="h-6 w-6" />, label: "Subscription", sub: "20 hari tersisa", bg: "bg-blue-50 dark:bg-blue-950/30", color: "text-blue-600", href: "/subscription" },
-];
-
 export default function Home() {
+  const navigate = useNavigate();
+  const isHC = useIsHighContrast();
+
   const [userName, setUserName] = useState("Pengguna");
   const [userCategory, setUserCategory] = useState("");
   const [currentDate, setCurrentDate] = useState("");
-  const isHC = useIsHighContrast();
+  const [origin, setOrigin] = useState("");
+  const [destination, setDestination] = useState("");
+
+  // --- STATE BARU UNTUK SUBSCRIPTION ---
+  const [hasSubs, setHasSubs] = useState(false);
+  const [subsDays, setSubsDays] = useState(0);
+  const [subsStatus, setSubsStatus] = useState("");
+  const [subsEndDate, setSubsEndDate] = useState("");
 
   useEffect(() => {
+    // 1. Ambil data profil lokal
     const name = localStorage.getItem("userName") || "Pengguna";
     const category = localStorage.getItem("userCategory") || "";
     setUserName(name.split(" ")[0]);
     setUserCategory(category);
+    
     const now = new Date();
     setCurrentDate(now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }));
-  }, []);
 
-  const navigate = useNavigate();
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
+    // 2. Cek status subscription ke Backend
+    const fetchSubs = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const res = await fetch(`${apiUrl}/api/subscription/my-subs`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const json = await res.json();
+        
+        if (res.ok && json.data) {
+          setHasSubs(true);
+          setSubsStatus(json.data.status);
+          
+          // Hitung sisa hari jika ada end_date
+          if (json.data.end_date) {
+            const end = new Date(json.data.end_date).getTime();
+            const today = new Date().getTime();
+            const diff = end - today;
+            setSubsDays(Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))));
+            setSubsEndDate(new Date(json.data.end_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }));
+          }
+        }
+      } catch (error) {
+        console.error("Gagal mengecek subscription di Home:", error);
+      }
+    };
+
+    fetchSubs();
+  }, []);
 
   const handleSearch = () => {
     if (!origin || !destination) return;
     navigate(`/route-results?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`);
   };
 
+  // Pindahkan quickActions ke dalam komponen agar bisa membaca state 'hasSubs'
+  const quickActions = [
+    { 
+      icon: <AlertCircle className="h-6 w-6" />, 
+      label: "Buat Laporan", 
+      sub: "Laporkan hambatan", 
+      bg: "bg-rose-50 dark:bg-rose-950/30", 
+      color: "text-rose-600", 
+      href: "/reporting" 
+    },
+    { 
+      icon: <Star className="h-6 w-6" />, 
+      label: "Subscription", 
+      // Teks dinamis berdasarkan status
+      sub: hasSubs ? (subsStatus === 'Pending' ? 'Sedang Diproses' : `${subsDays} hari tersisa`) : "Daftar pemandu", 
+      bg: "bg-blue-50 dark:bg-blue-950/30", 
+      color: "text-blue-600", 
+      // Rute Dinamis
+      href: hasSubs ? "/subscription/Profile" : "/subscription" 
+    },
+  ];
+
   // Style kondisional berdasarkan high contrast
-  const heroStyle = isHC
-    ? { background: "#000000"}
-    : { background: "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)" };
-
-  const searchBoxStyle = isHC
-    ? { background: "#000000", border: "2px solid #ffff00" }
-    : { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" };
-
-  const searchInputStyle = isHC
-    ? { background: "#000000", border: "2px solid 	#ffff00" }
-    : { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" };
-
-  const subCardStyle = isHC
-    ? { background: "#000000", border: "2px solid 	#ffff00" }
-    : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" };
-
-  const subBadgeStyle = isHC
-    ? { background: "#000000", color: "#ffff00", border: "2px solid	#ffff00" }
-    : { background: "rgba(125,216,166,0.2)", color: "#7dd8a6", border: "1px solid rgba(125,216,166,0.3)" };
-
-  const subProgressBgStyle = isHC
-    ? { background: "	#4d4d4d" }
-    : { background: "rgba(255,255,255,0.15)" };
-
-  const subProgressFillStyle = isHC
-    ? { background: "#ffff00" }
-    : { background: "#7dd8a6" };
-
-  const subButtonStyle = isHC
-    ? { background: "#000000", color: "#ffff00", border: "2px solid	#ffff00" }
-    : { background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" };
-
-  const categoryChipStyle = isHC
-    ? { background: "#000000", color: "#ffff00", border: "2px solid #ffff00" }
-    : { background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.2)" };
+  const heroStyle = isHC ? { background: "#000000"} : { background: "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)" };
+  const searchBoxStyle = isHC ? { background: "#000000", border: "2px solid #ffff00" } : { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" };
+  const searchInputStyle = isHC ? { background: "#000000", border: "2px solid #ffff00" } : { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" };
+  const subCardStyle = isHC ? { background: "#000000", border: "2px solid #ffff00" } : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" };
+  const subBadgeStyle = isHC ? { background: "#000000", color: "#ffff00", border: "2px solid #ffff00" } : { background: "rgba(125,216,166,0.2)", color: "#7dd8a6", border: "1px solid rgba(125,216,166,0.3)" };
+  const subProgressBgStyle = isHC ? { background: " #4d4d4d" } : { background: "rgba(255,255,255,0.15)" };
+  const subProgressFillStyle = isHC ? { background: "#ffff00" } : { background: "#7dd8a6" };
+  const subButtonStyle = isHC ? { background: "#000000", color: "#ffff00", border: "2px solid #ffff00" } : { background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" };
+  const categoryChipStyle = isHC ? { background: "#000000", color: "#ffff00", border: "2px solid #ffff00" } : { background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.2)" };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -79,10 +111,8 @@ export default function Home() {
       <section className="relative overflow-hidden" style={heroStyle}>
         {!isHC && (
           <>
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full -translate-y-1/2 translate-x-1/2"
-              style={{ background: "rgba(255,255,255,0.05)" }} aria-hidden="true" />
-            <div className="absolute bottom-0 left-1/4 w-32 h-32 rounded-full translate-y-1/2"
-              style={{ background: "rgba(255,255,255,0.03)" }} aria-hidden="true" />
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full -translate-y-1/2 translate-x-1/2" style={{ background: "rgba(255,255,255,0.05)" }} aria-hidden="true" />
+            <div className="absolute bottom-0 left-1/4 w-32 h-32 rounded-full translate-y-1/2" style={{ background: "rgba(255,255,255,0.03)" }} aria-hidden="true" />
           </>
         )}
 
@@ -103,9 +133,11 @@ export default function Home() {
                     {userCategory}
                   </span>
                 )}
-                <span className="px-3 py-1 rounded-full text-xs font-semibold" style={subBadgeStyle}>
-                  ⭐ Subscriber Aktif
-                </span>
+                {hasSubs && subsStatus === 'Active' && (
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold" style={subBadgeStyle}>
+                    ⭐ Subscriber Aktif
+                  </span>
+                )}
               </div>
 
               {/* Search bar */}
@@ -140,22 +172,50 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Subscription card */}
+            {/* Subscription card di Hero Section */}
             <div className="rounded-xl p-5 mb-0 self-end" style={subCardStyle}>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold mb-3" style={subBadgeStyle}>
-                ⭐ Aktif
-              </div>
-              <div className="text-white font-bold text-sm mb-1" style={{ color: isHC ? "#ffff00" : "#ffffff" }}> Paket Bulanan </div>
-              <div className={`text-xs mb-3 ${isHC ? 'text-[#ffff00]' : 'text-white/55'}`}>Berlaku hingga 31 Mar 2026</div>
-              <div className="h-1.5 rounded-full mb-1" style={subProgressBgStyle}>
-                <div className="h-full rounded-full transition-all duration-500" style={{ width: "65%", ...subProgressFillStyle }} />
-              </div>  
-              <div className={`text-xs mb-4 ${isHC ? 'text-[#ffff00]' : 'text-white/45'}`}>20 hari tersisa</div>
-              <Link to="/subscription">
-                <button className="w-full rounded-lg py-2 text-xs font-bold transition-all hover:opacity-90" style={subButtonStyle}>
-                  Perpanjang →
-                </button>
-              </Link>
+              {hasSubs ? (
+                <>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold mb-3" style={subsStatus === 'Pending' ? { ...subBadgeStyle, background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', borderColor: 'rgba(251, 191, 36, 0.4)' } : subBadgeStyle}>
+                    {subsStatus === 'Pending' ? '⏳ Menunggu Verifikasi' : '⭐ Aktif'}
+                  </div>
+                  <div className="text-white font-bold text-sm mb-1" style={{ color: isHC ? "#ffff00" : "#ffffff" }}> Paket Bulanan </div>
+                  <div className={`text-xs mb-3 ${isHC ? 'text-[#ffff00]' : 'text-white/55'}`}>
+                    {subsEndDate ? `Berlaku hingga ${subsEndDate}` : 'Belum ada tanggal aktif'}
+                  </div>
+                  
+                  {subsStatus === 'Active' && (
+                    <div className="h-1.5 rounded-full mb-1" style={subProgressBgStyle}>
+                      {/* Persentase dinamis: ((30 - sisa hari) / 30) * 100 */}
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, ((30 - subsDays) / 30) * 100))}%`, ...subProgressFillStyle }} />
+                    </div>  
+                  )}
+                  
+                  <div className={`text-xs mb-4 ${isHC ? 'text-[#ffff00]' : 'text-white/45'}`}>
+                    {subsStatus === 'Active' ? `${subsDays} hari tersisa` : 'Segera dialokasikan'}
+                  </div>
+                  
+                  <Link to="/subscription/Profile">
+                    <button className="w-full rounded-lg py-2 text-xs font-bold transition-all hover:opacity-90" style={subButtonStyle}>
+                      Lihat Profil →
+                    </button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold mb-3" style={{ background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}>
+                    💡 Info Fitur
+                  </div>
+                  <div className="text-white font-bold text-sm mb-1" style={{ color: isHC ? "#ffff00" : "#ffffff" }}> Pemandu Pribadi </div>
+                  <div className={`text-xs mb-4 ${isHC ? 'text-[#ffff00]' : 'text-white/55'}`}>Jalan lebih aman dengan pendampingan khusus.</div>
+                  
+                  <Link to="/subscription">
+                    <button className="w-full rounded-lg py-2 text-xs font-bold transition-all hover:opacity-90" style={subButtonStyle}>
+                      Cari Tahu →
+                    </button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -174,13 +234,13 @@ export default function Home() {
             {[
               { val: "8", label: "Rute Digunakan", sub: "3 rute minggu ini", progress: null },
               { val: "3", label: "Laporan Aktif", sub: "1 sedang diproses", progress: null },
-              { val: "20", label: "Hari Subscription", sub: "Berlaku hingga 31 Mar", progress: 65 },
+              { val: hasSubs && subsStatus === 'Active' ? subsDays.toString() : "-", label: "Hari Subscription", sub: hasSubs && subsEndDate ? `Berlaku hingga ${subsEndDate}` : "Belum berlangganan", progress: hasSubs && subsStatus === 'Active' ? Math.min(100, Math.max(0, ((30 - subsDays) / 30) * 100)) : 0 },
             ].map((s, i) => (
               <div key={i} className="bg-background rounded-xl border border-border p-5 high-contrast:border-2 high-contrast:border-white">
                 <div className="text-3xl font-bold text-primary mb-1 high-contrast:text-white">{s.val}</div>
                 <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 high-contrast:text-white">{s.label}</div>
                 <div className="text-sm text-muted-foreground high-contrast:text-white">{s.sub}</div>
-                {s.progress && (
+                {(s.progress !== null && s.progress > 0) && (
                   <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden high-contrast:bg-white">
                     <div className="h-full bg-primary rounded-full high-contrast:bg-white" style={{ width: `${s.progress}%` }} />
                   </div>
