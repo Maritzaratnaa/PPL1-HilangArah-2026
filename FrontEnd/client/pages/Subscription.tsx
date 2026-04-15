@@ -1,14 +1,56 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ChevronDown, Check, Star, ArrowRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Subscription() {
   const navigate = useNavigate();
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+  
+  // STATE BARU UNTUK INTEGRASI BACKEND
+  const [hasSubs, setHasSubs] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  // LOGIKA PENGECEKAN STATUS LANGGANAN
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      const token = localStorage.getItem("token");
+      
+      // Jika belum login, pasti belum punya langganan
+      if (!token) {
+        setIsChecking(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:3000/api/subscription/my-subs", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Jika status 200 OK, berarti user sudah punya data di tabel 'subs'
+        if (res.ok) {
+          setHasSubs(true);
+        }
+      } catch (error) {
+        console.error("Gagal mengecek status langganan:", error);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkSubscriptionStatus();
+  }, []);
+
+  // FUNGSI NAVIGASI DINAMIS
+  const handleActionClick = () => {
+    if (hasSubs) {
+      navigate("/subscription/profile"); // Arahkan ke dashboard jika sudah langganan
+    } else {
+      navigate("/subscription/form"); // Arahkan ke form jika belum
+    }
+  };
 
   const benefits = [
     { icon: '🧭', title: 'Pemandu Pribadi Tersertifikasi', description: 'Pemandu kami telah terlatih dan tersertifikasi untuk mendampingi pengguna dengan berbagai kebutuhan khusus.' },
@@ -33,7 +75,6 @@ export default function Subscription() {
 
       {/* HERO SECTION */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[#005260] via-[#007C8A] to-[#009DAD] pt-20 pb-28 px-6 lg:px-10">
-        {/* Decorative Orbs */}
         <div className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full bg-white/5 pointer-events-none" />
         <div className="absolute -bottom-16 left-[20%] w-[300px] h-[300px] rounded-full bg-white/5 pointer-events-none" />
 
@@ -50,16 +91,25 @@ export default function Subscription() {
               Dapatkan teman perjalanan yang siap menemani Anda kemanapun menggunakan transportasi umum — aman, nyaman, dan penuh perhatian.
             </p>
             <div className="flex flex-wrap gap-3">
-              <button className="bg-white text-[#007C8A] px-7 py-3.5 rounded-xl font-medium flex items-center gap-2 hover:bg-gray-100 transition-colors">
-                Mulai Berlangganan <ArrowRight size={18} />
+              {/* TOMBOL HERO DIUPDATE */}
+              <button 
+                onClick={handleActionClick}
+                disabled={isChecking}
+                className="bg-white text-[#007C8A] px-7 py-3.5 rounded-xl font-medium flex items-center gap-2 hover:bg-gray-100 transition-colors disabled:opacity-70"
+              >
+                {isChecking ? "Mengecek status..." : hasSubs ? "Lihat Status Langganan" : "Mulai Berlangganan"} <ArrowRight size={18} />
               </button>
-              <button className="bg-transparent text-white border border-white/40 px-6 py-3.5 rounded-xl font-medium hover:bg-white/10 transition-colors">
+              
+              <button 
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-transparent text-white border border-white/40 px-6 py-3.5 rounded-xl font-medium hover:bg-white/10 transition-colors"
+              >
                 Pelajari Lebih Lanjut ↓
               </button>
             </div>
           </div>
 
-          {/* Hero Visual Card */}
+          {/* Hero Visual Card (Tetap Sama) */}
           <div className="bg-white/10 border border-white/15 rounded-[24px] p-8 flex flex-col gap-4">
             <span className="text-xs text-white/60">Pemandu aktif saat ini</span>
             <div className="grid grid-cols-3 gap-3">
@@ -92,7 +142,7 @@ export default function Subscription() {
       {/* Wave Section Divider */}
       <div className="h-16 bg-[#F8FAFB] -mt-0.5" style={{ clipPath: 'polygon(0 100%, 100% 0, 100% 100%)' }} />
 
-      {/* BENEFITS SECTION */}
+      {/* BENEFITS SECTION (Tetap Sama) */}
       <section className="bg-[#F8FAFB] py-20 px-6 lg:px-10">
         <div className="max-w-5xl mx-auto">
           <div className="mb-12">
@@ -116,7 +166,7 @@ export default function Subscription() {
       </section>
 
       {/* PRICING SECTION */}
-      <section className="bg-[#007C8A] py-24 px-6 lg:px-10 relative overflow-hidden text-white">
+      <section id="pricing" className="bg-[#007C8A] py-24 px-6 lg:px-10 relative overflow-hidden text-white">
         <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />
         
         <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -170,15 +220,20 @@ export default function Subscription() {
               ))}
             </div>
 
-            <button className="w-full bg-[#007C8A] text-white py-4 rounded-xl font-medium hover:bg-[#006874] transition-colors mb-4">
-              Berlangganan Sekarang →
+            {/* TOMBOL KARTU HARGA DIUPDATE */}
+            <button 
+              onClick={handleActionClick}
+              disabled={isChecking}
+              className="w-full bg-[#007C8A] text-white py-4 rounded-xl font-medium hover:bg-[#006874] transition-colors mb-4 disabled:opacity-70"
+            >
+              {isChecking ? "Memuat..." : hasSubs ? "Lihat Status Anda →" : "Berlangganan Sekarang →"}
             </button>
             <p className="text-center text-[11px] text-gray-400">🔒 Pembayaran aman & terenkripsi · Batalkan kapan saja</p>
           </Card>
         </div>
       </section>
 
-      {/* FAQ SECTION */}
+      {/* FAQ SECTION (Tetap Sama) */}
       <section className="bg-[#F8FAFB] py-20 px-6">
         <div className="max-w-2xl mx-auto">
           <div className="mb-10">

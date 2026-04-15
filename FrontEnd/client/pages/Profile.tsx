@@ -67,12 +67,15 @@ const allStatuses = [
   },
 ];
 
+// 1. UPDATE INTERFACE
 interface UserProfile {
   email: string;
   full_name: string;
   phone_number: string;
   category_status: string;
   font_size_pref: string;
+  is_subscriber: boolean;
+  sub_status: string | null;
 }
 
 export default function Profile() {
@@ -140,6 +143,40 @@ export default function Profile() {
         .slice(0, 2)
         .toUpperCase()
     : "?";
+
+  // 2. FUNGSI RENDER BADGE STATUS
+  const renderSubscriptionBadge = () => {
+    if (profile?.is_subscriber) {
+      return (
+        <div className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800">
+          Subscriber Aktif
+        </div>
+      );
+    }
+
+    if (profile?.sub_status === "Pending") {
+      return (
+        <div className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800">
+          Menunggu Verifikasi
+        </div>
+      );
+    }
+
+    if (profile?.sub_status === "Expired") {
+      return (
+        <div className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800">
+          Langganan Berakhir
+        </div>
+      );
+    }
+
+    // Default jika status null atau tidak ada record
+    return (
+      <div className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/30 dark:text-slate-300 dark:border-slate-700">
+        Pengguna Gratis
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -248,13 +285,10 @@ export default function Profile() {
                     {profile?.email}
                   </p>
                 </div>
-                <div
-                  className="px-3 py-1 rounded-full text-xs font-semibold
-                  bg-emerald-100 text-emerald-700 border border-emerald-200
-                  dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
-                >
-                  Subscriber Aktif
-                </div>
+                
+                {/* 3. PANGGIL FUNGSI RENDER BADGE DI SINI */}
+                {renderSubscriptionBadge()}
+
               </div>
             </div>
           </div>
@@ -322,7 +356,6 @@ export default function Profile() {
             </p>
             <div className="flex flex-wrap gap-2">
               {allStatuses.map((s) => {
-                // Mengecek kecocokan berdasarkan value (opsional fallback ke label jika db menyimpan label)
                 const isActive =
                   profile?.category_status === s.value ||
                   profile?.category_status === s.label;

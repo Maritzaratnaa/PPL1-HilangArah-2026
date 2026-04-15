@@ -132,7 +132,7 @@ export default function SubscriptionConfirmation() {
                   </Button>
                   <Button 
                     variant="outline" 
-                    onClick={() => navigate('/subscription-profile')}
+                    onClick={() => navigate('/subscription/Profile')}
                     className="flex-1 border-border text-foreground hover:bg-muted/50 h-14 rounded-2xl font-bold text-[18px]"
                   >
                     Lihat Detail Profil

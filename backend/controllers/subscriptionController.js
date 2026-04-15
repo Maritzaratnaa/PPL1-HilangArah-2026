@@ -1,12 +1,11 @@
 const pool = require('../db');
 const { v4: uuidv4 } = require('uuid');
 
+// 1. FUNGSI CREATE (Buat Langganan Baru) - Tidak ada perubahan logika
 const createSubscription = async (req, res) => {
     try {
-        // Ambil user_id dari token JWT (asumsinya kamu pakai middleware auth)
         const userId = req.user.user_id; 
         
-        // Ambil data dari body request (inputan dari form frontend)
         const {
             phone_number,
             emergency_contact_name,
@@ -15,12 +14,10 @@ const createSubscription = async (req, res) => {
             specific_needs
         } = req.body;
 
-        // Validasi Input (Pastikan form tidak kosong)
         if (!phone_number || !emergency_contact_name || !emergency_contact_phone || !domicile) {
             return res.status(400).json({ message: "Semua kolom yang wajib harus diisi!" });
         }
 
-        // Pengecekan: Tidak boleh daftar kalau masih ada subs yang Pending atau Active
         const checkQuery = `SELECT status FROM subs WHERE user_id = ? AND status IN ('Pending', 'Active')`;
         const [existingSubs] = await pool.query(checkQuery, [userId]);
 
@@ -30,11 +27,8 @@ const createSubscription = async (req, res) => {
             });
         }
 
-        // Buat UUID baru untuk subs_id
         const subsId = uuidv4();
 
-        // Masukkan ke database (employee_id, start_date, end_date dibiarkan NULL dulu)
-        // status otomatis jadi 'Pending' karena DEFAULT di database
         const insertQuery = `
             INSERT INTO subs 
             (subs_id, user_id, phone_number, emergency_contact_name, emergency_contact_phone, domicile, specific_needs) 
@@ -51,7 +45,6 @@ const createSubscription = async (req, res) => {
             specific_needs || null
         ]);
 
-        // Respon sukses ke Frontend
         res.status(201).json({
             message: "Formulir langganan berhasil dikirim. Silakan lanjutkan ke pembayaran.",
             subs_id: subsId
@@ -63,12 +56,11 @@ const createSubscription = async (req, res) => {
     }
 };
 
-module.exports = { createSubscription };
+// 2. FUNGSI GET (Ambil Data Langganan) - UPDATE ORDER BY
 const getMySubscription = async (req, res) => {
     try {
         const userId = req.user.user_id;
 
-        // Ambil data langganan user dan data pemandu (jika sudah di-assign)
         const query = `
             SELECT 
                 s.subs_id, 
@@ -82,13 +74,15 @@ const getMySubscription = async (req, res) => {
             FROM subs s
             LEFT JOIN guides g ON s.employee_id = g.employee_id
             WHERE s.user_id = ?
-            ORDER BY s.start_date DESC 
+            -- PERUBAHAN DI SINI: Prioritaskan Active & Pending
+            ORDER BY 
+                FIELD(s.status, 'Active', 'Pending', 'Expired', 'Cancelled') ASC,
+                s.start_date DESC 
             LIMIT 1; 
         `;
 
         const [subs] = await pool.query(query, [userId]);
 
-        // Jika user belum pernah mendaftar sama sekali
         if (subs.length === 0) {
             return res.status(404).json({ 
                 message: "Anda belum memiliki riwayat langganan pemandu." 
@@ -106,4 +100,66 @@ const getMySubscription = async (req, res) => {
     }
 };
 
-module.exports = { createSubscription, getMySubscription };
+// 3. FUNGSI DELETE (Batalkan/Hapus Langganan) - FUNGSI BARU
+const cancelSubscription = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+
+        // Langsung hapus baris langganan milik user tersebut
+        const deleteQuery = `DELETE FROM subs WHERE user_id = ?`;
+        const [result] = await pool.query(deleteQuery, [userId]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Tidak ada langganan yang ditemukan untuk dibatalkan." });
+        }
+
+        res.status(200).json({ message: "Langganan berhasil dibatalkan dan dihapus." });
+
+    } catch (error) {
+        console.error("Error Cancel Subscription:", error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server saat membatalkan langganan." });
+    }
+};
+
+const activateSubscription = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const { subs_id } = req.body;
+
+        // Buat tanggal mulai (hari ini) dan tanggal berakhir (30 hari ke depan)
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 30);
+
+        // Format tanggal agar cocok dengan MySQL (YYYY-MM-DD)
+        const startStr = startDate.toISOString().split('T')[0];
+        const endStr = endDate.toISOString().split('T')[0];
+
+        // Update database: Ubah status jadi Active, isi start_date dan end_date
+        const updateQuery = `
+            UPDATE subs 
+            SET status = 'Active', start_date = ?, end_date = ? 
+            WHERE subs_id = ? AND user_id = ?
+        `;
+        
+        const [result] = await pool.query(updateQuery, [startStr, endStr, subs_id, userId]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Langganan tidak valid atau sudah diaktifkan." });
+        }
+
+        res.status(200).json({ message: "Pembayaran berhasil disimulasikan, langganan kini AKTIF." });
+
+    } catch (error) {
+        console.error("Error Activate Subscription:", error);
+        res.status(500).json({ message: "Terjadi kesalahan saat memproses pembayaran." });
+    }
+};
+
+// Pastikan KETIGA fungsi di-export di bagian paling bawah
+module.exports = { 
+    createSubscription, 
+    getMySubscription, 
+    cancelSubscription,
+    activateSubscription
+};

@@ -3,10 +3,19 @@ const pool = require('../db');
 const getProfile = async (req, res) => {
     try {
         const userId = req.user.user_id;
+        
+        // 1. UPDATE QUERY: Tambahkan LEFT JOIN ke tabel subs dan ambil s.status
         const query = `
-            SELECT u.email, p.full_name, p.phone_number, p.category_status, p.font_size_pref
+            SELECT 
+                u.email, 
+                p.full_name, 
+                p.phone_number, 
+                p.category_status, 
+                p.font_size_pref,
+                s.status AS sub_status 
             FROM users u
             JOIN profiles p ON u.user_id = p.user_id
+            LEFT JOIN subs s ON u.user_id = s.user_id
             WHERE u.user_id = ?
         `;
 
@@ -16,14 +25,31 @@ const getProfile = async (req, res) => {
             return res.status(404).json({message: "Profil tidak ditemukan."});
         }
 
+        // 2. LOGIKA STATUS: Ambil data baris pertama
+        const userData = rows[0];
+        
+        // Buat boolean is_subscriber. 
+        // Akan bernilai true JIKA tabel subs ada DAN statusnya 'Active'
+        // Sesuaikan kata 'Active' dengan tulisan persis di ENUM databasemu (huruf besar/kecilnya)
+        const isSubscriber = userData.sub_status === 'Active'; 
+
+        // 3. SUSUN RESPONSE: Gabungkan data profil dengan boolean is_subscriber
         res.status(200).json({
             message: "Data profil berhasil diambil.",
-            data: rows[0]
+            data: {
+                email: userData.email,
+                full_name: userData.full_name,
+                phone_number: userData.phone_number,
+                category_status: userData.category_status,
+                font_size_pref: userData.font_size_pref,
+                sub_status: userData.sub_status || null, // Opsional: kirim status asli (Pending/Active/Expired) untuk info tambahan di UI
+                is_subscriber: isSubscriber // Ini yang akan dipakai oleh UI React-mu
+            }
         });
     }
     catch (error) {
         console.error("Error Get Profile: ", error);
-        res.status(500).json({message: "Terjadi kesalahan pada server saat mengambil profil."})
+        res.status(500).json({message: "Terjadi kesalahan pada server saat mengambil profil."});
     }
 };
 
