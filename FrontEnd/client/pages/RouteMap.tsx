@@ -193,6 +193,13 @@ export default function RouteMap() {
     };
   }, []);
 
+  useEffect(() => {
+  const savedSize = localStorage.getItem('globalFontSize');
+  if (savedSize) {
+    document.documentElement.style.fontSize = `${savedSize}px`;
+  }
+  }, []);
+
   if (!selectedRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center">
