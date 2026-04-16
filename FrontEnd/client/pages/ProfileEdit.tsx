@@ -85,13 +85,17 @@ export default function ProfileEdit() {
           full_name: fullName,
           phone_number: phone,
           category_status: category,
-          font_size_pref: 'Medium' // Default sementara
+          font_size_pref: 'Medium'
         }),
       });
 
       const json = await res.json();
 
       if (res.ok) {
+        localStorage.setItem('userName', fullName);
+        localStorage.setItem('userCategory', category);
+        // ------------------------------
+
         setSavedSuccess(true);
         setTimeout(() => setSavedSuccess(false), 3000);
       } else {
