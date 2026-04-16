@@ -14,7 +14,7 @@ import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import RouteSearch from "./pages/RouteSearch";
 import RouteResults from "./pages/RouteResults";  
-import Subscription from "./pages/Subscription";
+import SubscriptionPage from "./pages/SubscriptionPage";
 import SubscriptionForm from "./pages/SubscriptionForm";
 import SubscriptionConfirmation from "./pages/SubscriptionConfirmation";
 import SubscriptionPayment from "./pages/SubscriptionPayment";
@@ -40,14 +40,13 @@ const App = () => (
           <Route path="/profile/edit" element={<ProfileEdit />} />
           <Route path="/route-search" element={<RouteSearch />} />
           <Route path="/route-results" element={<RouteResults />} />
-          <Route path="/subscription" element={<Subscription />} />
+          <Route path="/subscription" element={<SubscriptionPage />} />
           <Route path="/subscription/Payment-Confirmation" element={<SubscriptionConfirmation />} />
           <Route path="/subscription/Payment" element={<SubscriptionPayment />} />
           <Route path="/subscription/Form" element={<SubscriptionForm />} />
           <Route path="/subscription/Profile" element={<SubscriptionProfile />} />
           <Route path="/reporting" element={<Reporting />} />
           <Route path="/route-map" element={<RouteMap />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
