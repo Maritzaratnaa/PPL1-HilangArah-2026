@@ -22,6 +22,7 @@ import SubscriptionProfile from "./pages/SubscriptionProfile";
 import Reporting from "./pages/Reporting";
 import NotFound from "./pages/NotFound";
 import RouteMap from "./pages/RouteMap";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/reporting" element={<Reporting />} />
           <Route path="/route-map" element={<RouteMap />} />
           <Route path="*" element={<NotFound />} />
+          <Route path="/verify-email" element={<VerifyEmail/>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
