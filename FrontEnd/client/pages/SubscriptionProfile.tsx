@@ -1,9 +1,9 @@
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,8 +11,17 @@ import {
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { CheckCircle, Phone, MapPin, Clock, AlertTriangle, Trash2, Loader2, UserX } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
+import {
+  CheckCircle,
+  Phone,
+  MapPin,
+  Clock,
+  AlertTriangle,
+  Trash2,
+  Loader2,
+  UserX,
+} from "lucide-react";
 
 // Interface disesuaikan dengan response Backend
 interface BackendSubsData {
@@ -29,9 +38,10 @@ interface BackendSubsData {
 export default function SubscriptionProfile() {
   const navigate = useNavigate();
   const [showCancelModal, setShowCancelModal] = useState(false);
-  
+
   // State API
-  const [subscriptionData, setSubscriptionData] = useState<BackendSubsData | null>(null);
+  const [subscriptionData, setSubscriptionData] =
+    useState<BackendSubsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -48,7 +58,7 @@ export default function SubscriptionProfile() {
         const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
         const res = await fetch(`${apiUrl}/api/subscription/my-subs`, {
           method: "GET",
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const json = await res.json();
@@ -78,14 +88,14 @@ export default function SubscriptionProfile() {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const res = await fetch(`${apiUrl}/api/subscription/my-subs`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await res.json();
 
       if (res.ok) {
         setShowCancelModal(false);
-        navigate('/subscription'); // Balik ke halaman Landing Page Subs
+        navigate("/subscription"); // Balik ke halaman Landing Page Subs
       } else {
         alert(data.message || "Gagal membatalkan langganan.");
       }
@@ -98,11 +108,11 @@ export default function SubscriptionProfile() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -114,7 +124,9 @@ export default function SubscriptionProfile() {
         <main className="flex-grow flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground font-medium">Memuat data langganan...</p>
+            <p className="text-muted-foreground font-medium">
+              Memuat data langganan...
+            </p>
           </div>
         </main>
         <Footer />
@@ -132,11 +144,17 @@ export default function SubscriptionProfile() {
             <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
               <UserX className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h2 className="text-2xl font-bold mb-3 text-foreground">Tidak Ada Langganan</h2>
+            <h2 className="text-2xl font-bold mb-3 text-foreground">
+              Tidak Ada Langganan
+            </h2>
             <p className="text-muted-foreground mb-8">
-              {errorMsg || "Anda belum memiliki paket langganan pemandu ARAHIN yang aktif."}
+              {errorMsg ||
+                "Anda belum memiliki paket langganan pemandu ARAHIN yang aktif."}
             </p>
-            <Button onClick={() => navigate('/subscription')} className="w-full h-12 rounded-xl font-bold text-[16px]">
+            <Button
+              onClick={() => navigate("/subscription")}
+              className="w-full h-12 rounded-xl font-bold text-[16px]"
+            >
               Lihat Paket Langganan
             </Button>
           </Card>
@@ -147,21 +165,28 @@ export default function SubscriptionProfile() {
   }
 
   // --- KALKULASI DATA & STATUS ---
-  const isPending = subscriptionData.status === 'Pending';
+  const isPending = subscriptionData.status === "Pending";
   const hasGuide = subscriptionData.guide_name !== null;
 
-  const startDateStr = subscriptionData.start_date ? formatDate(subscriptionData.start_date) : "Menunggu Aktivasi";
-  const endDateStr = subscriptionData.end_date ? formatDate(subscriptionData.end_date) : "-";
+  const startDateStr = subscriptionData.start_date
+    ? formatDate(subscriptionData.start_date)
+    : "Menunggu Aktivasi";
+  const endDateStr = subscriptionData.end_date
+    ? formatDate(subscriptionData.end_date)
+    : "-";
 
   let daysRemaining = 0;
   let progressPercentage = 0;
-  
+
   if (subscriptionData.end_date) {
     const end = new Date(subscriptionData.end_date).getTime();
     const now = new Date().getTime();
     const diff = end - now;
     daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-    progressPercentage = Math.min(100, Math.max(0, ((30 - daysRemaining) / 30) * 100));
+    progressPercentage = Math.min(
+      100,
+      Math.max(0, ((30 - daysRemaining) / 30) * 100),
+    );
   }
 
   return (
@@ -173,7 +198,9 @@ export default function SubscriptionProfile() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Langganan Saya</h1>
-            <p className="text-gray-600">Kelola dan pantau status langganan ARAHIN Anda</p>
+            <p className="text-gray-600">
+              Kelola dan pantau status langganan ARAHIN Anda
+            </p>
           </div>
 
           {/* JIKA STATUS MASIH PENDING */}
@@ -181,16 +208,21 @@ export default function SubscriptionProfile() {
             <div className="bg-amber-100 border border-amber-300 text-amber-800 p-6 rounded-2xl mb-8 flex items-start gap-4">
               <AlertTriangle className="h-6 w-6 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="font-bold text-lg mb-1">Status Langganan: Sedang Diproses (Pending)</h3>
+                <h3 className="font-bold text-lg mb-1">
+                  Status Langganan: Sedang Diproses (Pending)
+                </h3>
                 <p className="text-amber-700">
-                  Sistem kami sedang memverifikasi data Anda. Pemandu akan segera dialokasikan setelah status Anda berubah menjadi Aktif.
+                  Sistem kami sedang memverifikasi data Anda. Pemandu akan
+                  segera dialokasikan setelah status Anda berubah menjadi Aktif.
                 </p>
               </div>
             </div>
           )}
 
           {/* Guide Card */}
-          <Card className={`bg-white border-t-4 ${isPending ? 'border-t-amber-400' : 'border-t-primary'} shadow-md rounded-2xl p-8 mb-8`}>
+          <Card
+            className={`bg-white border-t-4 ${isPending ? "border-t-amber-400" : "border-t-primary"} shadow-md rounded-2xl p-8 mb-8`}
+          >
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
               👤 Pemandu Anda
             </h2>
@@ -199,8 +231,10 @@ export default function SubscriptionProfile() {
               {/* Left - Avatar & Identity */}
               <div className="md:col-span-1">
                 <div className="relative mb-6">
-                  <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl text-white font-bold mx-auto ${hasGuide ? 'bg-gradient-to-br from-primary to-primary/70' : 'bg-gray-300'}`}>
-                    {hasGuide ? subscriptionData.guide_name?.charAt(0) : '⏳'}
+                  <div
+                    className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl text-white font-bold mx-auto ${hasGuide ? "bg-gradient-to-br from-primary to-primary/70" : "bg-gray-300"}`}
+                  >
+                    {hasGuide ? subscriptionData.guide_name?.charAt(0) : "⏳"}
                   </div>
                   {hasGuide && (
                     <div className="absolute bottom-0 right-1/4 translate-x-1/2 bg-green-500 rounded-full p-2 border-4 border-white">
@@ -210,9 +244,11 @@ export default function SubscriptionProfile() {
                 </div>
 
                 <h3 className="text-xl font-bold text-center mb-2">
-                  {hasGuide ? subscriptionData.guide_name : "Sedang Dialokasikan"}
+                  {hasGuide
+                    ? subscriptionData.guide_name
+                    : "Sedang Dialokasikan"}
                 </h3>
-                
+
                 {hasGuide ? (
                   <>
                     <div className="flex items-center justify-center gap-1 mb-4">
@@ -220,7 +256,8 @@ export default function SubscriptionProfile() {
                       <span className="font-bold">4.9</span>
                     </div>
                     <p className="text-sm text-gray-700 text-center leading-relaxed">
-                      Pemandu tersertifikasi ARAHIN yang siap menemani perjalanan Anda.
+                      Pemandu tersertifikasi ARAHIN yang siap menemani
+                      perjalanan Anda.
                     </p>
                   </>
                 ) : (
@@ -235,18 +272,33 @@ export default function SubscriptionProfile() {
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Catatan Kebutuhan</p>
-                    <p className="font-semibold text-gray-900">{subscriptionData.specific_needs || "Sesuai rute terencana"}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                      Catatan Kebutuhan
+                    </p>
+                    <p className="font-semibold text-gray-900">
+                      {subscriptionData.specific_needs ||
+                        "Sesuai rute terencana"}
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <Phone className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
                   <div className="flex-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">No. Pemandu</p>
-                    <p className="font-semibold text-gray-900">{hasGuide ? subscriptionData.guide_phone : "Belum tersedia"}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                      No. Pemandu
+                    </p>
+                    <p className="font-semibold text-gray-900">
+                      {hasGuide
+                        ? subscriptionData.guide_phone
+                        : "Belum tersedia"}
+                    </p>
                     {hasGuide && (
-                      <Button variant="outline" size="sm" className="mt-2 h-9 border-primary text-primary hover:bg-primary hover:text-white">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 h-9 border-primary text-primary hover:bg-primary hover:text-white"
+                      >
                         Hubungi via Telepon
                       </Button>
                     )}
@@ -256,7 +308,9 @@ export default function SubscriptionProfile() {
                 <div className="flex items-start gap-3">
                   <Clock className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-900">Tersedia Sesuai Jadwal Temu</p>
+                    <p className="font-semibold text-gray-900">
+                      Tersedia Sesuai Jadwal Temu
+                    </p>
                   </div>
                 </div>
 
@@ -264,7 +318,9 @@ export default function SubscriptionProfile() {
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-1" />
                     <div>
-                      <p className="font-semibold text-gray-900">Tersertifikasi ARAHIN Academy</p>
+                      <p className="font-semibold text-gray-900">
+                        Tersertifikasi ARAHIN Academy
+                      </p>
                     </div>
                   </div>
                 )}
@@ -279,22 +335,32 @@ export default function SubscriptionProfile() {
             </h2>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-xs text-gray-600 mb-1">Tanggal Mulai</p>
-                <p className="font-bold text-gray-900 text-sm">{startDateStr}</p>
+                <p className="font-bold text-gray-900 text-sm break-words">
+                  {startDateStr}
+                </p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-xs text-gray-600 mb-1">Tanggal Berakhir</p>
-                <p className="font-bold text-gray-900 text-sm">{endDateStr}</p>
+                <p className="font-bold text-gray-900 text-sm break-words">
+                  {endDateStr}
+                </p>
               </div>
               <div className="bg-blue-50 rounded-lg p-4 text-center">
                 <p className="text-xs text-gray-600 mb-1">Sisa Hari</p>
-                <p className="text-2xl font-bold text-primary">{isPending ? "-" : daysRemaining}</p>
+                <p className="text-2xl font-bold text-primary">
+                  {isPending ? "-" : daysRemaining}
+                </p>
               </div>
-              <div className={`rounded-lg p-4 text-center ${isPending ? 'bg-amber-50' : 'bg-green-50'}`}>
+              <div
+                className={`rounded-lg p-4 text-center ${isPending ? "bg-amber-50" : "bg-green-50"}`}
+              >
                 <p className="text-xs text-gray-600 mb-1">Status</p>
-                <p className={`font-bold ${isPending ? 'text-amber-600' : 'text-green-600'}`}>
+                <p
+                  className={`font-bold break-words ${isPending ? "text-amber-600" : "text-green-600"}`}
+                >
                   {subscriptionData.status}
                 </p>
               </div>
@@ -304,8 +370,12 @@ export default function SubscriptionProfile() {
             {!isPending && subscriptionData.end_date && (
               <div className="mb-8">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="font-bold text-gray-900">Progres Berlangganan</span>
-                  <span className="text-sm text-gray-600">{30 - daysRemaining} dari 30 hari</span>
+                  <span className="font-bold text-gray-900">
+                    Progres Berlangganan
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    {30 - daysRemaining} dari 30 hari
+                  </span>
                 </div>
                 <div className="w-full bg-gray-300 rounded-full h-3 overflow-hidden">
                   <div
@@ -315,7 +385,9 @@ export default function SubscriptionProfile() {
                 </div>
                 <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
                   <span>{30 - daysRemaining} hari telah berlalu</span>
-                  <span className="font-bold text-primary">{daysRemaining} hari tersisa</span>
+                  <span className="font-bold text-primary">
+                    {daysRemaining} hari tersisa
+                  </span>
                 </div>
               </div>
             )}
@@ -329,16 +401,26 @@ export default function SubscriptionProfile() {
 
             <div className="mb-6 pb-6 border-b border-gray-200">
               <p className="font-bold text-gray-900 mb-1">Paket Bulanan</p>
-              <p className="text-2xl font-bold text-primary">Rp 299.000/bulan</p>
-              <p className="text-xs font-medium text-muted-foreground mt-1">ID: {subscriptionData.subs_id.split('-')[0].toUpperCase()}</p>
+              <div className="flex items-baseline gap-1 flex-wrap">
+                <p className="text-2xl font-bold text-primary whitespace-nowrap">
+                  Rp 299.000
+                </p>
+                <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">
+                  /bulan
+                </span>
+              </div>
+
+              <p className="text-xs font-medium text-muted-foreground mt-1 uppercase">
+                ID: {subscriptionData.subs_id.split("-")[0]}
+              </p>
             </div>
 
             <div className="space-y-3">
               {[
-                '1 Pemandu Pribadi Tersertifikasi',
-                'Pendampingan perjalanan tak terbatas',
-                'Perencanaan rute aksesibel',
-                'Kontak darurat terintegrasi',
+                "1 Pemandu Pribadi Tersertifikasi",
+                "Pendampingan perjalanan tak terbatas",
+                "Perencanaan rute aksesibel",
+                "Kontak darurat terintegrasi",
               ].map((benefit, idx) => (
                 <div key={idx} className="flex items-center gap-3">
                   <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
@@ -367,16 +449,22 @@ export default function SubscriptionProfile() {
             <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
               <AlertTriangle className="h-8 w-8 text-amber-600" />
             </div>
-            <AlertDialogTitle className="text-2xl mb-4">Batalkan Langganan?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl mb-4">
+              Batalkan Langganan?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-base mb-4 text-gray-700">
-              Apakah Anda yakin ingin membatalkan langganan? Data langganan ini akan dihapus secara permanen dari sistem.
+              Apakah Anda yakin ingin membatalkan langganan? Data langganan ini
+              akan dihapus secara permanen dari sistem.
             </AlertDialogDescription>
 
             {!isPending && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-sm text-amber-900 text-left">
-                <p className="mb-2">ℹ️ <span className="font-bold">Penting:</span></p>
+                <p className="mb-2">
+                  ℹ️ <span className="font-bold">Penting:</span>
+                </p>
                 <p>
-                  Pembatalan tidak akan mengembalikan biaya yang sudah dibayar. Pemandu Anda saat ini akan di-nonaktifkan.
+                  Pembatalan tidak akan mengembalikan biaya yang sudah dibayar.
+                  Pemandu Anda saat ini akan di-nonaktifkan.
                 </p>
               </div>
             )}
@@ -391,12 +479,15 @@ export default function SubscriptionProfile() {
                 className="w-full h-12 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
               >
                 {isCancelling ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Menghapus...</>
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />{" "}
+                    Menghapus...
+                  </>
                 ) : (
                   "Ya, Batalkan Langganan"
                 )}
               </AlertDialogAction>
-              <AlertDialogCancel 
+              <AlertDialogCancel
                 disabled={isCancelling}
                 className="w-full h-12 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 mt-2"
               >

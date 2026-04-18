@@ -98,7 +98,7 @@ export default function Home() {
     },
     {
       icon: <Star className="h-6 w-6" />,
-      label: "Subscription",
+      label: "Langganan",
       // Teks dinamis berdasarkan status
       sub: hasSubs
         ? subsStatus === "Pending"
