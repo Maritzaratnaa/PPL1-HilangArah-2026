@@ -1,5 +1,21 @@
 const pool = require('../db');
 
+// --- HELPER: Cek apakah fasilitas kendaraan sesuai dengan profil user ---
+const checkRecommendation = (userCategory, transports) => {
+    if (transports.length === 0) return false;
+    
+    const safeCat = (userCategory || '').trim().toLowerCase();
+
+    if (['disability', 'disabilitas', 'tunanetra', 'tuli', 'pengguna kursi roda'].includes(safeCat)) {
+        return transports.every(t => t.facilities.low_entry || t.facilities.wheelchair_slot);
+    } else if (['elderly', 'pregnant', 'vulnerable', 'children', 'lansia', 'ibu hamil', 'penyakit rentan', 'anak-anak'].includes(safeCat)) {
+        return transports.every(t => t.facilities.priority_seat);
+    } else if (['women', 'wanita', 'perempuan'].includes(safeCat)) {
+        return transports.every(t => t.facilities.women_area);
+    }
+    return true; // Jika Umum
+};
+
 const searchRoutes = async (req, res) => {
     try {
         const userId = req.user.user_id; 
@@ -67,22 +83,31 @@ const searchRoutes = async (req, res) => {
         }];
 
         if (directRoutes.length > 0) {
-            const results = directRoutes.map(row => ({
-                route_type: "direct",
-                total_estimated_time: row.total_time,
-                is_recommended: true, // Bisa ditambah logika filter di sini
-                legs: [{
-                    step: 1,
-                    route_name: row.route_name,
-                    origin_stop: row.origin_stop_name,
-                    destination_stop: row.destination_stop_name,
-                    transports: formatTransport(row),
-                    stops_passed: row.total_stops,
-                    estimated_time_minutes: row.total_time,
-                    route_path: JSON.parse(row.route_path_json)
-                }]
-            }));
-            return res.status(200).json({ data: results });
+            const results = directRoutes.map(row => {
+                const transports = formatTransport(row);
+                return {
+                    route_type: "direct",
+                    total_estimated_time: row.total_time,
+                    // Logika rekomendasi diaplikasikan di sini
+                    is_recommended: checkRecommendation(userCategory, transports), 
+                    legs: [{
+                        step: 1,
+                        route_name: row.route_name,
+                        origin_stop: row.origin_stop_name,
+                        destination_stop: row.destination_stop_name,
+                        transports: transports,
+                        stops_passed: row.total_stops,
+                        estimated_time_minutes: row.total_time,
+                        route_path: JSON.parse(row.route_path_json)
+                    }]
+                };
+            });
+            
+            // 👈 PERBAIKAN: Mengirim filter_applied agar Frontend tahu kategori user!
+            return res.status(200).json({ 
+                filter_applied: userCategory, 
+                data: results 
+            });
         }
 
         // ==========================================
@@ -136,32 +161,44 @@ const searchRoutes = async (req, res) => {
             return res.status(404).json({ message: "Rute tidak ditemukan." });
         }
 
-        const results = transitRoutes.map(row => ({
-            route_type: "transit",
-            total_estimated_time: row.leg1_time + row.leg2_time,
-            legs: [
-                {
-                    step: 1, route_name: row.r1_name, origin_stop: row.origin_name, destination_stop: row.transit_name,
-                    estimated_time_minutes: row.leg1_time,
-                    route_path: JSON.parse(row.path1),
-                    transports: [{
-                        name: row.t1_name, type: row.t1_type,
-                        facilities: { women_area: row.t1_women === 1, low_entry: row.t1_low === 1, priority_seat: row.t1_prio === 1, wheelchair_slot: row.t1_wheel === 1 }
-                    }]
-                },
-                {
-                    step: 2, route_name: row.r2_name, origin_stop: row.transit_name, destination_stop: row.dest_name,
-                    estimated_time_minutes: row.leg2_time,
-                    route_path: JSON.parse(row.path2),
-                    transports: [{
-                        name: row.t2_name, type: row.t2_type,
-                        facilities: { women_area: row.t2_women === 1, low_entry: row.t2_low === 1, priority_seat: row.t2_prio === 1, wheelchair_slot: row.t2_wheel === 1 }
-                    }]
-                }
-            ]
-        }));
+        const results = transitRoutes.map(row => {
+            // Kita susun objek kendaraan (transports) agar bisa dicek rekomendasinya
+            const t1 = [{
+                name: row.t1_name, type: row.t1_type,
+                facilities: { women_area: row.t1_women === 1, low_entry: row.t1_low === 1, priority_seat: row.t1_prio === 1, wheelchair_slot: row.t1_wheel === 1 }
+            }];
+            const t2 = [{
+                name: row.t2_name, type: row.t2_type,
+                facilities: { women_area: row.t2_women === 1, low_entry: row.t2_low === 1, priority_seat: row.t2_prio === 1, wheelchair_slot: row.t2_wheel === 1 }
+            }];
 
-        res.status(200).json({ data: results });
+            return {
+                route_type: "transit",
+                total_estimated_time: row.leg1_time + row.leg2_time,
+                // Logika rekomendasi diaplikasikan di sini (Leg 1 & Leg 2 harus memenuhi syarat)
+                is_recommended: checkRecommendation(userCategory, t1) && checkRecommendation(userCategory, t2),
+                legs: [
+                    {
+                        step: 1, route_name: row.r1_name, origin_stop: row.origin_name, destination_stop: row.transit_name,
+                        estimated_time_minutes: row.leg1_time,
+                        route_path: JSON.parse(row.path1),
+                        transports: t1
+                    },
+                    {
+                        step: 2, route_name: row.r2_name, origin_stop: row.transit_name, destination_stop: row.dest_name,
+                        estimated_time_minutes: row.leg2_time,
+                        route_path: JSON.parse(row.path2),
+                        transports: t2
+                    }
+                ]
+            };
+        });
+
+        // 👈 PERBAIKAN: Mengirim filter_applied untuk rute Transit!
+        res.status(200).json({ 
+            filter_applied: userCategory, 
+            data: results 
+        });
 
     } catch (error) {
         console.error(error);

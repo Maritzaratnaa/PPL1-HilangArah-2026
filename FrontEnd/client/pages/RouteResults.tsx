@@ -6,7 +6,6 @@ import { useIsHighContrast } from "@/hooks/useTheme";
 import {
   ArrowLeft,
   Clock,
-  Bus,
   Loader2,
   ChevronDown,
   ChevronUp,
@@ -30,16 +29,17 @@ interface TransitStop {
   stop_name: string;
   latitude?: number;
   longitude?: number;
+  has_ramp?: boolean;
+  has_elevator?: boolean;
 }
 
-// INTERFACE BARU: Sesuai dengan JSON Backend yang baru (menggunakan 'legs')
 interface JourneyLeg {
   step: number;
   route_name: string;
   origin_stop: string;
   destination_stop: string;
   transports: Transport[];
-  stops_passed: number;
+  stops_passed?: number; 
   estimated_time_minutes: number;
   route_path: TransitStop[];
 }
@@ -47,34 +47,80 @@ interface JourneyLeg {
 interface RouteResult {
   route_type: "direct" | "transit";
   total_estimated_time: number;
+  total_stops_passed?: number;
   is_recommended: boolean;
   legs: JourneyLeg[];
 }
 
 const BASE_URL = "http://localhost:3000";
 
+// --- LOGIKA FILTER TAG KENDARAAN SUPER KETAT ---
 function getFacilityTips(category: string, facilities: Facility) {
   const tips: { icon: string; label: string; color: string }[] = [];
+  if (!facilities) return tips;
+
   const safeCategory = (category || "").trim().toLowerCase();
-  const isWomanOnly = safeCategory === "wanita" || safeCategory === "perempuan" || safeCategory === "women";
 
-  if ((isWomanOnly || safeCategory === "ibu hamil" || safeCategory === "pregnant") && facilities?.women_area) {
-    tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
-  }
-
-  if (isWomanOnly) return tips; 
-
-  if (safeCategory === "disabilitas" || safeCategory === "disability") {
-    if (facilities?.low_entry) tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
-    if (facilities?.wheelchair_slot) tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
-  }
-  
-  const needsPriority = ["lansia", "elderly", "ibu hamil", "pregnant", "penyakit rentan", "vulnerable-illness", "anak-anak", "children"].includes(safeCategory);
-  if (needsPriority && facilities?.priority_seat) {
-    tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+  if (["wanita", "perempuan", "women"].includes(safeCategory)) {
+    if (facilities.women_area) {
+      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+    }
+  } 
+  else if (["ibu hamil", "pregnant"].includes(safeCategory)) {
+    if (facilities.women_area) {
+      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+    }
+    if (facilities.priority_seat) {
+      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+    }
+  } 
+  else if (["disabilitas", "disability", "tunanetra", "tuli", "pengguna kursi roda"].includes(safeCategory)) {
+    if (facilities.low_entry) {
+      tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
+    }
+    if (facilities.wheelchair_slot) {
+      tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
+    }
+  } 
+  else if (["lansia", "elderly", "penyakit rentan", "vulnerable", "anak-anak", "children"].includes(safeCategory)) {
+    if (facilities.priority_seat) {
+      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+    }
   }
   
   return tips;
+}
+
+// --- KOMPONEN FILTER TAG HALTE/STASIUN SUPER KETAT ---
+function StopBadges({ has_ramp, has_elevator, category }: { has_ramp?: boolean; has_elevator?: boolean; category: string }) {
+  const safeCategory = (category || "").trim().toLowerCase();
+  
+  let showRamp = false;
+  let showElevator = false;
+
+  if (["disabilitas", "disability", "tunanetra", "tuli", "pengguna kursi roda"].includes(safeCategory)) {
+    showRamp = true;
+    showElevator = true;
+  } 
+  else if (["lansia", "elderly", "ibu hamil", "pregnant", "penyakit rentan", "vulnerable"].includes(safeCategory)) {
+    showElevator = true;
+  }
+
+  const badges = [];
+  if (showRamp && has_ramp) badges.push({ icon: "♿", label: "Ramp", color: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300" });
+  if (showElevator && has_elevator) badges.push({ icon: "🛗", label: "Lift", color: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300" });
+
+  if (badges.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-1.5">
+      {badges.map((b, i) => (
+        <span key={i} className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${b.color}`}>
+          {b.icon} {b.label}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function getCategoryAdvice(category: string, transports: Transport[]): string | null {
@@ -97,7 +143,7 @@ function getCategoryAdvice(category: string, transports: Transport[]): string | 
     case "ibu hamil":
     case "pregnant":
     case "penyakit rentan":
-    case "vulnerable-illness":
+    case "vulnerable":
     case "anak-anak":
     case "children":
       if (hasPriorityAll) return "✅ Tersedia kursi prioritas pada seluruh armada rute ini.";
@@ -152,7 +198,7 @@ export default function RouteResults() {
         const json = await res.json();
         if (res.ok) {
           setRoutes(json.data);
-          setFilterInfo(json.filter_applied);
+          setFilterInfo(json.filter_applied ? json.filter_applied : "Umum");
         } else {
           setErrorMsg(json.message);
         }
@@ -197,41 +243,45 @@ export default function RouteResults() {
     : { background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background font-['Atkinson_Hyperlegible',_sans-serif]">
       <Navbar />
 
       <section className="relative overflow-hidden" style={heroStyle}>
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full -translate-y-1/2 translate-x-1/2" style={{ background: "rgba(255,255,255,0.05)" }} aria-hidden="true" />
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 relative z-10">
           <Link to="/home">
-            <button className={`flex items-center gap-2 text-sm mb-4 transition-colors ${isHC ? 'text-[#ffff00]' : 'text-white/70 hover:text-white'}`}>
+            <button className={`flex items-center gap-2 text-sm mb-4 transition-colors font-semibold ${isHC ? 'text-[#ffff00]' : 'text-white/80 hover:text-white'}`}>
               <ArrowLeft className="h-4 w-4" />Kembali
             </button>
           </Link>
           <h1 className={`text-2xl md:text-3xl font-bold mb-3 ${isHC ? 'text-[#ffff00]' : 'text-white'}`}>Hasil Rekomendasi</h1>
           
-          {/* SEARCH BOX */}
-          <div className="rounded-xl p-4 mt-4" style={searchBoxStyle}>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5" style={searchInputStyle}>
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isHC ? 'bg-[#ffff00]' : 'bg-emerald-400'}`} />
+          {/* SEARCH BOX RESONSIF */}
+          <div className="rounded-xl p-3 mt-4" style={searchBoxStyle}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5" style={searchInputStyle}>
+                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isHC ? 'bg-[#ffff00]' : 'bg-emerald-400'}`} />
                 <input 
                   value={originName} onChange={(e) => setOriginName(e.target.value)}
                   placeholder="Ketik halte asal..."
-                  className={`bg-transparent text-sm outline-none w-full ${isHC ? 'text-white placeholder:text-white/60' : 'text-white placeholder:text-white/40'}`} 
+                  className={`bg-transparent text-sm outline-none w-full font-semibold ${isHC ? 'text-white placeholder:text-white/60' : 'text-white placeholder:text-white/40'}`} 
                 />
               </div>
-              <span className="text-white/40 text-lg flex-shrink-0">→</span>
-              <div className="flex-1 flex items-center gap-3 rounded-lg px-4 py-2.5" style={searchInputStyle}>
-                <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
+              
+              <div className="flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5" style={searchInputStyle}>
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400 flex-shrink-0" />
                 <input 
                   value={destinationName} onChange={(e) => setDestinationName(e.target.value)}
                   placeholder="Ketik halte tujuan..."
-                  className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40" 
+                  className="bg-transparent text-white font-semibold text-sm outline-none w-full placeholder:text-white/40" 
                 />
               </div>
-              <button onClick={handleSearchAgain} className={`font-bold text-sm px-5 py-2.5 rounded-lg hover:-translate-y-0.5 transition-all flex-shrink-0 ${isHC ? 'bg-[#ffff00] text-black' : 'bg-white text-[hsl(186,100%,27%)]'}`}>
-                Cari
+              
+              <button 
+                onClick={handleSearchAgain} 
+                className={`font-bold text-sm px-5 py-2.5 rounded-lg hover:-translate-y-0.5 transition-all w-full sm:w-auto flex-shrink-0 ${isHC ? 'bg-[#ffff00] text-black' : 'bg-white text-[hsl(186,100%,27%)]'}`}
+              >
+                Cari Rute
               </button>
             </div>
           </div>
@@ -246,36 +296,32 @@ export default function RouteResults() {
             <div className="text-center py-16">
               <div className="text-4xl mb-4">🔍</div>
               <div className="font-bold text-lg mb-2 text-rose-500">{errorMsg}</div>
-              <Link to="/home"><Button variant="outline">Kembali ke Beranda</Button></Link>
+              <Link to="/home"><Button variant="outline" className="font-bold mt-4">Kembali ke Beranda</Button></Link>
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold">{routes.length} opsi perjalanan</span>
-                  <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold">Filter: {filterInfo}</span>
+                  <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-bold capitalize">Filter: {filterInfo}</span>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {routes.map((route, routeIndex) => {
-                  // MENGAMBIL SEMUA KENDARAAN DARI SEMUA LEGS (Transit maupun Direct)
                   const allTransports = route.legs.flatMap(leg => leg.transports);
-                  const totalStopsPassed = route.legs.reduce((acc, leg) => acc + leg.stops_passed, 0);
                   const isExpanded = expandedCard === routeIndex;
                   
-                  // CEK FASILITAS GABUNGAN
                   const combinedFacilities = {
-                      low_entry: allTransports.every(t => t.facilities.low_entry),
-                      wheelchair_slot: allTransports.every(t => t.facilities.wheelchair_slot),
-                      priority_seat: allTransports.every(t => t.facilities.priority_seat),
-                      women_area: allTransports.every(t => t.facilities.women_area)
+                      low_entry: allTransports.some(t => t.facilities.low_entry),
+                      wheelchair_slot: allTransports.some(t => t.facilities.wheelchair_slot),
+                      priority_seat: allTransports.some(t => t.facilities.priority_seat),
+                      women_area: allTransports.some(t => t.facilities.women_area)
                   };
 
                   const facilityTips = getFacilityTips(filterInfo, combinedFacilities);
                   const categoryAdvice = getCategoryAdvice(filterInfo, allTransports);
                   
-                  // AMBIL TITIK AWAL DAN AKHIR DARI LEGS
                   const firstStop = route.legs[0].origin_stop;
                   const finalStop = route.legs[route.legs.length - 1].destination_stop;
 
@@ -283,116 +329,162 @@ export default function RouteResults() {
                     <div key={routeIndex} className="bg-card rounded-2xl border border-border shadow-sm hover:shadow-md transition-all overflow-hidden">
                       
                       {!route.is_recommended && (
-                        <div className="bg-rose-100 text-rose-700 text-xs px-5 py-2 font-bold flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4" /> Rute alternatif: Kurang memenuhi kriteria profil Anda.
+                        <div className="bg-rose-100 text-rose-700 text-xs px-5 py-2 font-bold flex items-start sm:items-center gap-2">
+                          <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5 sm:mt-0" /> 
+                          <span>Rute alternatif: Kurang memenuhi kriteria profil Anda.</span>
                         </div>
                       )}
                       
                       {route.route_type === "transit" && (
-                        <div className="bg-indigo-100 text-indigo-700 text-xs px-5 py-1.5 font-bold flex items-center gap-2">
-                           Rute Transit ({route.legs.length - 1}x pindah kendaraan)
+                        <div className="bg-indigo-100 text-indigo-700 text-xs px-5 py-2 font-bold flex items-center gap-2">
+                           🔄 Rute Transit ({route.legs.length - 1}x pindah kendaraan)
                         </div>
                       )}
 
-                      <div className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                         //   <div className="flex -space-x-3">
+                      <div className="p-4 sm:p-6">
+                        {/* HEADER CARD RESPONSIF */}
+                        <div className="flex items-start justify-between mb-4 gap-2">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="flex -space-x-2 flex-shrink-0">
                               {allTransports.map((t, i) => (
-                                <div key={i} className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-2xl border-2 border-white shadow-sm" title={t.name}>
+                                <div key={i} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-xl sm:text-2xl border-2 border-white dark:border-background shadow-sm" title={t.name}>
                                   {getTransportIcon(t.type)}
                                 </div>
                               ))}
                             </div>
-                            <div>
-                              <div className="font-bold text-base leading-tight">
+                            <div className="min-w-0">
+                              <div className="font-bold text-sm sm:text-base leading-tight truncate">
                                 {route.route_type === "transit" ? "Perjalanan Transit" : route.legs[0].route_name}
                               </div>
-                              <div className="text-xs text-muted-foreground mt-1">
+                              <div className="text-xs font-semibold text-muted-foreground mt-1 truncate">
                                 {allTransports.map(t => t.name).join(" ➔ ")}
                               </div>
                             </div>
                           </div>
 
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-primary">{route.total_estimated_time} mnt</div>
-                            <div className="text-[10px] uppercase text-muted-foreground">{totalStopsPassed} halte</div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-xl sm:text-2xl font-bold text-primary">{route.total_estimated_time} <span className="text-sm sm:text-lg">mnt</span></div>
                           </div>
                         </div>
 
-                        {/* Rangkuman Halte */}
-                        <div className="flex items-center gap-2 mb-4 text-sm">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                          <span className="font-medium">{firstStop}</span>
-                          <div className="flex-1 border-t-2 border-dashed border-border mx-2" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                          <span className="font-medium">{finalStop}</span>
+                        {/* RANGKUMAN HALTE RESPONSIF */}
+                        <div className="flex items-center gap-2 mb-5 text-xs sm:text-sm font-semibold">
+                          <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[40%]">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                            <span className="truncate">{firstStop}</span>
+                          </div>
+                          <div className="flex-1 border-t-2 border-dashed border-border mx-1" />
+                          <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[40%] justify-end">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0" />
+                            <span className="truncate text-right">{finalStop}</span>
+                          </div>
                         </div>
 
                         {/* Tips Fasilitas */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {facilityTips.map((tip, i) => (
-                            <span key={i} className={`text-xs px-2.5 py-1 rounded-full font-semibold ${tip.color}`}>{tip.icon} {tip.label}</span>
-                          ))}
-                        </div>
-
-                        {/* Bottom Actions */}
-                        <div className="flex items-center justify-between pt-4 border-t border-border">
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{route.total_estimated_time} mnt</div>
-                            <span>·</span>
-                            <div className="flex items-center gap-1"><Bus className="h-3.5 w-3.5" />{totalStopsPassed} halte</div>
+                        {facilityTips.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {facilityTips.map((tip, i) => (
+                              <span key={i} className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-transparent shadow-sm ${tip.color}`}>
+                                {tip.icon} {tip.label}
+                              </span>
+                            ))}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => setExpandedCard(isExpanded ? null : routeIndex)} className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
-                              {isExpanded ? <><ChevronUp className="h-3.5 w-3.5" />Tutup Detail</> : <><ChevronDown className="h-3.5 w-3.5" />Lihat Detail</>}
+                        )}
+
+                        {/* BOTTOM ACTIONS RESPONSIF */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 sm:pt-5 border-t border-border gap-3">
+                          <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
+                            <div className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-md">
+                              <Clock className="h-4 w-4 text-primary" /> {route.total_estimated_time} Menit
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                            <button onClick={() => setExpandedCard(isExpanded ? null : routeIndex)} className="flex items-center gap-1 text-xs text-primary font-bold hover:underline">
+                              {isExpanded ? <><ChevronUp className="h-4 w-4" />Tutup Detail</> : <><ChevronDown className="h-4 w-4" />Lihat Detail</>}
                             </button>
-                            <Button onClick={() => handleSelectRoute(route)} size="sm" className="h-8 px-5 text-xs font-bold">Pilih Rute</Button>
+                            <Button onClick={() => handleSelectRoute(route)} size="sm" className="h-9 px-6 text-sm font-bold rounded-lg shadow-sm">
+                              Pilih Rute
+                            </Button>
                           </div>
                         </div>
                       </div>
 
-                      {/* Dropdown Detail Perjalanan (Support Transit & Direct) */}
+                      {/* Dropdown Detail Perjalanan (Hanya Naik & Turun) */}
                       {isExpanded && (
-                        <div className="border-t border-border px-6 py-5 bg-muted/30 rounded-b-2xl">
+                        <div className="border-t border-border px-4 sm:px-6 py-5 sm:py-6 bg-muted/20 rounded-b-2xl">
                           {categoryAdvice && (
-                            <div className="mb-4 p-3 rounded-xl bg-primary/5 border border-primary/15 text-sm text-primary font-medium">
+                            <div className="mb-5 p-4 rounded-xl bg-primary/5 border border-primary/20 text-sm text-primary font-semibold">
                               {categoryAdvice}
                             </div>
                           )}
 
-                          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Detail Perjalanan</div>
+                          <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Detail Perjalanan</div>
                           
                           <div className="relative">
-                            <div className="absolute left-[9px] top-3 bottom-3 w-px bg-border" />
-                            <div className="space-y-4">
-                              {route.legs.map((leg, legIndex) => (
-                                <div key={legIndex} className="relative z-10 pl-8">
-                                  <span className="absolute left-0 w-5 h-5 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center mt-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                  </span>
-                                  
-                                  <div className="bg-background rounded-lg p-3 border border-border shadow-sm">
-                                    <div className="text-xs text-muted-foreground font-semibold mb-1">
-                                      Langkah {leg.step}: Naik {leg.route_name}
-                                    </div>
-                                    <div className="text-sm">
-                                      Dari <b>{leg.origin_stop}</b> ke <b>{leg.destination_stop}</b>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-2 flex gap-2">
-                                      <span>⏳ {leg.estimated_time_minutes} mnt</span>
-                                      <span>📍 Melewati {leg.stops_passed} halte</span>
+                            <div className="absolute left-[9px] top-3 bottom-3 w-[2px] bg-border/60" />
+                            <div className="space-y-6">
+                              {route.legs.map((leg, legIndex) => {
+                                const path = leg.route_path || [];
+                                const isReversed = path.length > 1 && path[path.length - 1].stop_name === leg.origin_stop;
+                                const orderedPath = isReversed ? [...path].reverse() : path;
+
+                                // HANYA AMBIL INDEX 0 (NAIK) DAN INDEX TERAKHIR (TURUN)
+                                const displayStops = orderedPath.filter((_, sIdx) => sIdx === 0 || sIdx === orderedPath.length - 1);
+
+                                return (
+                                  <div key={legIndex} className="relative z-10 pl-6 sm:pl-8">
+                                    <span className="absolute left-0 w-5 h-5 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center mt-1.5 ml-[-1px]">
+                                      <span className="w-2 h-2 rounded-full bg-primary" />
+                                    </span>
+                                    
+                                    <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
+                                      <div className="bg-muted/40 p-3 sm:p-3.5 border-b border-border flex items-center justify-between">
+                                        <div className="text-[11px] sm:text-xs text-primary font-bold uppercase tracking-wide">
+                                          Langkah {leg.step}: Naik {leg.route_name}
+                                        </div>
+                                        <div className="text-[10px] sm:text-xs font-bold text-muted-foreground flex items-center gap-1.5 bg-background px-2.5 py-1 rounded-md border border-border/50 shadow-sm">
+                                          <Clock className="w-3.5 h-3.5"/> {leg.estimated_time_minutes} mnt
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="p-4 sm:p-5 relative">
+                                        {displayStops.length > 1 && (
+                                          <div className="absolute left-[21px] sm:left-[26px] top-8 bottom-8 w-0.5 bg-border/60 border-l-2 border-dashed border-border" />
+                                        )}
+                                        
+                                        <div className="space-y-6">
+                                          {displayStops.map((stop, sIdx) => {
+                                            const isFirst = sIdx === 0;
+                                            return (
+                                              <div key={sIdx} className="relative z-10 flex gap-3 sm:gap-4">
+                                                <div className="flex flex-col items-center mt-1">
+                                                  <span className={`w-3 h-3 rounded-full ring-4 ring-background shadow-sm ${isFirst ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                                                </div>
+                                                <div className="-mt-0.5">
+                                                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">
+                                                    {isFirst ? 'Naik Dari' : 'Turun Di'}
+                                                  </div>
+                                                  <div className="text-sm font-bold text-foreground">
+                                                    {stop.stop_name}
+                                                  </div>
+                                                  <StopBadges has_ramp={stop.has_ramp} has_elevator={stop.has_elevator} category={filterInfo} />
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                               
-                              <div className="relative z-10 pl-8">
-                                <span className="absolute left-0 w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center mt-1">
+                              <div className="relative z-10 pl-6 sm:pl-8 pt-2">
+                                <span className="absolute left-0 w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center mt-1 ml-[-1px]">
                                   <span className="w-2 h-2 rounded-full bg-white" />
                                 </span>
-                                <div className="text-sm font-bold text-rose-600 mt-1">
-                                  Sampai di Tujuan: {finalStop}
+                                <div className="text-xs sm:text-sm font-bold text-rose-600 mt-1 bg-rose-50 dark:bg-rose-950/30 px-3 sm:px-4 py-2.5 rounded-xl border border-rose-200 inline-block shadow-sm">
+                                  Tiba di Tujuan Akhir: {finalStop}
                                 </div>
                               </div>
                             </div>
