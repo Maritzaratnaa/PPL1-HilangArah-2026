@@ -3,12 +3,22 @@ import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Check, Calendar, CreditCard, ArrowRight, PartyPopper } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 export default function SubscriptionConfirmation() {
   const navigate = useNavigate();
+  const location = useLocation();
   
-  // Data simulasi (bisa diambil dari localStorage jika diperlukan)
+  // Menangkap subs_id yang dikirim dari halaman pembayaran
+  const subsId = location.state?.subs_id;
+
+  // Memastikan halaman selalu termuat dari posisi paling atas
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Data tanggal hari ini untuk bukti aktivasi
   const today = new Date().toLocaleDateString('id-ID', { 
     day: 'numeric', 
     month: 'long', 
@@ -63,7 +73,7 @@ export default function SubscriptionConfirmation() {
             </div>
           </div>
 
-          {/* KONTIEN KONFIRMASI */}
+          {/* KONTEN KONFIRMASI */}
           <div className="max-w-3xl mx-auto text-center">
             <Card className="bg-card border-border rounded-[var(--radius)] p-10 lg:p-16 shadow-sm relative overflow-hidden">
               {/* Elemen Dekoratif */}
@@ -94,8 +104,8 @@ export default function SubscriptionConfirmation() {
                   <div className="p-5 bg-muted/30 rounded-2xl border border-border flex items-center gap-4">
                     <div className="p-2 bg-background rounded-lg text-primary shadow-sm"><CreditCard size={20} /></div>
                     <div>
-                      <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest">Metode Pembayaran</p>
-                      <p className="font-bold text-foreground text-[16px]">E-Wallet (GoPay)</p>
+                      <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest">Status Pembayaran</p>
+                      <p className="font-bold text-green-600 text-[16px]">LUNAS</p>
                     </div>
                   </div>
                 </div>
@@ -103,7 +113,12 @@ export default function SubscriptionConfirmation() {
                 {/* Detail Paket */}
                 <div className="bg-muted/30 border border-border rounded-2xl p-6 mb-12 text-left">
                   <div className="flex justify-between items-center mb-4">
-                    <span className="font-bold text-foreground text-[18px]">Paket Bulanan (Premium)</span>
+                    <div>
+                      <span className="font-bold text-foreground text-[18px] block">Paket Bulanan (Premium)</span>
+                      {subsId && (
+                        <span className="text-xs text-muted-foreground font-mono mt-1 block">ID: {subsId.split('-')[0].toUpperCase()}</span>
+                      )}
+                    </div>
                     <span className="p-2 bg-green-100 text-green-700 rounded-lg text-[12px] font-bold uppercase tracking-wider">Aktif</span>
                   </div>
                   <ul className="space-y-3 text-[16px] text-muted-foreground font-medium">
@@ -125,13 +140,14 @@ export default function SubscriptionConfirmation() {
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button 
-                    onClick={() => navigate('/home')} 
+                    onClick={() => navigate('/')} 
                     className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-14 rounded-2xl font-bold text-[18px]"
                   >
-                    Mulai Cari Rute <ArrowRight size={20} className="ml-2" />
+                    Kembali ke Beranda <ArrowRight size={20} className="ml-2" />
                   </Button>
                   <Button 
                     variant="outline" 
+                    // Rute diperbaiki agar sesuai dengan rute aplikasi (SubscriptionProfile)
                     onClick={() => navigate('/subscription/Profile')}
                     className="flex-1 border-border text-foreground hover:bg-muted/50 h-14 rounded-2xl font-bold text-[18px]"
                   >

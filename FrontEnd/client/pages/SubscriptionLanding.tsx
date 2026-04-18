@@ -1,14 +1,57 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ChevronDown, Check, Star, ArrowRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function SubscriptionLanding() {
   const navigate = useNavigate();
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+
+  // --- STATE UNTUK PENGECEKAN API ---
+  const [hasSubs, setHasSubs] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  // --- LOGIKA PENGECEKAN STATUS LANGGANAN ---
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      const token = localStorage.getItem("token");
+      
+      // Jika belum login, pasti belum punya langganan
+      if (!token) {
+        setIsChecking(false);
+        return;
+      }
+
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const res = await fetch(`${apiUrl}/api/subscription/my-subs`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Jika status 200 OK, berarti user sudah punya data di tabel 'subs'
+        if (res.ok) {
+          setHasSubs(true);
+        }
+      } catch (error) {
+        console.error("Gagal mengecek status langganan:", error);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkSubscriptionStatus();
+  }, []);
+
+  // --- FUNGSI NAVIGASI DINAMIS ---
+  const handleActionClick = () => {
+    if (hasSubs) {
+      navigate("/subscription/Profile"); // Arahkan ke dashboard jika sudah langganan
+    } else {
+      navigate("/subscription/Form"); // Arahkan ke form jika belum
+    }
+  };
 
   const benefits = [
     { icon: '🧭', title: 'Pemandu Pribadi Tersertifikasi', description: 'Pemandu kami telah terlatih dan tersertifikasi untuk mendampingi pengguna dengan berbagai kebutuhan khusus.' },
@@ -50,10 +93,19 @@ export default function SubscriptionLanding() {
               Dapatkan teman perjalanan yang siap menemani Anda kemanapun menggunakan transportasi umum — aman, nyaman, dan penuh perhatian.
             </p>
             <div className="flex flex-wrap gap-3">
-              <button className="bg-white text-[#007C8A] px-7 py-3.5 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-100 transition-colors">
-                Mulai Berlangganan <ArrowRight size={18} />
+              {/* TOMBOL 1: Diubah onClick-nya */}
+              <button 
+                onClick={handleActionClick}
+                disabled={isChecking}
+                className="bg-white text-[#007C8A] px-7 py-3.5 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-100 transition-colors disabled:opacity-70"
+              >
+                {isChecking ? "Mengecek..." : hasSubs ? "Lihat Status Langganan" : "Mulai Berlangganan"} <ArrowRight size={18} />
               </button>
-              <button className="bg-transparent text-white border border-white/40 px-6 py-3.5 rounded-xl font-bold hover:bg-white/10 transition-colors">
+              {/* TOMBOL 2: Diubah agar nge-scroll ke bagian Pricing */}
+              <button 
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-transparent text-white border border-white/40 px-6 py-3.5 rounded-xl font-bold hover:bg-white/10 transition-colors"
+              >
                 Pelajari Lebih Lanjut ↓
               </button>
             </div>
@@ -115,8 +167,8 @@ export default function SubscriptionLanding() {
         </div>
       </section>
 
-      {/* PRICING SECTION */}
-      <section className="bg-[#007C8A] py-24 px-6 lg:px-10 relative overflow-hidden text-white">
+      {/* PRICING SECTION - Tambahkan id="pricing" agar tombol scroll berfungsi */}
+      <section id="pricing" className="bg-[#007C8A] py-24 px-6 lg:px-10 relative overflow-hidden text-white">
         <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />
         
         <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -170,8 +222,13 @@ export default function SubscriptionLanding() {
               ))}
             </div>
 
-            <button className="w-full bg-[#007C8A] text-white py-4 rounded-xl font-bold hover:bg-[#006874] transition-colors mb-4 text-[18px]">
-              Berlangganan Sekarang →
+            {/* TOMBOL 3: Diubah onClick-nya */}
+            <button 
+              onClick={handleActionClick}
+              disabled={isChecking}
+              className="w-full bg-[#007C8A] text-white py-4 rounded-xl font-bold hover:bg-[#006874] transition-colors mb-4 text-[18px] disabled:opacity-70"
+            >
+              {isChecking ? "Memuat..." : hasSubs ? "Lihat Status Anda →" : "Berlangganan Sekarang →"}
             </button>
             <p className="text-center text-[11px] font-medium text-gray-400">🔒 Pembayaran aman & terenkripsi · Batalkan kapan saja</p>
           </Card>

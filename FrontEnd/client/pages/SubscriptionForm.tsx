@@ -79,7 +79,7 @@ export default function SubscriptionForm() {
         alert(data.message);
         // Opsi tambahan: Jika error-nya karena sudah punya, langsung lempar ke profil
         if (data.message.includes('sudah memiliki langganan')) {
-          navigate('/subscription/profile');
+          navigate('/subscription/Profile');
         }
       }
     } catch (error) {
