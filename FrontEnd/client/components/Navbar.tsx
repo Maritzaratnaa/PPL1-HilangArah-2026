@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, BarChart3, Zap, Type, Minus, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ThemeToggle } from './ThemeToggle';
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, User, BarChart3, Zap, Type, Minus, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "./ThemeToggle";
 
 // Komponen baru untuk mengatur Font Size dengan Plus/Minus
 function FontSizeControl() {
@@ -13,7 +13,7 @@ function FontSizeControl() {
 
   // Ambil data dari local storage saat pertama kali dimuat
   useEffect(() => {
-    const savedSize = localStorage.getItem('globalFontSize');
+    const savedSize = localStorage.getItem("globalFontSize");
     if (savedSize) {
       const size = parseInt(savedSize, 10);
       setFontSize(size);
@@ -24,21 +24,24 @@ function FontSizeControl() {
   // Menutup popup saat user klik di luar area
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Fungsi untuk update font size
   const updateFontSize = (newSize: number) => {
     // Batas minimum 12px dan maksimum 24px agar layout tidak hancur
-    if (newSize >= 12 && newSize <= 24) { 
+    if (newSize >= 12 && newSize <= 24) {
       setFontSize(newSize);
       document.documentElement.style.fontSize = `${newSize}px`;
-      localStorage.setItem('globalFontSize', newSize.toString());
+      localStorage.setItem("globalFontSize", newSize.toString());
     }
   };
 
@@ -58,29 +61,27 @@ function FontSizeControl() {
 
       {/* Pop-up Panel untuk Plus dan Minus */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 p-2 bg-background border border-border rounded-md shadow-lg z-50 flex items-center gap-3 w-max supports-[backdrop-filter]:bg-background/95 backdrop-blur">
+        <div className="absolute right-0 mt-2 p-2 bg-background border border-border rounded-md shadow-lg z-50 flex items-center gap-2 w-max supports-[backdrop-filter]:bg-background/95 backdrop-blur">
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-7 w-7"
             onClick={() => updateFontSize(fontSize - 1)}
-            disabled={fontSize <= 12} // Disable jika sudah mencapai batas minimum
+            disabled={fontSize <= 12}
           >
-            <Minus className="h-4 w-4" />
+            <Minus className="h-3 w-3" />
           </Button>
-          
-          <span className="text-sm font-medium w-6 text-center select-none">
+          <span className="text-xs font-medium w-5 text-center select-none">
             {fontSize}
           </span>
-          
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-7 w-7"
             onClick={() => updateFontSize(fontSize + 1)}
-            disabled={fontSize >= 24} // Disable jika sudah mencapai batas maksimum
+            disabled={fontSize >= 24}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3 w-3" />
           </Button>
         </div>
       )}
@@ -93,20 +94,20 @@ export function Navbar() {
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('isLoggedIn');
+    const token = localStorage.getItem("isLoggedIn");
     if (token) {
-      navigate('/home');
+      navigate("/home");
     } else {
-      navigate('/');
+      navigate("/");
     }
   };
 
   const handleProfileClick = () => {
-    const token = localStorage.getItem('isLoggedIn');
+    const token = localStorage.getItem("isLoggedIn");
     if (!token) {
-      navigate('/login');
+      navigate("/login");
     } else {
-      navigate('/profile');
+      navigate("/profile");
     }
   };
 
@@ -127,46 +128,37 @@ export function Navbar() {
           </Link>
 
           {/* Icon Group */}
-          <div className="flex items-center gap-2 ml-auto">
-            {/* Profile */}
+          <div className="flex items-center gap-1 ml-auto">
             <Button
               variant="ghost"
               size="icon"
-              className="h-11 w-11 high-contrast:border-2 high-contrast:border-primary"
+              className="h-10 w-10 high-contrast:border-2 high-contrast:border-primary"
               aria-label="Profile"
               onClick={handleProfileClick}
             >
               <User className="h-5 w-5" />
             </Button>
-
-            {/* Reports */}
             <Link to="/reporting">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 high-contrast:border-2 high-contrast:border-primary"
+                className="h-10 w-10 high-contrast:border-2 high-contrast:border-primary"
                 aria-label="Reports"
               >
                 <BarChart3 className="h-5 w-5" />
               </Button>
             </Link>
-
-            {/* Subscription */}
             <Link to="/subscription">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 high-contrast:border-2 high-contrast:border-primary"
+                className="h-10 w-10 high-contrast:border-2 high-contrast:border-primary"
                 aria-label="Subscription"
               >
                 <Zap className="h-5 w-5" />
               </Button>
             </Link>
-
-            {/* Theme Toggle */}
             <ThemeToggle />
-
-            {/* Font Size Toggle (Sekarang di sebelah kanan ThemeToggle) */}
             <FontSizeControl />
           </div>
         </div>

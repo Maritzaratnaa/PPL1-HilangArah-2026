@@ -206,19 +206,23 @@ export default function Profile() {
 
       <main className="flex-grow px-4 py-12">
         <div className="mx-auto max-w-2xl">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <Link to="/home">
+          <div className="flex items-center justify-between mb-8 gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              {" "}
+              {/* min-w-0 penting untuk flex child */}
+              <Link to="/home" className="shrink-0">
                 <Button variant="ghost" size="icon" className="h-11 w-11">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
-              <h1 className="text-2xl font-bold">Profil Saya</h1>
+              <h1 className="text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Profil Saya
+              </h1>
             </div>
-            <Link to="/profile/edit">
+            <Link to="/profile/edit" className="shrink-0">
               <Button
                 variant="outline"
-                className="gap-2 high-contrast:border-2 high-contrast:border-primary"
+                className="gap-2 high-contrast:border-2 high-contrast:border-primary whitespace-nowrap"
               >
                 <Pencil className="h-4 w-4" />
                 Edit Profil
@@ -276,19 +280,19 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-xl font-bold mb-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+                <div className="min-w-0">
+                  <h2 className="text-xl font-bold mb-1 truncate">
                     {profile?.full_name}
                   </h2>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground truncate">
                     {profile?.email}
                   </p>
                 </div>
-                
-                {/* 3. PANGGIL FUNGSI RENDER BADGE DI SINI */}
-                {renderSubscriptionBadge()}
 
+                <div className="flex-shrink-0 self-start sm:self-center">
+                  {renderSubscriptionBadge()}
+                </div>
               </div>
             </div>
           </div>
