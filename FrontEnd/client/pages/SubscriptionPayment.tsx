@@ -21,7 +21,7 @@ export default function SubscriptionPayment() {
     // Jika tidak ada subsId (user iseng ngetik URL manual), tendang balik ke form
     if (!subsId) {
       alert("Sesi pembayaran tidak valid atau sudah kadaluarsa.");
-      navigate('/subscription/form');
+      navigate('/subscription/Form');
     }
 
     const timer = setInterval(() => {
@@ -37,10 +37,14 @@ export default function SubscriptionPayment() {
     return `${hours.toString().padStart(2, '0')} : ${minutes.toString().padStart(2, '0')} : ${secs.toString().padStart(2, '0')}`;
   };
 
-  // --- FUNGSI PEMBAYARAN DIUPDATE ---
+  // --- FUNGSI PEMBAYARAN MIDTRANS ---
+// --- FUNGSI PEMBAYARAN MIDTRANS ---
   const handlePaymentConfirm = async () => {
     setIsProcessing(true);
     const token = localStorage.getItem("token");
+
+    // 🛑 DEBUG 1: Cek apakah Token JWT (Login) berhasil diambil
+    console.log("🔑 [DEBUG 1] Token JWT User:", token);
 
     if (!token) {
       alert("Sesi Anda telah habis. Silakan login kembali.");
@@ -51,34 +55,79 @@ export default function SubscriptionPayment() {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       
-      // Tembak API backend untuk mengubah status jadi Active
-      const res = await fetch(`${apiUrl}/api/subscription/activate`, {
-        method: "PUT",
+      // Tembak API backend untuk meminta Token Transaksi Midtrans
+      const res = await fetch(`${apiUrl}/api/subscription/payment-token`, { 
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ subs_id: subsId }) // Kirim ID langganan ke backend
+        body: JSON.stringify({ 
+          subs_id: subsId,
+          amount: 278100 
+        }) 
       });
 
       const data = await res.json();
 
-      if (res.ok) {
-        // Jika sukses di-update di database, pindah ke halaman Konfirmasi
-        navigate('/subscription/Payment-Confirmation', { 
-          state: { subs_id: subsId } 
+      // 🛑 DEBUG 2: Cek apa balasan dari Backend (sukses atau malah error?)
+      console.log("📦 [DEBUG 2] Balasan dari Backend:", data);
+
+      if (res.ok && data.token) {
+        
+        // 🛑 DEBUG 3: Cek Token Snap Midtrans
+        console.log("💳 [DEBUG 3] Token Midtrans Berhasil Didapat:", data.token);
+
+        // Panggil popup Midtrans Snap
+        (window as any).snap.pay(data.token, {
+          onSuccess: async function(result: any){
+            
+            // 🛑 DEBUG 4: Cek hasil sukses dari Midtrans
+            console.log("✅ [DEBUG 4] Pembayaran Sukses! Data dari Midtrans:", result);
+
+            try {
+              await fetch(`${apiUrl}/api/subscription/activate`, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ subs_id: subsId })
+              });
+            } catch (err) {
+              console.error("Gagal update database:", err);
+            }
+
+            navigate('/subscription/Payment-Confirmation', { 
+              state: { subs_id: subsId } 
+            });
+          },
+          onPending: function(result: any){
+            console.log("⏳ [DEBUG] Pembayaran Tertunda:", result);
+            alert("Menunggu pembayaran Anda diselesaikan!");
+            navigate('/subscription/Profile'); 
+          },
+          onError: function(result: any){
+            console.log("❌ [DEBUG] Pembayaran Error:", result);
+            alert("Pembayaran gagal diproses!");
+            setIsProcessing(false);
+          },
+          onClose: function(){
+            console.log("⚠️ [DEBUG] Popup ditutup oleh user.");
+            alert('Anda menutup popup tanpa menyelesaikan pembayaran.');
+            setIsProcessing(false);
+          }
         });
       } else {
-        alert(data.message || "Gagal memproses pembayaran.");
+        alert(data.message || "Gagal mendapatkan token pembayaran.");
+        setIsProcessing(false);
       }
     } catch (error) {
       console.error("Payment error:", error);
       alert("Terjadi kesalahan jaringan saat memproses pembayaran.");
-    } finally {
       setIsProcessing(false);
     }
   };
-
   // Jika subsId tidak ada (sedang proses redirect), render kosong agar tidak error
   if (!subsId) return null; 
 
@@ -201,7 +250,7 @@ export default function SubscriptionPayment() {
                       <span className="text-lg">ℹ️</span>
                       <h3 className="font-bold text-foreground">Cara Pembayaran</h3>
                     </div>
-                    <p className="text-[16px] text-muted-foreground font-medium">Ikuti instruksi pembayaran melalui aplikasi yang Anda pilih.</p>
+                    <p className="text-[16px] text-muted-foreground font-medium">Anda akan dialihkan ke halaman pembayaran aman Midtrans setelah menekan tombol konfirmasi.</p>
                   </div>
 
                   <Button 
@@ -212,7 +261,7 @@ export default function SubscriptionPayment() {
                     {isProcessing ? (
                       <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Memproses Pembayaran...</>
                     ) : (
-                      "Konfirmasi Pembayaran →"
+                      "Bayar dengan Midtrans →"
                     )}
                   </Button>
                 </div>

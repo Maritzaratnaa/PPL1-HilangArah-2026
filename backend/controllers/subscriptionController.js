@@ -1,5 +1,6 @@
 const pool = require('../db');
 const { v4: uuidv4 } = require('uuid');
+const midtransClient = require('midtrans-client');
 
 // 1. FUNGSI CREATE (Buat Langganan Baru) - Tidak ada perubahan logika
 const createSubscription = async (req, res) => {
@@ -156,10 +157,46 @@ const activateSubscription = async (req, res) => {
     }
 };
 
+const snap = new midtransClient.Snap({
+    isProduction: false, // Ubah ke true nanti kalau sudah rilis
+    serverKey: process.env.MIDTRANS_SERVER_KEY,
+    clientKey: process.env.MIDTRANS_CLIENT_KEY
+});
+
+// Fungsi untuk mendapatkan Token Pembayaran
+const getPaymentToken = async (req, res) => {
+    try {
+        const { subs_id, amount } = req.body;
+        const user = req.user; // Dari token JWT
+
+        // Parameter yang dikirim ke Midtrans
+        let parameter = {
+            "transaction_details": {
+                "order_id": subs_id, // Gunakan subs_id sebagai nomor pesanan
+                "gross_amount": amount
+            },
+            "customer_details": {
+                "first_name": user.full_name || "User", // Sesuaikan dengan field DB kamu
+                "email": user.email || "user@example.com"
+            }
+        };
+
+        const transaction = await snap.createTransaction(parameter);
+        
+        // Kirim token ke frontend
+        res.status(200).json({ token: transaction.token });
+
+    } catch (error) {
+        console.error("Midtrans Error:", error);
+        res.status(500).json({ message: "Gagal membuat token pembayaran" });
+    }
+};
+
 // Pastikan KETIGA fungsi di-export di bagian paling bawah
 module.exports = { 
     createSubscription, 
     getMySubscription, 
     cancelSubscription,
-    activateSubscription
+    activateSubscription,
+    getPaymentToken
 };
