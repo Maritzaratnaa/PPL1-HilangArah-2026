@@ -7,13 +7,11 @@ import {
   DirectionsRenderer,
 } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin } from "lucide-react";
 
-const containerStyle = {
-  width: "100%",
-  height: "100%",
-};
+const containerStyle = { width: '100%', height: '100%' };
 
+// --- INTERFACES ---
 interface Facility {
   low_entry: boolean;
   wheelchair_slot: boolean;
@@ -21,13 +19,39 @@ interface Facility {
   women_area?: boolean;
 }
 
-// 1. WAJIB ADA: Tambahkan interface Transport
 interface Transport {
   name: string;
   type: string;
   facilities: Facility;
 }
 
+interface TransitStop {
+  stop_name: string;
+  latitude?: number;
+  longitude?: number;
+  has_ramp?: boolean;
+  has_elevator?: boolean;
+}
+
+interface JourneyLeg {
+  step: number;
+  route_name: string;
+  origin_stop: string;
+  destination_stop: string;
+  transports: Transport[];
+  stops_passed?: number; 
+  estimated_time_minutes: number;
+  route_path: TransitStop[];
+}
+
+interface RouteResult {
+  route_type: "direct" | "transit";
+  total_estimated_time: number;
+  is_recommended: boolean;
+  legs: JourneyLeg[];
+}
+
+// --- HELPER FUNCTIONS ---
 function getTransportIcon(type: string) {
   const icons: Record<string, string> = {
     Bus: "🚌",
@@ -38,15 +62,10 @@ function getTransportIcon(type: string) {
   return icons[type] || "🚍";
 }
 
+// Badge Rekomendasi di Header
 function getAccessibilityBadge(facilities: Facility, category: string) {
   const safeCategory = (category || "").trim().toLowerCase();
-
-  if (
-    safeCategory === "wanita" ||
-    safeCategory === "perempuan" ||
-    safeCategory === "women"
-  )
-    return null;
+  if (["wanita", "perempuan", "women"].includes(safeCategory)) return null;
 
   if (facilities?.wheelchair_slot && facilities?.low_entry) {
     return {
@@ -64,97 +83,69 @@ function getAccessibilityBadge(facilities: Facility, category: string) {
   return { label: "Standar", color: "bg-muted text-muted-foreground" };
 }
 
-function getFacilityTips(category: string, facilities: Facility) {
+// LOGIKA FILTER TAG KENDARAAN SUPER KETAT
+function getFacilityTips(facilities: Facility, category: string) {
   const tips: { icon: string; label: string; color: string }[] = [];
+  if (!facilities) return tips;
 
   const safeCategory = (category || "").trim().toLowerCase();
 
-  // Deteksi kategori yang lebih fleksibel (asalkan mengandung kata kuncinya)
-  const isWomanOnly =
-    safeCategory.includes("wanita") ||
-    safeCategory.includes("perempuan") ||
-    (safeCategory.includes("women") && !safeCategory.includes("pregnant"));
-  const isPregnant =
-    safeCategory.includes("hamil") || safeCategory.includes("pregnant");
-  const isDisability =
-    safeCategory.includes("disabilitas") || safeCategory.includes("disability");
-  const needsPriority =
-    isPregnant ||
-    safeCategory.includes("lansia") ||
-    safeCategory.includes("elderly") ||
-    safeCategory.includes("rentan") ||
-    safeCategory.includes("anak") ||
-    safeCategory.includes("children");
-
-  // 1. Tag Area Wanita
-  if ((isWomanOnly || isPregnant) && facilities?.women_area) {
-    tips.push({
-      icon: "👩",
-      label: "Area Wanita",
-      color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300",
-    });
-  }
-
-  if (isWomanOnly) return tips;
-
-  // 2. Tag Disabilitas
-  if (isDisability) {
-    if (facilities?.low_entry)
-      tips.push({
-        icon: "🚌",
-        label: "Low Entry",
-        color:
-          "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300",
-      });
-    if (facilities?.wheelchair_slot)
-      tips.push({
-        icon: "♿",
-        label: "Slot Kursi Roda",
-        color:
-          "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300",
-      });
-  }
-
-  // 3. Tag Kursi Prioritas
-  if (needsPriority && facilities?.priority_seat) {
-    tips.push({
-      icon: "🪑",
-      label: "Kursi Prioritas",
-      color:
-        "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
-    });
+  // 1. Kategori Wanita
+  if (["wanita", "perempuan", "women"].includes(safeCategory)) {
+    if (facilities.women_area) {
+      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
+    }
+  } 
+  // 2. Kategori Ibu Hamil
+  else if (["ibu hamil", "pregnant"].includes(safeCategory)) {
+    if (facilities.women_area) {
+      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
+    }
+    if (facilities.priority_seat) {
+      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
+    }
+  } 
+  // 3. Kategori Disabilitas
+  else if (["disabilitas", "disability", "tunanetra", "tuli", "pengguna kursi roda"].includes(safeCategory)) {
+    if (facilities.low_entry) {
+      tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300" });
+    }
+    if (facilities.wheelchair_slot) {
+      tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300" });
+    }
+  } 
+  // 4. Kategori Lansia / Penyakit Rentan / Anak-anak
+  else if (["lansia", "elderly", "penyakit rentan", "vulnerable", "anak-anak", "children"].includes(safeCategory)) {
+    if (facilities.priority_seat) {
+      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
+    }
   }
 
   return tips;
 }
-// 2. PERBAIKAN: Fungsi ini SEKARANG MENERIMA Transport[] (ARRAY)
-function getCategoryAdvice(
-  category: string,
-  transports: Transport[],
-): string | null {
-  const safeCategory = (category || "").trim().toLowerCase();
 
-  const hasWomenAreaAll = transports.every((t) => t.facilities.women_area);
-  const hasWheelchairAll = transports.every(
-    (t) => t.facilities.wheelchair_slot,
-  );
-  const hasLowEntryAll = transports.every((t) => t.facilities.low_entry);
-  const hasPriorityAll = transports.every((t) => t.facilities.priority_seat);
+// Saran Teks Berdasarkan Kategori
+function getCategoryAdvice(category: string, transports: Transport[]): string | null {
+  if (!transports || transports.length === 0) return null;
+  const safeCategory = (category || "").trim().toLowerCase();
+  
+  const hasWomenAreaAll = transports.every(t => t.facilities?.women_area);
+  const hasWheelchairAll = transports.every(t => t.facilities?.wheelchair_slot);
+  const hasLowEntryAll = transports.every(t => t.facilities?.low_entry);
+  const hasPriorityAll = transports.every(t => t.facilities?.priority_seat);
 
   switch (safeCategory) {
     case "disabilitas":
     case "disability":
-      if (hasWheelchairAll)
-        return "✅ Seluruh armada rute ini memiliki slot khusus kursi roda.";
-      if (hasLowEntryAll)
-        return "✅ Seluruh armada menggunakan low entry sehingga mudah dinaiki.";
-      return "✅ Rute ini telah disesuaikan dengan kriteria aksesibilitas armada dan halte.";
+      if (hasWheelchairAll) return "✅ Seluruh armada rute ini memiliki slot khusus kursi roda.";
+      if (hasLowEntryAll) return "✅ Seluruh armada menggunakan low entry sehingga mudah dinaiki.";
+      return "✅ Rute ini telah disesuaikan dengan kriteria aksesibilitas armada.";
     case "lansia":
     case "elderly":
     case "ibu hamil":
     case "pregnant":
     case "penyakit rentan":
-    case "vulnerable-illness":
+    case "vulnerable":
     case "anak-anak":
     case "children":
       if (hasPriorityAll)
@@ -171,54 +162,31 @@ function getCategoryAdvice(
   }
 }
 
-function StopBadges({
-  has_ramp,
-  has_elevator,
-  category,
-}: {
-  has_ramp?: boolean;
-  has_elevator?: boolean;
-  category: string;
-}) {
+// KOMPONEN FILTER TAG HALTE/STASIUN
+function StopBadges({ has_ramp, has_elevator, category }: { has_ramp?: boolean; has_elevator?: boolean; category: string }) {
   const safeCategory = (category || "").trim().toLowerCase();
+  
+  let showRamp = false;
+  let showElevator = false;
 
-  const isWomanOnly =
-    safeCategory === "wanita" ||
-    safeCategory === "perempuan" ||
-    safeCategory === "women";
-  if (isWomanOnly) return null;
-
-  const badges = [];
-  if (has_ramp)
-    badges.push({
-      icon: "♿",
-      label: "Ramp",
-      color: "bg-emerald-100 text-emerald-700",
-    });
-  if (has_elevator)
-    badges.push({
-      icon: "🛗",
-      label: "Elevator",
-      color: "bg-blue-100 text-blue-700",
-    });
-
-  if (badges.length === 0) {
-    return (
-      <div className="flex gap-1 mt-1">
-        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-muted text-muted-foreground">
-          ⚠️ Tanpa Fasilitas
-        </span>
-      </div>
-    );
+  if (["disabilitas", "disability", "tunanetra", "tuli", "pengguna kursi roda"].includes(safeCategory)) {
+    showRamp = true;
+    showElevator = true;
+  } 
+  else if (["lansia", "elderly", "ibu hamil", "pregnant", "penyakit rentan", "vulnerable"].includes(safeCategory)) {
+    showElevator = true;
   }
 
+  const badges = [];
+  if (showRamp && has_ramp) badges.push({ icon: "♿", label: "Ramp", color: "bg-emerald-100 text-emerald-700 border-emerald-200" });
+  if (showElevator && has_elevator) badges.push({ icon: "🛗", label: "Lift", color: "bg-blue-100 text-blue-700 border-blue-200" });
+
+  if (badges.length === 0) return null;
+
   return (
-    <div className="flex flex-wrap gap-1 mt-1">
+    <div className="flex flex-wrap gap-1 mt-1.5">
       {badges.map((b, i) => (
-        <span
-          key={i}
-          className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${b.color}`}
-        >
+        <span key={i} className={`text-[10px] px-2 py-0.5 rounded-md font-bold border shadow-sm ${b.color}`}>
           {b.icon} {b.label}
         </span>
       ))}
@@ -226,15 +194,20 @@ function StopBadges({
   );
 }
 
+// --- MAIN COMPONENT ---
 export default function RouteMap() {
   const location = useLocation();
   const navigate = useNavigate();
-  const selectedRoute = location.state?.selectedRoute;
-  const [response, setResponse] = useState<google.maps.DirectionsResult | null>(
-    null,
-  );
+  const selectedRoute = location.state?.selectedRoute as RouteResult | undefined;
+  const filterCategory = location.state?.filterCategory || "";
 
-  const isMapsEnabled = import.meta.env.VITE_ENABLE_MAPS === "true";
+  const [response, setResponse] = useState<google.maps.DirectionsResult | null>(null);
+
+  // --- RESPONSIVE STATE ---
+  const [isMobile, setIsMobile] = useState(false);
+  const [showPanel, setShowPanel] = useState(false); // Mengatur panel rute (bottom sheet) di mobile
+
+  const isMapsEnabled = import.meta.env.VITE_ENABLE_MAPS === 'true';
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: isMapsEnabled
       ? import.meta.env.VITE_GOOGLE_MAPS_API_KEY
@@ -254,6 +227,7 @@ export default function RouteMap() {
     [response],
   );
 
+  // Panel Resize Logic (Khusus Desktop)
   const MIN_WIDTH = 280;
   const MAX_WIDTH = 640;
   const DEFAULT_WIDTH = 384;
@@ -262,16 +236,10 @@ export default function RouteMap() {
   const startX = useRef(0);
   const startWidth = useRef(DEFAULT_WIDTH);
 
-  const [isMobile, setIsMobile] = useState(false);
-  const [showPanel, setShowPanel] = useState(false);
-
+  // Deteksi ukuran layar (Mobile / Desktop)
   useEffect(() => {
-    const savedSize = localStorage.getItem("globalFontSize");
-    if (savedSize) {
-      document.documentElement.style.fontSize = `${savedSize}px`;
-    }
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
+    checkMobile(); // Cek saat pertama render
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
@@ -288,11 +256,7 @@ export default function RouteMap() {
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       const delta = e.clientX - startX.current;
-      const newWidth = Math.min(
-        MAX_WIDTH,
-        Math.max(MIN_WIDTH, startWidth.current + delta),
-      );
-      setPanelWidth(newWidth);
+      setPanelWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta)));
     };
     const onMouseUp = () => {
       if (!isDragging.current) return;
@@ -308,319 +272,275 @@ export default function RouteMap() {
     };
   }, []);
 
-  if (!selectedRoute) {
+  if (!selectedRoute || !selectedRoute.legs) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Silakan pilih rute terlebih dahulu.</p>
-        <Button onClick={() => navigate("/home")} className="ml-4">
-          Kembali
-        </Button>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 font-['Atkinson_Hyperlegible',_sans-serif]">
+        <p className="text-muted-foreground font-semibold">Silakan pilih rute terlebih dahulu.</p>
+        <Button onClick={() => navigate('/home')}>Kembali</Button>
       </div>
     );
   }
 
-  const origin = {
-    lat: parseFloat(selectedRoute.journey.origin_lat),
-    lng: parseFloat(selectedRoute.journey.origin_lng),
-  };
-  const destination = {
-    lat: parseFloat(selectedRoute.journey.dest_lat),
-    lng: parseFloat(selectedRoute.journey.dest_lng),
-  };
+  // Data Extraction
+  const firstLeg = selectedRoute.legs[0];
+  const lastLeg = selectedRoute.legs[selectedRoute.legs.length - 1];
+  const firstStopName = firstLeg.origin_stop;
+  const finalStopName = lastLeg.destination_stop;
 
-  // 3. PERBAIKAN: Akses fasilitas dari array kendaraan pertama untuk ringkasan header
-  const firstTransport = selectedRoute.transports?.[0];
-  const firstFacilities = firstTransport?.facilities || {
-    low_entry: false,
-    wheelchair_slot: false,
-    priority_seat: false,
-    women_area: false,
-  };
+  const allTransports = selectedRoute.legs.flatMap(leg => leg.transports);
+  
+  const originLat = firstLeg.route_path?.[0]?.latitude;
+  const originLng = firstLeg.route_path?.[0]?.longitude;
+  const destLat = lastLeg.route_path?.[lastLeg.route_path.length - 1]?.latitude;
+  const destLng = lastLeg.route_path?.[lastLeg.route_path.length - 1]?.longitude;
 
-  const filterCategory = location.state?.filterCategory || "";
-  const transitStops = selectedRoute.journey.transit_stops || [];
+  const mapOrigin = originLat && originLng ? { lat: parseFloat(originLat.toString()), lng: parseFloat(originLng.toString()) } : `${firstStopName}, Jakarta`;
+  const mapDestination = destLat && destLng ? { lat: parseFloat(destLat.toString()), lng: parseFloat(destLng.toString()) } : `${finalStopName}, Jakarta`;
 
+  const firstFacilities = allTransports[0]?.facilities || { low_entry: false, wheelchair_slot: false, priority_seat: false, women_area: false };
   const accessBadge = getAccessibilityBadge(firstFacilities, filterCategory);
+  const categoryAdvice = getCategoryAdvice(filterCategory, allTransports);
 
-  // 4. PERBAIKAN: Fungsi pemanggilan array
-  const categoryAdvice = getCategoryAdvice(
-    filterCategory,
-    selectedRoute.transports,
-  );
+  // Ambil data fasilitas untuk Titik Awal dan Titik Akhir
+  const originStopData = firstLeg.route_path?.find(s => s.stop_name === firstStopName) || firstLeg.route_path?.[0];
+  const finalStopData = lastLeg.route_path?.find(s => s.stop_name === finalStopName) || lastLeg.route_path?.[lastLeg.route_path.length - 1];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background max-h-screen overflow-hidden">
-      <main
-        className="flex-grow flex flex-col md:flex-row overflow-hidden"
-        style={{ height: "calc(100vh - 64px)" }}
-      >
-        {/* AREA PETA */}
-        <div
-          className="relative flex-grow overflow-hidden bg-muted/10"
-          style={{ height: isMobile ? (showPanel ? "45vh" : "70vh") : "100%" }}
+    <div className="min-h-screen flex flex-col bg-background max-h-screen overflow-hidden font-['Atkinson_Hyperlegible',_sans-serif]">
+      <main className="flex-grow flex flex-col md:flex-row relative" style={{ height: "calc(100vh - 64px)" }}>
+        
+        {/* === RIGHT PANEL / BACKGROUND (AREA PETA) === */}
+        {/* Di mobile, peta memenuhi layar, di desktop ada di kanan panel rute */}
+        <div 
+          className="relative flex-grow overflow-hidden bg-muted/10 w-full"
+          style={{ height: isMobile ? (showPanel ? "45vh" : "100%") : "100%" }}
         >
           {isLoaded ? (
             <GoogleMap
               mapContainerStyle={containerStyle}
-              center={origin}
+              center={typeof mapOrigin === 'string' ? { lat: -6.200000, lng: 106.816666 } : mapOrigin}
               zoom={13}
-              options={{
-                disableDefaultUI: false,
-                zoomControl: true,
-                styles: [
-                  {
-                    featureType: "poi",
-                    elementType: "labels",
-                    stylers: [{ visibility: "off" }],
-                  },
-                ],
-              }}
+              options={{ disableDefaultUI: false, zoomControl: true, styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }] }}
             >
               <DirectionsService
-                options={{
-                  origin,
-                  destination,
-                  travelMode: google.maps.TravelMode.TRANSIT,
-                }}
+                options={{ origin: mapOrigin, destination: mapDestination, travelMode: google.maps.TravelMode.TRANSIT }}
                 callback={directionsCallback}
               />
               {response && (
-                <DirectionsRenderer
-                  options={{
-                    directions: response,
-                    polylineOptions: {
-                      strokeColor: "#006d77",
-                      strokeWeight: 6,
-                    },
-                  }}
-                />
+                <DirectionsRenderer options={{ directions: response, polylineOptions: { strokeColor: "#006d77", strokeWeight: 6 } }} />
               )}
             </GoogleMap>
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+            <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
           )}
 
-          {/* Tombol toggle panel di mobile */}
+          {/* TOMBOL TOGGLE (Hanya muncul di Mobile) */}
           {isMobile && (
             <button
               onClick={() => setShowPanel(!showPanel)}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20
-          bg-card border border-border rounded-full px-5 py-2.5
-          text-sm font-bold shadow-lg flex items-center gap-2"
+              className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-card border border-border rounded-full px-5 py-2.5 text-sm font-bold shadow-lg flex items-center gap-2"
             >
-              {showPanel ? "🗺️ Lihat Peta" : "📋 Lihat Detail Rute"}
+              {showPanel ? "🗺️ Lihat Peta Penuh" : "📋 Lihat Detail Rute"}
             </button>
           )}
         </div>
 
-        {/* SIDE PANEL */}
-        <div
-          className={`bg-card border-border flex flex-col overflow-hidden
-      ${
-        isMobile
-          ? `border-t fixed bottom-0 left-0 right-0 z-30 transition-transform duration-300 ${showPanel ? "translate-y-0" : "translate-y-full"}`
-          : "relative border-l flex-shrink-0"
-      }`}
-          style={isMobile ? { height: "55vh" } : { width: `${panelWidth}px` }}
+        {/* === LEFT PANEL (TIMELINE / BOTTOM SHEET) === */}
+        <div 
+          className={`bg-card border-border flex flex-col overflow-hidden shadow-xl
+            ${isMobile 
+              ? `fixed bottom-0 left-0 right-0 z-30 transition-transform duration-300 rounded-t-3xl border-t-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] ${showPanel ? "translate-y-0" : "translate-y-full"}` 
+              : "relative border-r flex-shrink-0 z-20 order-first"
+            }`} 
+          style={isMobile ? { height: "60vh" } : { width: `${panelWidth}px` }}
         >
-          {/* Header panel */}
-          <div className="p-4 border-b border-border bg-card/95 flex-shrink-0">
+          
+          {/* Header Panel */}
+          <div className="p-4 sm:p-5 border-b border-border bg-muted/20 flex-shrink-0">
             <div className="flex items-center justify-between mb-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(-1)}
-                className="h-9 w-9 -ml-2"
-              >
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="font-bold text-muted-foreground -ml-2 h-8">
+                <ArrowLeft className="h-4 w-4 mr-2" /> Kembali
               </Button>
               {isMobile && (
-                <button
-                  onClick={() => setShowPanel(false)}
-                  className="text-xs text-muted-foreground font-semibold"
-                >
+                <button onClick={() => setShowPanel(false)} className="text-xs text-muted-foreground font-bold bg-muted px-3 py-1.5 rounded-full border border-border">
                   Tutup ✕
                 </button>
               )}
             </div>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
+
+            <div className="flex items-start justify-between mb-4 gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="flex -space-x-2 flex-shrink-0">
-                  {selectedRoute.transports.map((t: any, i: number) => (
-                    <div
-                      key={i}
-                      className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center text-lg border-2 border-card flex-shrink-0"
-                    >
-                      {getTransportIcon(t.type)}
+                  {selectedRoute.legs.map((leg, i) => (
+                    <div key={i} className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center text-xl border-2 border-card shadow-sm flex-shrink-0">
+                      {getTransportIcon(leg.transports[0]?.type || "Bus")}
                     </div>
                   ))}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-sm truncate">
-                    {selectedRoute.route_name}
+                  <div className="font-bold text-base leading-tight truncate">
+                    {selectedRoute.route_type === "transit" ? "Perjalanan Transit" : firstLeg.route_name}
                   </div>
-                  <div className="text-[10px] text-muted-foreground truncate">
-                    {selectedRoute.transports
-                      .map((t: any) => t.name)
-                      .join(" ➔ ")}
+                  <div className="text-[10px] font-semibold text-muted-foreground mt-1 truncate">
+                    {selectedRoute.legs.map((leg) => leg.route_name).join(" ➔ ")}
                   </div>
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <div className="text-xl font-bold text-primary">
-                  {selectedRoute.journey.estimated_time_minutes} mnt
-                </div>
-                <div className="text-[10px] uppercase tracking-tighter text-muted-foreground">
-                  {selectedRoute.journey.stops_passed} halte
-                </div>
+                <div className="text-2xl font-bold text-primary">{selectedRoute.total_estimated_time} <span className="text-sm">mnt</span></div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 my-3 text-xs">
-              <div className="flex items-center gap-1 flex-shrink-0 max-w-[42%]">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                <span className="font-medium truncate">
-                  {selectedRoute.journey.origin_stop}
-                </span>
+            {/* Titik Awal -> Tujuan Akhir Line */}
+            <div className="flex items-center gap-2 mb-4 text-xs sm:text-sm">
+              <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[40%]">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                <span className="font-bold truncate">{firstStopName}</span>
               </div>
               <div className="flex-1 border-t-2 border-dashed border-border mx-1" />
-              <div className="flex items-center gap-1 flex-shrink-0 max-w-[42%]">
-                <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
-                <span className="font-medium truncate">
-                  {selectedRoute.journey.destination_stop}
-                </span>
+              <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[40%] justify-end">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0" />
+                <span className="font-bold truncate text-right">{finalStopName}</span>
               </div>
             </div>
 
+            {/* Badge Rekomendasi Utama */}
             <div className="flex flex-wrap gap-1.5">
               {accessBadge && (
-                <span
-                  className={`text-xs px-2.5 py-1 rounded-full font-semibold ${accessBadge.color}`}
-                >
+                <span className={`text-[11px] sm:text-xs px-2.5 py-1 rounded-full font-bold ${accessBadge.color}`}>
                   {accessBadge.label}
                 </span>
               )}
-              {getFacilityTips(filterCategory, firstFacilities).map(
-                (tip, i) => (
-                  <span
-                    key={i}
-                    className={`text-xs px-2.5 py-1 rounded-full font-semibold ${tip.color}`}
-                  >
-                    {tip.icon} {tip.label}
-                  </span>
-                ),
-              )}
             </div>
           </div>
 
-          {/* Scrollable body — isi rute perjalanan tetap sama */}
-          <div className="flex-grow overflow-y-auto p-4">
-            {/* ... isi body panel tetap sama persis ... */}
+          {/* Scrollable Body: TIMELINE */}
+          <div className="flex-grow overflow-y-auto p-4 sm:p-5">
             {categoryAdvice && (
-              <div className="mb-5 p-3 rounded-xl bg-primary/5 border border-primary/15 text-sm text-primary font-medium">
+              <div className="mb-5 p-3 rounded-xl bg-primary/5 border border-primary/15 text-xs sm:text-sm text-primary font-semibold">
                 {categoryAdvice}
               </div>
             )}
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
+
+            <div className="text-[11px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
               Rute Perjalanan
             </div>
             <div className="relative">
+              {/* Garis Vertikal Utama */}
               <div className="absolute left-[9px] top-3 bottom-3 w-px bg-border" />
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 relative">
-                  <span className="w-5 h-5 rounded-full bg-emerald-500 z-10 flex items-center justify-center mt-1">
+
+              <div className="space-y-0">
+                
+                {/* 1. TITIK AWAL (Sekarang menampilkan Badge Fasilitas) */}
+                <div className="flex items-start gap-3 relative pb-4">
+                  <span className="w-5 h-5 rounded-full bg-emerald-500 z-10 flex items-center justify-center mt-1 ring-4 ring-background">
                     <span className="w-2 h-2 bg-white rounded-full" />
                   </span>
                   <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1 shadow-sm">
-                    <div className="text-[10px] text-muted-foreground uppercase font-bold">
-                      Titik Awal
-                    </div>
-                    <div className="text-sm font-semibold">
-                      {selectedRoute.journey.origin_stop}
-                    </div>
-                    <StopBadges
-                      has_ramp={selectedRoute.journey.origin_has_ramp}
-                      has_elevator={selectedRoute.journey.origin_has_elevator}
-                      category={filterCategory}
-                    />
+                    <div className="text-[10px] text-muted-foreground uppercase font-bold">Titik Awal</div>
+                    <div className="text-sm font-bold text-foreground">{firstStopName}</div>
+                    {originStopData && (
+                      <StopBadges has_ramp={originStopData.has_ramp} has_elevator={originStopData.has_elevator} category={filterCategory} />
+                    )}
                   </div>
                 </div>
-                {selectedRoute.transports.map((t: any, idx: number) => (
-                  <div key={idx} className="space-y-4">
-                    <div className="flex items-start gap-3 relative py-1">
-                      <div className="bg-primary/10 rounded-xl px-3 py-3 border border-dashed border-primary/30 flex-1 ml-6 shadow-sm">
-                        <div className="text-[10px] font-bold text-primary uppercase mb-1">
-                          {getTransportIcon(t.type)} Naik {t.type}
-                        </div>
-                        <div className="text-sm font-extrabold">{t.name}</div>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {getFacilityTips(filterCategory, t.facilities).map(
-                            (tip, i) => (
-                              <span
-                                key={i}
-                                className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${tip.color}`}
-                              >
-                                {tip.icon} {tip.label}
+
+                {/* 2. LOOP PER LEG */}
+                {selectedRoute.legs.map((leg, legIdx) => {
+                  const path = leg.route_path || [];
+                  const isReversed = path.length > 1 && path[path.length - 1].stop_name === leg.origin_stop;
+                  const orderedPath = isReversed ? [...path].reverse() : path;
+                  const intermediateStops = orderedPath.slice(1, -1);
+                  const transitStopData = leg.route_path?.find(s => s.stop_name === leg.destination_stop) || orderedPath[orderedPath.length - 1];
+
+                  return (
+                    <div key={legIdx}>
+                      {/* KOTAK INFO KENDARAAN */}
+                      {leg.transports.map((t, tIdx) => (
+                        <div key={tIdx} className="flex items-start gap-3 relative pb-6">
+                          <div className="absolute left-[9px] top-0 bottom-0 w-0.5 border-l-2 border-dashed border-muted-foreground/30 ml-[-1px]"></div>
+                          
+                          <div className="bg-card rounded-2xl p-4 border shadow-sm flex-1 ml-6 relative overflow-hidden">
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xl">{getTransportIcon(t.type)}</span>
+                              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                Naik {leg.route_name}
                               </span>
-                            ),
-                          )}
+                            </div>
+                            <div className="text-sm font-extrabold mb-3">{t.name}</div>
+
+                            <div className="flex flex-wrap gap-2">
+                              {getFacilityTips(t.facilities, filterCategory).map((facility, i) => (
+                                <div key={i} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold shadow-sm ${facility.color}`}>
+                                  <span>{facility.icon}</span> {facility.label}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    {idx < selectedRoute.transports.length - 1 &&
-                      transitStops[idx] && (
-                        <div className="flex items-start gap-3 relative">
-                          <span className="w-5 h-5 rounded-full bg-blue-500 z-10 flex items-center justify-center mt-1">
+                      ))}
+
+                      {/* DAFTAR HALTE YANG DILEWATI */}
+                      {intermediateStops.length > 0 && (
+                        <div className="relative pb-4 space-y-3">
+                          {intermediateStops.map((stop, sIdx) => (
+                            <div key={sIdx} className="flex items-start gap-3 relative">
+                              <span className="w-5 h-5 z-10 flex items-center justify-center mt-0.5 bg-background">
+                                <span className="w-2 h-2 bg-muted-foreground/40 rounded-full" />
+                              </span>
+                              <div className="flex-1 mt-0.5">
+                                <div className="text-xs font-semibold text-muted-foreground/80 leading-tight">
+                                  {stop.stop_name}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* HALTE TRANSIT */}
+                      {legIdx < selectedRoute.legs.length - 1 && (
+                        <div className="flex items-start gap-3 relative pb-4 pt-2">
+                          <span className="w-5 h-5 rounded-full bg-blue-500 z-10 flex items-center justify-center mt-1 ring-4 ring-background">
                             <span className="w-2 h-2 bg-white rounded-full" />
                           </span>
-                          <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1 shadow-sm">
-                            <div className="text-[10px] text-muted-foreground uppercase font-bold">
-                              Transit / Ganti Kendaraan
+                          <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg px-3 py-2 border border-blue-200 dark:border-blue-900 flex-1 shadow-sm">
+                            <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400">
+                              <MapPin className="w-3 h-3" /> Transit / Pindah Rute
                             </div>
-                            <div className="text-sm font-semibold">
-                              {transitStops[idx].stop_name}
-                            </div>
-                            <StopBadges
-                              has_ramp={transitStops[idx].has_ramp}
-                              has_elevator={transitStops[idx].has_elevator}
-                              category={filterCategory}
-                            />
+                            <div className="text-sm font-bold text-foreground">{leg.destination_stop}</div>
+                            {transitStopData && (
+                              <StopBadges has_ramp={transitStopData.has_ramp} has_elevator={transitStopData.has_elevator} category={filterCategory} />
+                            )}
                           </div>
                         </div>
                       )}
-                  </div>
-                ))}
-                <div className="flex items-start gap-3 relative">
-                  <span className="w-5 h-5 rounded-full bg-rose-500 z-10 flex items-center justify-center mt-1">
+                    </div>
+                  );
+                })}
+
+                {/* 3. TITIK TUJUAN AKHIR */}
+                <div className="flex items-start gap-3 relative pt-1 pb-4">
+                  <span className="w-5 h-5 rounded-full bg-rose-500 z-10 flex items-center justify-center mt-1 ring-4 ring-background">
                     <span className="w-2 h-2 bg-white rounded-full" />
                   </span>
                   <div className="bg-background rounded-lg px-3 py-2 border border-border flex-1 shadow-sm">
-                    <div className="text-[10px] text-muted-foreground uppercase font-bold">
-                      Tujuan Akhir
-                    </div>
-                    <div className="text-sm font-semibold">
-                      {selectedRoute.journey.destination_stop}
-                    </div>
-                    <StopBadges
-                      has_ramp={selectedRoute.journey.dest_has_ramp}
-                      has_elevator={selectedRoute.journey.dest_has_elevator}
-                      category={filterCategory}
-                    />
+                    <div className="text-[10px] text-muted-foreground uppercase font-bold text-rose-600">Tujuan Akhir</div>
+                    <div className="text-sm font-bold text-foreground">{finalStopName}</div>
+                    {finalStopData && (
+                      <StopBadges has_ramp={finalStopData.has_ramp} has_elevator={finalStopData.has_elevator} category={filterCategory} />
+                    )}
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
 
-          {/* Drag handle — hanya di desktop */}
+          {/* Drag Handle - Hanya Muncul di Desktop */}
           {!isMobile && (
-            <div
-              onMouseDown={onMouseDown}
-              className="absolute top-0 right-0 h-full w-4 flex items-center justify-center cursor-col-resize z-30 group"
-              title="Seret untuk mengubah lebar panel"
-            >
+            <div onMouseDown={onMouseDown} className="absolute top-0 right-0 h-full w-4 flex items-center justify-center cursor-col-resize z-30 group">
               <div className="h-16 w-1.5 rounded-full bg-border group-hover:bg-primary/60 group-active:bg-primary transition-all duration-150" />
             </div>
           )}
