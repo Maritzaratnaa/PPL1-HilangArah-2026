@@ -1,6 +1,11 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useCallback, useRef, useEffect } from "react";
-import { GoogleMap, useJsApiLoader, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
+import {
+  GoogleMap,
+  useJsApiLoader,
+  DirectionsService,
+  DirectionsRenderer,
+} from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, MapPin } from "lucide-react";
 
@@ -11,7 +16,7 @@ interface Facility {
   low_entry: boolean;
   wheelchair_slot: boolean;
   priority_seat: boolean;
-  women_area?: boolean; 
+  women_area?: boolean;
 }
 
 interface Transport {
@@ -48,7 +53,12 @@ interface RouteResult {
 
 // --- HELPER FUNCTIONS ---
 function getTransportIcon(type: string) {
-  const icons: Record<string, string> = { Bus: "🚌", MRT: "🚇", KRL: "🚈", LRT: "🚅" };
+  const icons: Record<string, string> = {
+    Bus: "🚌",
+    MRT: "🚇",
+    KRL: "🚈",
+    LRT: "🚅",
+  };
   return icons[type] || "🚍";
 }
 
@@ -58,9 +68,17 @@ function getAccessibilityBadge(facilities: Facility, category: string) {
   if (["wanita", "perempuan", "women"].includes(safeCategory)) return null;
 
   if (facilities?.wheelchair_slot && facilities?.low_entry) {
-    return { label: "♿ Aksesibel Penuh", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" };
+    return {
+      label: "♿ Aksesibel Penuh",
+      color:
+        "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
+    };
   } else if (facilities?.priority_seat) {
-    return { label: "🪑 Sebagian Aksesibel", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" };
+    return {
+      label: "🪑 Sebagian Aksesibel",
+      color:
+        "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
+    };
   }
   return { label: "Standar", color: "bg-muted text-muted-foreground" };
 }
@@ -102,7 +120,7 @@ function getFacilityTips(facilities: Facility, category: string) {
       tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
     }
   }
-  
+
   return tips;
 }
 
@@ -130,12 +148,14 @@ function getCategoryAdvice(category: string, transports: Transport[]): string | 
     case "vulnerable":
     case "anak-anak":
     case "children":
-      if (hasPriorityAll) return "✅ Tersedia kursi prioritas pada seluruh armada rute ini.";
+      if (hasPriorityAll)
+        return "✅ Tersedia kursi prioritas pada seluruh armada rute ini.";
       return "✅ Tersedia kursi prioritas untuk kenyamanan perjalanan Anda.";
     case "wanita":
     case "perempuan":
     case "women":
-      if (hasWomenAreaAll) return "✅ Tersedia area khusus wanita pada seluruh armada rute ini.";
+      if (hasWomenAreaAll)
+        return "✅ Tersedia area khusus wanita pada seluruh armada rute ini.";
       return "⚠️ Area khusus wanita mungkin tidak tersedia di salah satu armada transit.";
     default:
       return null;
@@ -189,15 +209,23 @@ export default function RouteMap() {
 
   const isMapsEnabled = import.meta.env.VITE_ENABLE_MAPS === 'true';
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: isMapsEnabled ? import.meta.env.VITE_GOOGLE_MAPS_API_KEY : "",
+    googleMapsApiKey: isMapsEnabled
+      ? import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+      : "",
     libraries: ["places"],
   });
 
-  const directionsCallback = useCallback((res: google.maps.DirectionsResult | null, status: google.maps.DirectionsStatus) => {
-    if (res !== null && status === 'OK' && !response) {
-      setResponse(res);
-    }
-  }, [response]);
+  const directionsCallback = useCallback(
+    (
+      res: google.maps.DirectionsResult | null,
+      status: google.maps.DirectionsStatus,
+    ) => {
+      if (res !== null && status === "OK" && !response) {
+        setResponse(res);
+      }
+    },
+    [response],
+  );
 
   // Panel Resize Logic (Khusus Desktop)
   const MIN_WIDTH = 280;
@@ -397,7 +425,6 @@ export default function RouteMap() {
             <div className="text-[11px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
               Rute Perjalanan
             </div>
-
             <div className="relative">
               {/* Garis Vertikal Utama */}
               <div className="absolute left-[9px] top-3 bottom-3 w-px bg-border" />

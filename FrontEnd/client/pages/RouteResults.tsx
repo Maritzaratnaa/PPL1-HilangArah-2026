@@ -9,7 +9,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 
 interface Facility {
@@ -135,8 +135,10 @@ function getCategoryAdvice(category: string, transports: Transport[]): string | 
   switch (safeCategory) {
     case "disabilitas":
     case "disability":
-      if (hasWheelchairAll) return "✅ Seluruh armada rute ini memiliki slot khusus kursi roda.";
-      if (hasLowEntryAll) return "✅ Seluruh armada menggunakan low entry sehingga mudah dinaiki.";
+      if (hasWheelchairAll)
+        return "✅ Seluruh armada rute ini memiliki slot khusus kursi roda.";
+      if (hasLowEntryAll)
+        return "✅ Seluruh armada menggunakan low entry sehingga mudah dinaiki.";
       return "✅ Rute ini telah disesuaikan dengan kriteria aksesibilitas.";
     case "lansia":
     case "elderly":
@@ -146,12 +148,14 @@ function getCategoryAdvice(category: string, transports: Transport[]): string | 
     case "vulnerable":
     case "anak-anak":
     case "children":
-      if (hasPriorityAll) return "✅ Tersedia kursi prioritas pada seluruh armada rute ini.";
+      if (hasPriorityAll)
+        return "✅ Tersedia kursi prioritas pada seluruh armada rute ini.";
       return "✅ Tersedia kursi prioritas untuk kenyamanan perjalanan Anda.";
     case "wanita":
     case "perempuan":
     case "women":
-      if (hasWomenAreaAll) return "✅ Tersedia area khusus wanita pada seluruh armada rute ini.";
+      if (hasWomenAreaAll)
+        return "✅ Tersedia area khusus wanita pada seluruh armada rute ini.";
       return "✅ Tersedia area khusus wanita (cek detail per armada).";
     default:
       return null;
@@ -182,7 +186,9 @@ export default function RouteResults() {
     }
 
     if (!originQuery || !destQuery) {
-      setErrorMsg("Parameter pencarian tidak lengkap. Silakan kembali ke Beranda.");
+      setErrorMsg(
+        "Parameter pencarian tidak lengkap. Silakan kembali ke Beranda.",
+      );
       setLoading(false);
       return;
     }
@@ -193,7 +199,7 @@ export default function RouteResults() {
       try {
         const res = await fetch(
           `${BASE_URL}/api/search-routes?origin=${encodeURIComponent(originQuery)}&destination=${encodeURIComponent(destQuery)}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         const json = await res.json();
         if (res.ok) {
@@ -214,7 +220,9 @@ export default function RouteResults() {
 
   const handleSearchAgain = () => {
     if (!originName || !destinationName) return;
-    navigate(`/route-results?origin=${encodeURIComponent(originName)}&destination=${encodeURIComponent(destinationName)}`);
+    navigate(
+      `/route-results?origin=${encodeURIComponent(originName)}&destination=${encodeURIComponent(destinationName)}`,
+    );
   };
 
   const handleSelectRoute = (route: RouteResult) => {
@@ -224,23 +232,37 @@ export default function RouteResults() {
   };
 
   const getTransportIcon = (type: string) => {
-    const icons: Record<string, string> = { Bus: "🚌", MRT: "🚇", KRL: "🚈", LRT: "🚅" };
+    const icons: Record<string, string> = {
+      Bus: "🚌",
+      MRT: "🚇",
+      KRL: "🚈",
+      LRT: "🚅",
+    };
     return icons[type] || "🚍";
   };
 
   const isHC = useIsHighContrast();
 
   const heroStyle = isHC
-    ? { background: "#000000", borderBottom: "4px solid #ffff00" } 
-    : { background: "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)" };
+    ? { background: "#000000", borderBottom: "4px solid #ffff00" }
+    : {
+        background:
+          "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)",
+      };
 
   const searchBoxStyle = isHC
-    ? { background: "#000000", border: "2px solid #ffff00" } 
-    : { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" };
+    ? { background: "#000000", border: "2px solid #ffff00" }
+    : {
+        background: "rgba(255,255,255,0.1)",
+        border: "1.5px solid rgba(255,255,255,0.18)",
+      };
 
   const searchInputStyle = isHC
-    ? { background: "#000000", border: "2px solid #ffff00" } 
-    : { background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" };
+    ? { background: "#000000", border: "2px solid #ffff00" }
+    : {
+        background: "rgba(255,255,255,0.12)",
+        border: "1.5px solid rgba(255,255,255,0.2)",
+      };
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-['Atkinson_Hyperlegible',_sans-serif]">
