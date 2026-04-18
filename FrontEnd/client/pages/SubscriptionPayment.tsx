@@ -38,7 +38,6 @@ export default function SubscriptionPayment() {
   };
 
   // --- FUNGSI PEMBAYARAN MIDTRANS ---
-// --- FUNGSI PEMBAYARAN MIDTRANS ---
   const handlePaymentConfirm = async () => {
     setIsProcessing(true);
     const token = localStorage.getItem("token");
