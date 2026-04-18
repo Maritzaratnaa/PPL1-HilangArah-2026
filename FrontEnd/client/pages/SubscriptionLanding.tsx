@@ -331,13 +331,6 @@ export default function SubscriptionLanding() {
               ))}
             </div>
 
-
-            <button className="w-full bg-[#007C8A] text-white py-4 rounded-xl font-bold hover:bg-[#006874] transition-colors mb-4 text-[18px] px-4 h-auto min-h-[60px]">
-              <span className="flex items-center justify-center flex-wrap gap-x-2">
-                <span>Berlangganan Sekarang</span>
-                <span className="shrink-0">→</span>
-              </span>
-            </button>
             {/* TOMBOL 3: Diubah onClick-nya */}
             <button 
               onClick={handleActionClick}
