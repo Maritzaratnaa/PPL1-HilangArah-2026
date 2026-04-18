@@ -27,6 +27,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/search-routes', searchRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
