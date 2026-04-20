@@ -47,15 +47,15 @@ export default function Login() {
       <main className="flex-grow flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-lg border border-border p-8 high-contrast:border-4 high-contrast:p-6">
-            <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
+            <h1 className="text-3xl font-bold mb-2">Selamat Datang</h1>
             <p className="text-muted-foreground mb-8">
-              Sign in to your ARAHIN account
+              Masuk ke akun ARAHIN kamu
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-base font-semibold">
-                  Email Address
+                  Alamat Email
                 </Label>
                 <Input
                   id="email"
@@ -71,7 +71,7 @@ export default function Login() {
 
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-base font-semibold">
-                  Password
+                  Kata Sandi
                 </Label>
                 <div className="relative">
                   <Input
@@ -106,7 +106,7 @@ export default function Login() {
                   to="#"
                   className="text-base font-semibold text-primary hover:underline underline-offset-2 high-contrast:border high-contrast:border-primary high-contrast:px-2 high-contrast:py-1"
                 >
-                  Forgot Password?
+                  Lupa Password?
                 </Link>
               </div>
 
@@ -116,18 +116,18 @@ export default function Login() {
                 disabled={loading}
                 className="w-full h-12 text-base font-semibold high-contrast:border-2 high-contrast:border-primary"
               >
-                {loading ? "Masuk..." : "Sign In"}
+                {loading ? "Masuk..." : "Masuk"}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-muted-foreground">
-                Don't have an account?{" "}
+                Belum punya akun?{" "}
                 <Link
                   to="/register"
                   className="text-primary font-semibold hover:underline underline-offset-2"
                 >
-                  Sign up here
+                  Daftar di sini
                 </Link>
               </p>
             </div>
