@@ -293,7 +293,7 @@ export default function SubscriptionProfile() {
                         ? subscriptionData.guide_phone
                         : "Belum tersedia"}
                     </p>
-                    {hasGuide && (
+                    {/* {hasGuide && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -301,7 +301,7 @@ export default function SubscriptionProfile() {
                       >
                         Hubungi via Telepon
                       </Button>
-                    )}
+                    )} */}
                   </div>
                 </div>
 
@@ -365,32 +365,6 @@ export default function SubscriptionProfile() {
                 </p>
               </div>
             </div>
-
-            {/* Progress Bar */}
-            {!isPending && subscriptionData.end_date && (
-              <div className="mb-8">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-bold text-gray-900">
-                    Progres Berlangganan
-                  </span>
-                  <span className="text-sm text-gray-600">
-                    {30 - daysRemaining} dari 30 hari
-                  </span>
-                </div>
-                <div className="w-full bg-gray-300 rounded-full h-3 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-primary to-primary/70 h-full rounded-full transition-all"
-                    style={{ width: `${progressPercentage}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
-                  <span>{30 - daysRemaining} hari telah berlalu</span>
-                  <span className="font-bold text-primary">
-                    {daysRemaining} hari tersisa
-                  </span>
-                </div>
-              </div>
-            )}
           </Card>
 
           {/* Package Info Card */}
