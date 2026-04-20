@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useIsHighContrast } from "@/hooks/useTheme"; // Import hook high contrast
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +38,7 @@ interface BackendSubsData {
 
 export default function SubscriptionProfile() {
   const navigate = useNavigate();
+  const isHC = useIsHighContrast(); // Inisialisasi High Contrast Mode
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   // State API
@@ -119,12 +121,12 @@ export default function SubscriptionProfile() {
   // --- STATE 1: LOADING ---
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className={`min-h-screen flex flex-col transition-colors ${isHC ? "bg-black" : "bg-background"}`}>
         <Navbar />
         <main className="flex-grow flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground font-medium">
+            <Loader2 className={`h-10 w-10 animate-spin ${isHC ? "text-[#ffff00]" : "text-primary"}`} />
+            <p className={`font-medium ${isHC ? "text-[#ffff00]" : "text-muted-foreground"}`}>
               Memuat data langganan...
             </p>
           </div>
@@ -137,23 +139,28 @@ export default function SubscriptionProfile() {
   // --- STATE 2: BELUM PUNYA LANGGANAN (Atau Error) ---
   if (!subscriptionData || errorMsg) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className={`min-h-screen flex flex-col transition-colors ${isHC ? "bg-black" : "bg-gray-50 dark:bg-gray-950"}`}>
         <Navbar />
         <main className="flex-grow flex items-center justify-center px-4 py-12">
-          <Card className="max-w-md p-10 text-center rounded-2xl shadow-sm border-border">
-            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-              <UserX className="h-10 w-10 text-muted-foreground" />
+          <Card className={`max-w-md p-10 text-center rounded-2xl shadow-sm ${
+            isHC ? "bg-black border-2 border-[#ffff00]" : "bg-white dark:bg-gray-900 border-border"
+          }`}>
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+              isHC ? "bg-black border border-[#ffff00]" : "bg-muted dark:bg-gray-800"
+            }`}>
+              <UserX className={`h-10 w-10 ${isHC ? "text-[#ffff00]" : "text-muted-foreground"}`} />
             </div>
-            <h2 className="text-2xl font-bold mb-3 text-foreground">
+            <h2 className={`text-2xl font-bold mb-3 ${isHC ? "text-[#ffff00]" : "text-foreground dark:text-white"}`}>
               Tidak Ada Langganan
             </h2>
-            <p className="text-muted-foreground mb-8">
-              {errorMsg ||
-                "Anda belum memiliki paket langganan pemandu ARAHIN yang aktif."}
+            <p className={`mb-8 ${isHC ? "text-white" : "text-muted-foreground dark:text-gray-400"}`}>
+              {errorMsg || "Anda belum memiliki paket langganan pemandu ARAHIN yang aktif."}
             </p>
             <Button
               onClick={() => navigate("/subscription")}
-              className="w-full h-12 rounded-xl font-bold text-[16px]"
+              className={`w-full h-12 rounded-xl font-bold text-[16px] ${
+                isHC ? "bg-[#ffff00] text-black hover:bg-[#ffff00]/90 border-2 border-[#ffff00]" : ""
+              }`}
             >
               Lihat Paket Langganan
             </Button>
@@ -176,42 +183,45 @@ export default function SubscriptionProfile() {
     : "-";
 
   let daysRemaining = 0;
-  let progressPercentage = 0;
+  // let progressPercentage = 0; (Bisa di-uncomment jika dibutuhkan)
 
   if (subscriptionData.end_date) {
     const end = new Date(subscriptionData.end_date).getTime();
     const now = new Date().getTime();
     const diff = end - now;
     daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-    progressPercentage = Math.min(
-      100,
-      Math.max(0, ((30 - daysRemaining) / 30) * 100),
-    );
+    // progressPercentage = Math.min(100, Math.max(0, ((30 - daysRemaining) / 30) * 100));
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className={`min-h-screen flex flex-col transition-colors ${isHC ? "bg-black" : "bg-gray-50 dark:bg-gray-950"}`}>
       <Navbar />
 
       <main className="flex-grow px-4 py-12">
         <div className="mx-auto max-w-4xl">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Langganan Saya</h1>
-            <p className="text-gray-600">
+            <h1 className={`text-3xl font-bold mb-2 ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
+              Langganan Saya
+            </h1>
+            <p className={isHC ? "text-white" : "text-gray-600 dark:text-gray-400"}>
               Kelola dan pantau status langganan ARAHIN Anda
             </p>
           </div>
 
           {/* JIKA STATUS MASIH PENDING */}
           {isPending && (
-            <div className="bg-amber-100 border border-amber-300 text-amber-800 p-6 rounded-2xl mb-8 flex items-start gap-4">
-              <AlertTriangle className="h-6 w-6 flex-shrink-0 mt-1" />
+            <div className={`p-6 rounded-2xl mb-8 flex items-start gap-4 ${
+              isHC 
+                ? "bg-black border-2 border-[#ffff00] text-[#ffff00]" 
+                : "bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300"
+            }`}>
+              <AlertTriangle className={`h-6 w-6 flex-shrink-0 mt-1 ${isHC ? "text-[#ffff00]" : ""}`} />
               <div>
-                <h3 className="font-bold text-lg mb-1">
+                <h3 className={`font-bold text-lg mb-1 ${isHC ? "text-[#ffff00]" : ""}`}>
                   Status Langganan: Sedang Diproses (Pending)
                 </h3>
-                <p className="text-amber-700">
+                <p className={isHC ? "text-white" : "text-amber-700 dark:text-amber-400"}>
                   Sistem kami sedang memverifikasi data Anda. Pemandu akan
                   segera dialokasikan setelah status Anda berubah menjadi Aktif.
                 </p>
@@ -221,9 +231,13 @@ export default function SubscriptionProfile() {
 
           {/* Guide Card */}
           <Card
-            className={`bg-white border-t-4 ${isPending ? "border-t-amber-400" : "border-t-primary"} shadow-md rounded-2xl p-8 mb-8`}
+            className={`shadow-md rounded-2xl p-8 mb-8 ${
+              isHC 
+                ? "bg-black border-2 border-[#ffff00] border-t-4 border-t-[#ffff00]" 
+                : `bg-white dark:bg-gray-900 border-t-4 ${isPending ? "border-t-amber-400" : "border-t-primary dark:border-t-[#26c6da]"} border-gray-200 dark:border-gray-800`
+            }`}
           >
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+            <h2 className={`text-xl font-bold mb-6 flex items-center gap-2 ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
               👤 Pemandu Anda
             </h2>
 
@@ -232,18 +246,24 @@ export default function SubscriptionProfile() {
               <div className="md:col-span-1">
                 <div className="relative mb-6">
                   <div
-                    className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl text-white font-bold mx-auto ${hasGuide ? "bg-gradient-to-br from-primary to-primary/70" : "bg-gray-300"}`}
+                    className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl font-bold mx-auto ${
+                      isHC 
+                        ? "bg-black border-2 border-[#ffff00] text-[#ffff00]" 
+                        : (hasGuide ? "bg-gradient-to-br from-primary to-primary/70 dark:from-[#26c6da] dark:to-[#1fa0b0] text-white" : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400")
+                    }`}
                   >
                     {hasGuide ? subscriptionData.guide_name?.charAt(0) : "⏳"}
                   </div>
                   {hasGuide && (
-                    <div className="absolute bottom-0 right-1/4 translate-x-1/2 bg-green-500 rounded-full p-2 border-4 border-white">
-                      <CheckCircle className="h-5 w-5 text-white" />
+                    <div className={`absolute bottom-0 right-1/4 translate-x-1/2 rounded-full p-2 border-4 ${
+                      isHC ? "bg-black border-[#ffff00]" : "bg-green-500 border-white dark:border-gray-900"
+                    }`}>
+                      <CheckCircle className={`h-5 w-5 ${isHC ? "text-[#ffff00]" : "text-white"}`} />
                     </div>
                   )}
                 </div>
 
-                <h3 className="text-xl font-bold text-center mb-2">
+                <h3 className={`text-xl font-bold text-center mb-2 ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
                   {hasGuide
                     ? subscriptionData.guide_name
                     : "Sedang Dialokasikan"}
@@ -252,16 +272,16 @@ export default function SubscriptionProfile() {
                 {hasGuide ? (
                   <>
                     <div className="flex items-center justify-center gap-1 mb-4">
-                      <span className="text-yellow-400">★</span>
-                      <span className="font-bold">4.9</span>
+                      <span className={isHC ? "text-[#ffff00]" : "text-yellow-400"}>★</span>
+                      <span className={`font-bold ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>4.9</span>
                     </div>
-                    <p className="text-sm text-gray-700 text-center leading-relaxed">
+                    <p className={`text-sm text-center leading-relaxed ${isHC ? "text-white" : "text-gray-700 dark:text-gray-300"}`}>
                       Pemandu tersertifikasi ARAHIN yang siap menemani
                       perjalanan Anda.
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-500 text-center italic">
+                  <p className={`text-sm text-center italic ${isHC ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
                     Admin kami sedang mencocokkan Anda dengan pemandu terbaik.
                   </p>
                 )}
@@ -270,12 +290,12 @@ export default function SubscriptionProfile() {
               {/* Right - Contact & Info */}
               <div className="md:col-span-2 space-y-4">
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+                  <MapPin className={`h-5 w-5 flex-shrink-0 mt-1 ${isHC ? "text-[#ffff00]" : "text-primary dark:text-[#26c6da]"}`} />
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                    <p className={`text-xs uppercase tracking-widest font-bold ${isHC ? "text-white" : "text-muted-foreground dark:text-gray-400"}`}>
                       Catatan Kebutuhan
                     </p>
-                    <p className="font-semibold text-gray-900">
+                    <p className={`font-semibold ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
                       {subscriptionData.specific_needs ||
                         "Sesuai rute terencana"}
                     </p>
@@ -283,32 +303,23 @@ export default function SubscriptionProfile() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Phone className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+                  <Phone className={`h-5 w-5 flex-shrink-0 mt-1 ${isHC ? "text-[#ffff00]" : "text-primary dark:text-[#26c6da]"}`} />
                   <div className="flex-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                    <p className={`text-xs uppercase tracking-widest font-bold ${isHC ? "text-white" : "text-muted-foreground dark:text-gray-400"}`}>
                       No. Pemandu
                     </p>
-                    <p className="font-semibold text-gray-900">
+                    <p className={`font-semibold ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
                       {hasGuide
                         ? subscriptionData.guide_phone
                         : "Belum tersedia"}
                     </p>
-                    {/* {hasGuide && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2 h-9 border-primary text-primary hover:bg-primary hover:text-white"
-                      >
-                        Hubungi via Telepon
-                      </Button>
-                    )} */}
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+                  <Clock className={`h-5 w-5 flex-shrink-0 mt-1 ${isHC ? "text-[#ffff00]" : "text-primary dark:text-[#26c6da]"}`} />
                   <div>
-                    <p className="font-semibold text-gray-900">
+                    <p className={`font-semibold ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
                       Tersedia Sesuai Jadwal Temu
                     </p>
                   </div>
@@ -316,9 +327,9 @@ export default function SubscriptionProfile() {
 
                 {hasGuide && (
                   <div className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-1" />
+                    <CheckCircle className={`h-5 w-5 flex-shrink-0 mt-1 ${isHC ? "text-[#ffff00]" : "text-green-500 dark:text-green-400"}`} />
                     <div>
-                      <p className="font-semibold text-gray-900">
+                      <p className={`font-semibold ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
                         Tersertifikasi ARAHIN Academy
                       </p>
                     </div>
@@ -329,37 +340,47 @@ export default function SubscriptionProfile() {
           </Card>
 
           {/* Subscription Details Card */}
-          <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl p-8 mb-8">
-            <h2 className="text-xl font-bold mb-8 flex items-center gap-2">
+          <Card className={`shadow-sm rounded-2xl p-8 mb-8 ${
+            isHC ? "bg-black border-2 border-[#ffff00]" : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+          }`}>
+            <h2 className={`text-xl font-bold mb-8 flex items-center gap-2 ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
               📅 Detail Berlangganan
             </h2>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <p className="text-xs text-gray-600 mb-1">Tanggal Mulai</p>
-                <p className="font-bold text-gray-900 text-sm break-words">
+              <div className={`rounded-lg p-4 text-center ${isHC ? "bg-black border border-[#ffff00]" : "bg-gray-50 dark:bg-gray-800"}`}>
+                <p className={`text-xs mb-1 ${isHC ? "text-white" : "text-gray-600 dark:text-gray-400"}`}>Tanggal Mulai</p>
+                <p className={`font-bold text-sm break-words ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
                   {startDateStr}
                 </p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <p className="text-xs text-gray-600 mb-1">Tanggal Berakhir</p>
-                <p className="font-bold text-gray-900 text-sm break-words">
+              <div className={`rounded-lg p-4 text-center ${isHC ? "bg-black border border-[#ffff00]" : "bg-gray-50 dark:bg-gray-800"}`}>
+                <p className={`text-xs mb-1 ${isHC ? "text-white" : "text-gray-600 dark:text-gray-400"}`}>Tanggal Berakhir</p>
+                <p className={`font-bold text-sm break-words ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
                   {endDateStr}
                 </p>
               </div>
-              <div className="bg-blue-50 rounded-lg p-4 text-center">
-                <p className="text-xs text-gray-600 mb-1">Sisa Hari</p>
-                <p className="text-2xl font-bold text-primary">
+              <div className={`rounded-lg p-4 text-center ${isHC ? "bg-black border border-[#ffff00]" : "bg-blue-50 dark:bg-blue-900/20"}`}>
+                <p className={`text-xs mb-1 ${isHC ? "text-white" : "text-gray-600 dark:text-gray-400"}`}>Sisa Hari</p>
+                <p className={`text-2xl font-bold ${isHC ? "text-[#ffff00]" : "text-primary dark:text-[#26c6da]"}`}>
                   {isPending ? "-" : daysRemaining}
                 </p>
               </div>
               <div
-                className={`rounded-lg p-4 text-center ${isPending ? "bg-amber-50" : "bg-green-50"}`}
+                className={`rounded-lg p-4 text-center ${
+                  isHC 
+                    ? "bg-black border border-[#ffff00]" 
+                    : (isPending ? "bg-amber-50 dark:bg-amber-900/20" : "bg-green-50 dark:bg-green-900/20")
+                }`}
               >
-                <p className="text-xs text-gray-600 mb-1">Status</p>
+                <p className={`text-xs mb-1 ${isHC ? "text-white" : "text-gray-600 dark:text-gray-400"}`}>Status</p>
                 <p
-                  className={`font-bold break-words ${isPending ? "text-amber-600" : "text-green-600"}`}
+                  className={`font-bold break-words ${
+                    isHC 
+                      ? "text-[#ffff00]" 
+                      : (isPending ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400")
+                  }`}
                 >
                   {subscriptionData.status}
                 </p>
@@ -368,23 +389,25 @@ export default function SubscriptionProfile() {
           </Card>
 
           {/* Package Info Card */}
-          <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl p-8 mb-8">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+          <Card className={`shadow-sm rounded-2xl p-8 mb-8 ${
+            isHC ? "bg-black border-2 border-[#ffff00]" : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+          }`}>
+            <h2 className={`text-xl font-bold mb-6 flex items-center gap-2 ${isHC ? "text-[#ffff00]" : "text-gray-900 dark:text-white"}`}>
               📋 Paket Berlangganan
             </h2>
 
-            <div className="mb-6 pb-6 border-b border-gray-200">
-              <p className="font-bold text-gray-900 mb-1">Paket Bulanan</p>
+            <div className={`mb-6 pb-6 border-b ${isHC ? "border-[#ffff00]" : "border-gray-200 dark:border-gray-700"}`}>
+              <p className={`font-bold mb-1 ${isHC ? "text-white" : "text-gray-900 dark:text-white"}`}>Paket Bulanan</p>
               <div className="flex items-baseline gap-1 flex-wrap">
-                <p className="text-2xl font-bold text-primary whitespace-nowrap">
+                <p className={`text-2xl font-bold whitespace-nowrap ${isHC ? "text-[#ffff00]" : "text-primary dark:text-[#26c6da]"}`}>
                   Rp 299.000
                 </p>
-                <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">
+                <span className={`text-sm font-bold whitespace-nowrap ${isHC ? "text-white" : "text-muted-foreground dark:text-gray-400"}`}>
                   /bulan
                 </span>
               </div>
 
-              <p className="text-xs font-medium text-muted-foreground mt-1 uppercase">
+              <p className={`text-xs font-medium mt-1 uppercase ${isHC ? "text-white" : "text-muted-foreground dark:text-gray-500"}`}>
                 ID: {subscriptionData.subs_id.split("-")[0]}
               </p>
             </div>
@@ -397,8 +420,8 @@ export default function SubscriptionProfile() {
                 "Kontak darurat terintegrasi",
               ].map((benefit, idx) => (
                 <div key={idx} className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
-                  <span className="text-gray-900 font-medium">{benefit}</span>
+                  <CheckCircle className={`w-5 h-5 flex-shrink-0 ${isHC ? "text-[#ffff00]" : "text-primary dark:text-[#26c6da]"}`} />
+                  <span className={`font-medium ${isHC ? "text-white" : "text-gray-900 dark:text-white"}`}>{benefit}</span>
                 </div>
               ))}
             </div>
@@ -407,7 +430,11 @@ export default function SubscriptionProfile() {
             <Button
               onClick={() => setShowCancelModal(true)}
               variant="outline"
-              className="w-full mt-8 h-12 border-2 border-red-500 text-red-500 hover:bg-red-50 font-bold rounded-lg flex items-center justify-center gap-2"
+              className={`w-full mt-8 h-12 font-bold rounded-lg flex items-center justify-center gap-2 ${
+                isHC 
+                  ? "bg-black text-[#ffff00] border-2 border-[#ffff00] hover:bg-[#ffff00] hover:text-black" 
+                  : "border-2 border-red-500 text-red-500 hover:bg-red-50 dark:border-red-600 dark:text-red-500 dark:hover:bg-red-950/50"
+              }`}
             >
               <Trash2 className="h-5 w-5" />
               Batalkan Langganan
@@ -418,21 +445,27 @@ export default function SubscriptionProfile() {
 
       {/* Cancel Confirmation Modal */}
       <AlertDialog open={showCancelModal} onOpenChange={setShowCancelModal}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className={`max-w-md ${isHC ? "bg-black border-2 border-[#ffff00]" : "dark:bg-gray-900 dark:border-gray-800"}`}>
           <div className="text-center py-4">
-            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-              <AlertTriangle className="h-8 w-8 text-amber-600" />
+            <div className={`mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full ${
+              isHC ? "bg-black border border-[#ffff00]" : "bg-amber-100 dark:bg-amber-900/30"
+            }`}>
+              <AlertTriangle className={`h-8 w-8 ${isHC ? "text-[#ffff00]" : "text-amber-600 dark:text-amber-400"}`} />
             </div>
-            <AlertDialogTitle className="text-2xl mb-4">
+            <AlertDialogTitle className={`text-2xl mb-4 ${isHC ? "text-[#ffff00]" : "dark:text-white"}`}>
               Batalkan Langganan?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-base mb-4 text-gray-700">
+            <AlertDialogDescription className={`text-base mb-4 ${isHC ? "text-white" : "text-gray-700 dark:text-gray-300"}`}>
               Apakah Anda yakin ingin membatalkan langganan? Data langganan ini
               akan dihapus secara permanen dari sistem.
             </AlertDialogDescription>
 
             {!isPending && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-sm text-amber-900 text-left">
+              <div className={`rounded-lg p-4 mb-6 text-sm text-left ${
+                isHC 
+                  ? "bg-black border border-[#ffff00] text-white" 
+                  : "bg-amber-50 border border-amber-200 text-amber-900 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-200"
+              }`}>
                 <p className="mb-2">
                   ℹ️ <span className="font-bold">Penting:</span>
                 </p>
@@ -450,7 +483,11 @@ export default function SubscriptionProfile() {
                   handleCancelSubscription();
                 }}
                 disabled={isCancelling}
-                className="w-full h-12 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
+                className={`w-full h-12 font-bold rounded-lg ${
+                  isHC 
+                    ? "bg-[#ffff00] text-black hover:bg-[#ffff00]/90 border-2 border-[#ffff00]" 
+                    : "bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                }`}
               >
                 {isCancelling ? (
                   <>
@@ -463,7 +500,11 @@ export default function SubscriptionProfile() {
               </AlertDialogAction>
               <AlertDialogCancel
                 disabled={isCancelling}
-                className="w-full h-12 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 mt-2"
+                className={`w-full h-12 font-bold rounded-lg mt-2 ${
+                  isHC 
+                    ? "bg-black text-[#ffff00] border-2 border-[#ffff00] hover:bg-[#ffff00] hover:text-black" 
+                    : "bg-primary text-white hover:bg-primary/90 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                }`}
               >
                 Tidak, Kembali
               </AlertDialogCancel>
