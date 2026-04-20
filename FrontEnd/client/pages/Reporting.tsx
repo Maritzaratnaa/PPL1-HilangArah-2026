@@ -162,6 +162,7 @@ export default function Reporting() {
     (r) =>
       filterStatus === "all" ||
       (filterStatus === "pending" && r.status === "Pending") ||
+      (filterStatus === "processed" && r.status === "Processed") || 
       (filterStatus === "resolved" && r.status === "Resolved"),
   );
 
@@ -344,7 +345,7 @@ export default function Reporting() {
               </h2>
               <div className="flex bg-muted/50 p-1.5 rounded-2xl border border-border overflow-x-auto no-scrollbar">
                 <div className="flex flex-nowrap gap-1 min-w-full">
-                  {["all", "pending", "resolved"].map((st) => (
+                  {["all", "pending", "processed", "resolved"].map((st) => (
                     <button
                       key={st}
                       onClick={() => setFilterStatus(st)}
@@ -357,8 +358,10 @@ export default function Reporting() {
                       {st === "all"
                         ? "Semua"
                         : st === "pending"
-                          ? "Menunggu"
-                          : "Selesai"}
+                        ? "Menunggu"
+                        : st === "processed"
+                        ? "Diproses" // Label baru
+                        : "Selesai"}
                     </button>
                   ))}
                 </div>

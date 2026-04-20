@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +22,8 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userCategory, setUserCategory] = useState<string>("");
+  const [loading, setLoading] = useState(false); // Dipindah ke atas agar lebih rapi
+  const navigate = useNavigate();
 
   const userCategories = [
     { value: "disability", label: "Disabilitas" },
@@ -53,22 +55,21 @@ export default function Register() {
         }),
       });
       const json = await res.json();
+      
       if (res.ok) {
-        alert("Registrasi berhasil! Silakan login.");
-        navigate("/login");
+        // --- PERBAIKAN DI SINI ---
+        alert("Registrasi berhasil! Silakan cek email Anda untuk kode OTP.");
+        // Arahkan ke halaman verifikasi dan bawa data emailnya
+        navigate("/verify-email", { state: { email: email } });
       } else {
         alert(json.message);
       }
-    } catch (err) {
-      //alert("Gagal menghubungi server.");
+    } catch (err: any) {
       alert("Error detail: " + err.message);
     } finally {
       setLoading(false);
     }
   };
-
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

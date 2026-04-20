@@ -22,6 +22,10 @@ export default function Home() {
   const [subsStatus, setSubsStatus] = useState("");
   const [subsEndDate, setSubsEndDate] = useState("");
 
+  // --- STATE UNTUK RINGKASAN LAPORAN ---
+  const [totalReports, setTotalReports] = useState(0);
+  const [processedReports, setProcessedReports] = useState(0);
+
   useEffect(() => {
     // 1. Ambil data profil lokal
     const name = localStorage.getItem("userName") || "Pengguna";
@@ -39,7 +43,40 @@ export default function Home() {
       }),
     );
 
-    // 2. Cek status subscription ke Backend
+    // 2. Cek laporan aktif
+    const fetchReports = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const res = await fetch(`${apiUrl}/api/reports/my-reports`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+
+        if (res.ok && json.data) {
+          // 1. Hitung yang benar-benar masih "berjalan" (Pending & Processed)
+          const activeCount = json.data.filter(
+            (r: any) => r.status === "Pending" || r.status === "Processed",
+          ).length;
+
+          // 2. Hitung spesifik yang sedang diproses untuk teks di bawahnya
+          const processedCount = json.data.filter(
+            (r: any) => r.status === "Processed",
+          ).length;
+
+          setTotalReports(activeCount); // Ini jadi angka utama (misal: 3)
+          setProcessedReports(processedCount); // Ini jadi sub-teks (misal: 1 sedang diproses)
+        }
+      } catch (error) {
+        console.error("Gagal mengambil data laporan:", error);
+      }
+    };
+
+    fetchReports(); // Panggil fungsinya di sini
+
+    // 3. Cek status subscription ke Backend
     const fetchSubs = async () => {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -144,12 +181,6 @@ export default function Home() {
         color: "#7dd8a6",
         border: "1px solid rgba(125,216,166,0.3)",
       };
-  const subProgressBgStyle = isHC
-    ? { background: " #4d4d4d" }
-    : { background: "rgba(255,255,255,0.15)" };
-  const subProgressFillStyle = isHC
-    ? { background: "#ffff00" }
-    : { background: "#7dd8a6" };
   const subButtonStyle = isHC
     ? { background: "#000000", color: "#ffff00", border: "2px solid #ffff00" }
     : {
@@ -307,22 +338,6 @@ export default function Home() {
                       : "Belum ada tanggal aktif"}
                   </div>
 
-                  {subsStatus === "Active" && (
-                    <div
-                      className="h-1.5 rounded-full mb-1"
-                      style={subProgressBgStyle}
-                    >
-                      {/* Persentase dinamis: ((30 - sisa hari) / 30) * 100 */}
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.min(100, Math.max(0, ((30 - subsDays) / 30) * 100))}%`,
-                          ...subProgressFillStyle,
-                        }}
-                      />
-                    </div>
-                  )}
-
                   <div
                     className={`text-xs mb-4 ${isHC ? "text-[#ffff00]" : "text-white/45"}`}
                   >
@@ -392,22 +407,18 @@ export default function Home() {
         </svg>
       </section>
 
-      {/* STATS */}
+      {/* STATS SECTION */}
       <section className="bg-muted/50 py-10 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-lg font-bold mb-5">Ringkasan Saya</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               {
-                val: "8",
-                label: "Rute Digunakan",
-                sub: "3 rute minggu ini",
-                progress: null,
-              },
-              {
-                val: "3",
+                // Ganti angka statis "3" menjadi totalReports
+                val: totalReports.toString(),
                 label: "Laporan Aktif",
-                sub: "1 sedang diproses",
+                // Ganti teks statis dengan processedReports
+                sub: `${processedReports} sedang diproses`,
                 progress: null,
               },
               {
@@ -420,10 +431,7 @@ export default function Home() {
                   hasSubs && subsEndDate
                     ? `Berlaku hingga ${subsEndDate}`
                     : "Belum berlangganan",
-                progress:
-                  hasSubs && subsStatus === "Active"
-                    ? Math.min(100, Math.max(0, ((30 - subsDays) / 30) * 100))
-                    : 0,
+                progress: null,
               },
             ].map((s, i) => (
               <div
@@ -439,14 +447,6 @@ export default function Home() {
                 <div className="text-sm text-muted-foreground high-contrast:text-white">
                   {s.sub}
                 </div>
-                {s.progress !== null && s.progress > 0 && (
-                  <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden high-contrast:bg-white">
-                    <div
-                      className="h-full bg-primary rounded-full high-contrast:bg-white"
-                      style={{ width: `${s.progress}%` }}
-                    />
-                  </div>
-                )}
               </div>
             ))}
           </div>
