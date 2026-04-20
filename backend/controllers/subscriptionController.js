@@ -2,7 +2,7 @@ const pool = require('../db');
 const { v4: uuidv4 } = require('uuid');
 const midtransClient = require('midtrans-client');
 
-// 1. FUNGSI CREATE (Buat Langganan Baru) - Tidak ada perubahan logika
+// Fungsi Create (Buat Langganan Baru)
 const createSubscription = async (req, res) => {
     try {
         const userId = req.user.user_id; 
@@ -57,7 +57,7 @@ const createSubscription = async (req, res) => {
     }
 };
 
-// 2. FUNGSI GET (Ambil Data Langganan) - UPDATE ORDER BY
+// Fungsi Get (Ambil Data Subscription)
 const getMySubscription = async (req, res) => {
     try {
         const userId = req.user.user_id;
@@ -70,12 +70,12 @@ const getMySubscription = async (req, res) => {
                 s.end_date,
                 s.specific_needs,
                 s.emergency_contact_name,
+                GREATEST(DATEDIFF(s.end_date, CURDATE()), 0) AS days_left,
                 g.full_name AS guide_name,
                 g.phone_number AS guide_phone
             FROM subs s
             LEFT JOIN guides g ON s.employee_id = g.employee_id
             WHERE s.user_id = ?
-            -- PERUBAHAN DI SINI: Prioritaskan Active & Pending
             ORDER BY 
                 FIELD(s.status, 'Active', 'Pending', 'Expired', 'Cancelled') ASC,
                 s.start_date DESC 
@@ -85,9 +85,16 @@ const getMySubscription = async (req, res) => {
         const [subs] = await pool.query(query, [userId]);
 
         if (subs.length === 0) {
-            return res.status(404).json({ 
-                message: "Anda belum memiliki riwayat langganan pemandu." 
+            return res.status(404).json({
+                message: "Anda belum memiliki riwayat langganan pemandu."
             });
+        }
+
+        const subscription = subs[0];
+
+        if (subscription.status === 'Active' && subscription.days_left <= 0) {
+            subscription.status = 'Expired';
+            await pool.query(`UPDATE subs SET status = 'Expired' WHERE subs_id = ?`, [subscription.subs_id]);
         }
 
         res.status(200).json({
@@ -95,18 +102,18 @@ const getMySubscription = async (req, res) => {
             data: subs[0]
         });
 
-    } catch (error) {
+    }
+    catch (error) {
         console.error("Error Get My Subscription:", error);
         res.status(500).json({ message: "Terjadi kesalahan pada server saat mengambil data langganan." });
     }
 };
 
-// 3. FUNGSI DELETE (Batalkan/Hapus Langganan) - FUNGSI BARU
+// Fungsi Delete (Batalkan/Hapus Langganan)
 const cancelSubscription = async (req, res) => {
     try {
         const userId = req.user.user_id;
 
-        // Langsung hapus baris langganan milik user tersebut
         const deleteQuery = `DELETE FROM subs WHERE user_id = ?`;
         const [result] = await pool.query(deleteQuery, [userId]);
 
@@ -122,21 +129,19 @@ const cancelSubscription = async (req, res) => {
     }
 };
 
+// Fungsi Update (Mengaktifkan Langganan)
 const activateSubscription = async (req, res) => {
     try {
         const userId = req.user.user_id;
         const { subs_id } = req.body;
 
-        // Buat tanggal mulai (hari ini) dan tanggal berakhir (30 hari ke depan)
         const startDate = new Date();
         const endDate = new Date();
         endDate.setDate(endDate.getDate() + 30);
 
-        // Format tanggal agar cocok dengan MySQL (YYYY-MM-DD)
         const startStr = startDate.toISOString().split('T')[0];
         const endStr = endDate.toISOString().split('T')[0];
 
-        // Update database: Ubah status jadi Active, isi start_date dan end_date
         const updateQuery = `
             UPDATE subs 
             SET status = 'Active', start_date = ?, end_date = ? 
@@ -158,7 +163,7 @@ const activateSubscription = async (req, res) => {
 };
 
 const snap = new midtransClient.Snap({
-    isProduction: false, // Ubah ke true nanti kalau sudah rilis
+    isProduction: false, // Ubah ke true nanti kalau udah rilis
     serverKey: process.env.MIDTRANS_SERVER_KEY,
     clientKey: process.env.MIDTRANS_CLIENT_KEY
 });
@@ -172,11 +177,11 @@ const getPaymentToken = async (req, res) => {
         // Parameter yang dikirim ke Midtrans
         let parameter = {
             "transaction_details": {
-                "order_id": subs_id, // Gunakan subs_id sebagai nomor pesanan
+                "order_id": subs_id,
                 "gross_amount": amount
             },
             "customer_details": {
-                "first_name": user.full_name || "User", // Sesuaikan dengan field DB kamu
+                "first_name": user.full_name || "User",
                 "email": user.email || "user@example.com"
             }
         };
@@ -192,7 +197,6 @@ const getPaymentToken = async (req, res) => {
     }
 };
 
-// Pastikan KETIGA fungsi di-export di bagian paling bawah
 module.exports = { 
     createSubscription, 
     getMySubscription, 
