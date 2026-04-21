@@ -1,6 +1,6 @@
 const pool = require('../db');
 
-// --- HELPER: Cek apakah fasilitas kendaraan sesuai dengan profil user ---
+// Cek fasilitas kendaraan yang sesuai user
 const checkRecommendation = (userCategory, transports) => {
     if (transports.length === 0) return false;
     
@@ -43,14 +43,10 @@ const searchRoutes = async (req, res) => {
 
         await pool.query("SET SESSION group_concat_max_len = 1000000;");
 
-        console.log(`\n======================================================`);
-        console.log(`🔍 [DEBUG] MENCARI RUTE: "${origin}" ➔ "${destination}"`);
-        console.log(`======================================================`);
+        console.log(`[DEBUG] MENCARI RUTE: "${origin}" ➔ "${destination}"`);
 
-        // ==========================================
-        // CASE 1: RUTE LANGSUNG (DIRECT)
-        // ==========================================
-        console.time("⏱️ [WAKTU] Eksekusi Query Direct");
+        // Rute Langsung
+        console.time("[WAKTU] Eksekusi Query Direct");
         let directQuery = `
             SELECT 
                 r.route_id, r.route_name,
@@ -74,10 +70,10 @@ const searchRoutes = async (req, res) => {
             WHERE os.name LIKE ? AND ds.name LIKE ? AND o_rs.stop_order != d_rs.stop_order
         `;
         const [directRoutes] = await pool.query(directQuery, [searchOrigin, searchDest]);
-        console.timeEnd("⏱️ [WAKTU] Eksekusi Query Direct");
+        console.timeEnd("[WAKTU] Eksekusi Query Direct");
 
         if (directRoutes.length > 0) {
-            console.log(`✅ Ditemukan ${directRoutes.length} rute langsung!`);
+            console.log(`Ditemukan ${directRoutes.length} rute langsung!`);
             const results = directRoutes.map(row => {
                 const transports = formatTransport('trans', row);
                 return {
@@ -92,12 +88,10 @@ const searchRoutes = async (req, res) => {
             });
             return res.status(200).json({ filter_applied: userCategory, data: results });
         }
-        console.log(`❌ Rute Langsung tidak ditemukan. Melanjutkan ke pencarian Transit 1x...`);
+        console.log(`Rute Langsung tidak ditemukan. Melanjutkan ke pencarian Transit 1x...`);
 
-        // ==========================================
-        // CASE 2: RUTE TRANSIT 1x
-        // ==========================================
-        console.time("⏱️ [WAKTU] Eksekusi Query Transit 1x");
+        // Rute Transit 1x
+        console.time("[WAKTU] Eksekusi Query Transit 1x");
         let transitQuery = `
             SELECT 
                 r1.route_name AS r1_name, t1.name AS t1_name, t1.type AS t1_type,
@@ -142,10 +136,10 @@ const searchRoutes = async (req, res) => {
             LIMIT 3
         `;
         const [transitRoutes] = await pool.query(transitQuery, [searchOrigin, searchDest]);
-        console.timeEnd("⏱️ [WAKTU] Eksekusi Query Transit 1x");
+        console.timeEnd("[WAKTU] Eksekusi Query Transit 1x");
 
         if (transitRoutes.length > 0) {
-            console.log(`✅ Ditemukan ${transitRoutes.length} rute dengan Transit 1x!`);
+            console.log(`Ditemukan ${transitRoutes.length} rute dengan Transit 1x!`);
             const results = transitRoutes.map(row => {
                 const t1 = formatTransport('t1', row);
                 const t2 = formatTransport('t2', row);
@@ -160,12 +154,10 @@ const searchRoutes = async (req, res) => {
             });
             return res.status(200).json({ filter_applied: userCategory, data: results });
         }
-        console.log(`❌ Rute Transit 1x tidak ditemukan. Mencoba rute Transit 2x (AWAS QUERY BERAT!)...`);
+        console.log(`Rute Transit 1x tidak ditemukan. Mencoba rute Transit 2x (AWAS QUERY BERAT!)...`);
 
-        // ==========================================
-        // CASE 3: RUTE TRANSIT 2x (3 Kendaraan)
-        // ==========================================
-        console.time("⏱️ [WAKTU] Eksekusi Query Transit 2x (SANGAT BERAT)");
+        // Rute Transit 2x
+        console.time("[WAKTU] Eksekusi Query Transit 2x (SANGAT BERAT)");
         let transit2xQuery = `
             SELECT 
                 r1.route_name AS r1_name, t1.name AS t1_name, t1.type AS t1_type,
@@ -231,10 +223,10 @@ const searchRoutes = async (req, res) => {
         `;
 
         const [transit2xRoutes] = await pool.query(transit2xQuery, [searchOrigin, searchDest]);
-        console.timeEnd("⏱️ [WAKTU] Eksekusi Query Transit 2x (SANGAT BERAT)");
+        console.timeEnd("[WAKTU] Eksekusi Query Transit 2x (SANGAT BERAT)");
 
         if (transit2xRoutes.length > 0) {
-            console.log(`✅ Ditemukan ${transit2xRoutes.length} rute dengan Transit 2x!`);
+            console.log(`Ditemukan ${transit2xRoutes.length} rute dengan Transit 2x!`);
             const results = transit2xRoutes.map(row => {
                 const t1 = formatTransport('t1', row);
                 const t2 = formatTransport('t2', row);
@@ -252,11 +244,11 @@ const searchRoutes = async (req, res) => {
             return res.status(200).json({ filter_applied: userCategory, data: results });
         }
 
-        console.log(`❌ Rute sama sekali tidak ditemukan.`);
+        console.log(`Rute sama sekali tidak ditemukan.`);
         return res.status(404).json({ message: "Rute tidak ditemukan. Pastikan nama halte benar." });
 
     } catch (error) {
-        console.error("❌ ERROR SAAT PENCARIAN:", error);
+        console.error("ERROR SAAT PENCARIAN:", error);
         res.status(500).json({ message: "Terjadi kesalahan pada server saat mencari rute." });
     }
 };

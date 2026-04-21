@@ -1,7 +1,7 @@
 const pool = require('../db');
 const crypto = require('crypto'); 
 
-// Fungsi 1: Membuat laporan baru
+// Membuat laporan baru
 const createReport = async (req, res) => {
     try {
         const reporterId = req.user.user_id; 
@@ -37,7 +37,7 @@ const createReport = async (req, res) => {
     }
 };
 
-// Fungsi 2: Mengambil riwayat laporan milik pengguna tersebut
+// Mengambil riwayat laporan
 const getMyReports = async (req, res) => {
     try {
         const reporterId = req.user.user_id;

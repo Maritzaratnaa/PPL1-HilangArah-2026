@@ -2,11 +2,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const pool = require('../db'); 
-const sendEmail = require('../utils/sendEmail'); // 👈 Pastikan path folder-nya benar!
+const sendEmail = require('../utils/sendEmail');
 
-// ==============================
-// LOGIKA REGISTER
-// ==============================
+// Register
 const register = async (req, res) => {
     const connection = await pool.getConnection();
     try {
@@ -32,10 +30,10 @@ const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const role = 'Pengguna';
         
-        // 👈 BIKIN KODE OTP 6 DIGIT
+        // BIKIN KODE OTP 6 DIGIT
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // 👈 UPDATE QUERY INSERT: Masukkan otp_code ke database
+        // UPDATE QUERY INSERT: Masukkan otp_code ke database
         await connection.query(
             'INSERT INTO users (user_id, email, username, password, role, otp_code) VALUES (?, ?, ?, ?, ?, ?)',
             [user_id, email, username, hashedPassword, role, otpCode]
@@ -52,10 +50,10 @@ const register = async (req, res) => {
 
         await connection.commit();
 
-        // 👈 KIRIM EMAIL OTP (Tidak di-await agar user tidak menunggu loading lama)
+        // Kirim Email OTP
         sendEmail(email, otpCode);
 
-        // 👈 KEMBALIKAN EMAIL KE FRONTEND (Agar frontend tahu siapa yang mau diverifikasi)
+        // Kirim email ke frontend
         res.status(201).json({ 
             message: "Registrasi berhasil! Silakan cek email Anda untuk kode OTP.",
             email: email 
@@ -70,9 +68,7 @@ const register = async (req, res) => {
     }
 };
 
-// ==============================
-// LOGIKA VERIFIKASI EMAIL (BARU)
-// ==============================
+// Verifikasi Email
 const verifyEmail = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -92,7 +88,6 @@ const verifyEmail = async (req, res) => {
             return res.status(400).json({ message: "Kode OTP salah atau tidak valid." });
         }
 
-        // Jika cocok, aktifkan akun dan hapus kode OTP agar tidak bisa dipakai 2x
         await pool.query('UPDATE users SET is_verified = 1, otp_code = NULL WHERE email = ?', [email]);
 
         res.status(200).json({ message: "Verifikasi email berhasil! Silakan login." });
@@ -103,9 +98,7 @@ const verifyEmail = async (req, res) => {
     }
 };
 
-// ==============================
-// LOGIKA LOGIN
-// ==============================
+// Login
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -128,7 +121,7 @@ const login = async (req, res) => {
 
         const user = users[0];
 
-        // 👈 CEK APAKAH AKUN SUDAH DIVERIFIKASI
+        // Cek verifikasi akun
         if (user.is_verified === 0) {
             return res.status(403).json({ 
                 message: "Email belum diverifikasi. Silakan cek email Anda untuk kode OTP atau daftar ulang.",
@@ -174,5 +167,5 @@ const login = async (req, res) => {
 module.exports = {
     register,
     login,
-    verifyEmail // 👈 Jangan lupa di-export!
+    verifyEmail
 };
