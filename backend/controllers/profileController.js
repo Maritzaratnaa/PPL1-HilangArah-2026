@@ -4,7 +4,7 @@ const getProfile = async (req, res) => {
     try {
         const userId = req.user.user_id;
         
-        // 1. UPDATE QUERY: Tambahkan LEFT JOIN ke tabel subs dan ambil s.status
+        // Update Query
         const query = `
             SELECT 
                 u.email, 
@@ -25,15 +25,10 @@ const getProfile = async (req, res) => {
             return res.status(404).json({message: "Profil tidak ditemukan."});
         }
 
-        // 2. LOGIKA STATUS: Ambil data baris pertama
         const userData = rows[0];
         
-        // Buat boolean is_subscriber. 
-        // Akan bernilai true JIKA tabel subs ada DAN statusnya 'Active'
-        // Sesuaikan kata 'Active' dengan tulisan persis di ENUM databasemu (huruf besar/kecilnya)
         const isSubscriber = userData.sub_status === 'Active'; 
 
-        // 3. SUSUN RESPONSE: Gabungkan data profil dengan boolean is_subscriber
         res.status(200).json({
             message: "Data profil berhasil diambil.",
             data: {
@@ -42,8 +37,8 @@ const getProfile = async (req, res) => {
                 phone_number: userData.phone_number,
                 category_status: userData.category_status,
                 font_size_pref: userData.font_size_pref,
-                sub_status: userData.sub_status || null, // Opsional: kirim status asli (Pending/Active/Expired) untuk info tambahan di UI
-                is_subscriber: isSubscriber // Ini yang akan dipakai oleh UI React-mu
+                sub_status: userData.sub_status || null,
+                is_subscriber: isSubscriber
             }
         });
     }

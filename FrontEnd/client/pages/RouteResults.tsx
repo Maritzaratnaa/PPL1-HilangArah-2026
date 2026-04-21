@@ -136,10 +136,10 @@ function getCategoryAdvice(category: string, transports: Transport[]): string | 
     case "disabilitas":
     case "disability":
       if (hasWheelchairAll)
-        return "✅ Seluruh armada rute ini memiliki slot khusus kursi roda.";
+        return "Seluruh armada rute ini memiliki slot khusus kursi roda.";
       if (hasLowEntryAll)
-        return "✅ Seluruh armada menggunakan low entry sehingga mudah dinaiki.";
-      return "✅ Rute ini telah disesuaikan dengan kriteria aksesibilitas.";
+        return "Seluruh armada menggunakan low entry sehingga mudah dinaiki.";
+      return "Rute ini telah disesuaikan dengan kriteria aksesibilitas.";
     case "lansia":
     case "elderly":
     case "ibu hamil":
@@ -149,14 +149,14 @@ function getCategoryAdvice(category: string, transports: Transport[]): string | 
     case "anak-anak":
     case "children":
       if (hasPriorityAll)
-        return "✅ Tersedia kursi prioritas pada seluruh armada rute ini.";
-      return "✅ Tersedia kursi prioritas untuk kenyamanan perjalanan Anda.";
+        return "Tersedia kursi prioritas pada seluruh armada rute ini.";
+      return "Tersedia kursi prioritas untuk kenyamanan perjalanan Anda.";
     case "wanita":
     case "perempuan":
     case "women":
       if (hasWomenAreaAll)
-        return "✅ Tersedia area khusus wanita pada seluruh armada rute ini.";
-      return "✅ Tersedia area khusus wanita (cek detail per armada).";
+        return "Tersedia area khusus wanita pada seluruh armada rute ini.";
+      return "Tersedia area khusus wanita (cek detail per armada).";
     default:
       return null;
   }
@@ -359,7 +359,7 @@ export default function RouteResults() {
                       
                       {route.route_type === "transit" && (
                         <div className="bg-indigo-100 text-indigo-700 text-xs px-5 py-2 font-bold flex items-center gap-2">
-                           🔄 Rute Transit ({route.legs.length - 1}x pindah kendaraan)
+                           Rute Transit ({route.legs.length - 1}x pindah kendaraan)
                         </div>
                       )}
 
