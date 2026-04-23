@@ -7,6 +7,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const adminSubRoutes = require('./routes/adminSubRoutes');
 
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/api/search-routes', searchRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminSubRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
