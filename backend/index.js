@@ -21,15 +21,16 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.status(200).send('Backend API ARAHIN is running!');
 });
-// ------------------------------------------------
 
-app.use('/api', authRoutes);
+app.use('/api/auth', authRoutes); 
+
 app.use('/api/profile', profileRoutes); 
 app.use('/api/search-routes', searchRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/subscription', subscriptionRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminSubRoutes);
+
+
+app.use('/api', adminSubRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
