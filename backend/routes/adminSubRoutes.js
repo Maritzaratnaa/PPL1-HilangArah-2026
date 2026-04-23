@@ -9,7 +9,7 @@ const {
     deleteSubscription 
 } = require('../controllers/adminSubController');
 
-const authMiddleware = require('../middlewares/authMiddleware'); 
+const authMiddleware = require('../middleware/authMiddleware'); 
 
 router.get('/admin/subscriptions', authMiddleware, authMiddleware.isAdmin, getAllSubscriptions);
 router.get('/admin/subscriptions/:subs_id', authMiddleware, authMiddleware.isAdmin, getSubscriptionDetail);
