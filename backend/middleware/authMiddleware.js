@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
-// 1. Fungsi mengecek Token 
-const authenticateToken = (req, res, next) => {
+// 1. Ini fungsi lamamu yang tidak kita ubah namanya (tetap authMiddleware)
+const authMiddleware = (req, res, next) => {
     const token = req.header('Authorization')?.split(' ')[1];
 
     if (!token) {
@@ -18,13 +18,15 @@ const authenticateToken = (req, res, next) => {
     }
 };
 
-// 2. Fungsi mengecek Role Admin (BARU)
+// 2. Fungsi baru khusus Admin
 const isAdmin = (req, res, next) => {
     if (req.user && req.user.role === 'Admin') {
-        next(); // Jika admin, boleh lanjut
+        next();
     } else {
         return res.status(403).json({ message: "Akses ditolak! Halaman ini khusus Admin." });
     }
 };
 
-module.exports = { authenticateToken, isAdmin };
+
+authMiddleware.isAdmin = isAdmin;
+module.exports = authMiddleware;
