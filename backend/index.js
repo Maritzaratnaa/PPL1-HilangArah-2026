@@ -8,7 +8,7 @@ const searchRoutes = require('./routes/searchRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const adminSubRoutes = require('./routes/adminSubRoutes');
-
+const adminRoleRoutes = require('./routes/adminRoleRoutes');
 
 const app = express();
 app.use(cors( {
@@ -31,6 +31,7 @@ app.use('/api/subscription', subscriptionRoutes);
 
 
 app.use('/api', adminSubRoutes);
+app.use('/api/admin', adminRoleRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

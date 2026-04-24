@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 
-// 1. Ini fungsi lamamu yang tidak kita ubah namanya (tetap authMiddleware)
 const authMiddleware = (req, res, next) => {
     const token = req.header('Authorization')?.split(' ')[1];
 
@@ -18,15 +17,25 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
-// 2. Fungsi baru khusus Admin
 const isAdmin = (req, res, next) => {
     if (req.user && req.user.role === 'Admin') {
         next();
-    } else {
+    }
+    else {
         return res.status(403).json({ message: "Akses ditolak! Halaman ini khusus Admin." });
     }
 };
 
+const isMainAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'Admin' && req.user.email === 'arahin.support@gmail.com') {
+        next();
+    }
+    else {
+        return res.status(403).json({message: "Akses ditolak! Hanya Admin Utama yang memiliki akses ini."})
+    }
+};
 
 authMiddleware.isAdmin = isAdmin;
+authMiddleware.isMainAdmin = isMainAdmin;
+
 module.exports = authMiddleware;
