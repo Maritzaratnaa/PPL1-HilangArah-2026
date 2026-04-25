@@ -1,0 +1,669 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Search, Trash2, Pencil, Plus, X, Users, UserCheck, Zap, BarChart3, FileText, Bus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AdminSidebar } from '@/components/Admin/AdminSideBar';
+
+// ── DUMMY DATA ── disesuaikan dengan database
+const dummyTrans = [
+  { trans_id: 'TRN001', name: 'TransJakarta Koridor 1', type: 'Bus', is_low_entry: true, has_wheelchair_slot: true, has_priority_seat: true, has_women_area: true, is_active: true },
+  { trans_id: 'TRN002', name: 'MRT Jakarta', type: 'MRT', is_low_entry: true, has_wheelchair_slot: true, has_priority_seat: true, has_women_area: false, is_active: true },
+  { trans_id: 'TRN003', name: 'KRL Commuterline', type: 'Train', is_low_entry: false, has_wheelchair_slot: false, has_priority_seat: true, has_women_area: true, is_active: true },
+  { trans_id: 'TRN004', name: 'LRT Jakarta', type: 'LRT', is_low_entry: true, has_wheelchair_slot: true, has_priority_seat: true, has_women_area: false, is_active: false },
+];
+
+const dummyStops = [
+  { stop_id: 'STP001', name: 'Halte Sudirman', address: 'Jl. Jend. Sudirman', latitude: -6.20876, longitude: 106.82301, has_ramp: true, has_elevator: true, is_active: true },
+  { stop_id: 'STP002', name: 'Halte Blok M', address: 'Jl. Melawai', latitude: -6.24412, longitude: 106.79884, has_ramp: true, has_elevator: false, is_active: true },
+  { stop_id: 'STP003', name: 'Halte Bundaran HI', address: 'Jl. MH Thamrin', latitude: -6.19467, longitude: 106.82299, has_ramp: true, has_elevator: true, is_active: true },
+  { stop_id: 'STP004', name: 'Halte Harmoni', address: 'Jl. Gajah Mada', latitude: -6.13682, longitude: 106.81342, has_ramp: false, has_elevator: false, is_active: true },
+  { stop_id: 'STP005', name: 'Stasiun Manggarai', address: 'Jl. Manggarai Utara', latitude: -6.21409, longitude: 106.85062, has_ramp: true, has_elevator: true, is_active: false },
+];
+
+const dummyRoutes = [
+  { route_id: 'RTE001', trans_id: 'TRN001', route_name: 'Koridor 1 - Blok M - Kota', origin_stop_id: 'STP002', destination_stop_id: 'STP001', origin_stop_name: 'Halte Blok M', dest_stop_name: 'Halte Kota', is_active: true },
+  { route_id: 'RTE002', trans_id: 'TRN002', route_name: 'MRT Lebak Bulus - Bundaran HI', origin_stop_id: 'STP001', destination_stop_id: 'STP003', origin_stop_name: 'Stasiun Lebak Bulus', dest_stop_name: 'Stasiun Bundaran HI', is_active: true },
+  { route_id: 'RTE003', trans_id: 'TRN003', route_name: 'KRL Bogor - Jakarta Kota', origin_stop_id: 'STP005', destination_stop_id: 'STP001', origin_stop_name: 'Stasiun Bogor', dest_stop_name: 'Stasiun Jakarta Kota', is_active: true },
+];
+
+type Trans = typeof dummyTrans[0];
+type Stop = typeof dummyStops[0];
+type Route = typeof dummyRoutes[0];
+
+const emptyTrans: Trans = {
+  trans_id: '', name: '', type: 'Bus',
+  is_low_entry: false, has_wheelchair_slot: false,
+  has_priority_seat: false, has_women_area: false, is_active: true
+};
+
+const emptyStop: Stop = {
+  stop_id: '', name: '', address: '',
+  latitude: 0, longitude: 0,
+  has_ramp: false, has_elevator: false, is_active: true
+};
+
+const emptyRoute: Route = {
+  route_id: '', trans_id: '', route_name: '',
+  origin_stop_id: '', destination_stop_id: '',
+  origin_stop_name: '', dest_stop_name: '', is_active: true
+};
+
+// ── TRANS MODAL ── disesuaikan dengan database (tambah has_women_area)
+function TransModal({ trans, onSave, onClose }: { trans: Partial<Trans>; onSave: (t: Trans) => void; onClose: () => void }) {
+  const [form, setForm] = useState({ ...emptyTrans, ...trans });
+  const isEdit = !!trans.name;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold">{isEdit ? 'Edit Transportasi' : 'Tambah Transportasi'}</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="space-y-4 mb-6">
+          <div>
+            <Label className="text-sm font-semibold mb-1.5 block">Nama Transportasi</Label>
+            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama transportasi" className="h-10" />
+          </div>
+          <div>
+            <Label className="text-sm font-semibold mb-1.5 block">Tipe</Label>
+            <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
+              className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
+              {['Bus', 'Train', 'LRT', 'MRT'].map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold block">Fasilitas Aksesibilitas</Label>
+            {[
+              { key: 'is_low_entry', label: 'Low Entry' },
+              { key: 'has_wheelchair_slot', label: 'Slot Kursi Roda' },
+              { key: 'has_priority_seat', label: 'Kursi Prioritas' },
+              { key: 'has_women_area', label: 'Area Khusus Wanita' },
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-2">
+                <input type="checkbox" id={key} checked={form[key as keyof typeof form] as boolean}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.checked })} className="h-4 w-4" />
+                <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 pt-2 border-t border-border">
+            <input type="checkbox" id="trans_active" checked={form.is_active}
+              onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4" />
+            <Label htmlFor="trans_active" className="text-sm cursor-pointer">Aktif</Label>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={onClose}>Batal</Button>
+          <Button className="flex-1" onClick={() => { if (!form.name) return; onSave(form as Trans); }}>
+            {isEdit ? 'Simpan' : 'Tambah'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── STOP MODAL ── disesuaikan dengan database (tambah latitude, longitude)
+function StopModal({ stop, onSave, onClose }: { stop: Partial<Stop>; onSave: (s: Stop) => void; onClose: () => void }) {
+  const [form, setForm] = useState({ ...emptyStop, ...stop });
+  const isEdit = !!stop.name;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold">{isEdit ? 'Edit Halte' : 'Tambah Halte'}</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="space-y-4 mb-6">
+          <div>
+            <Label className="text-sm font-semibold mb-1.5 block">Nama Halte</Label>
+            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama halte" className="h-10" />
+          </div>
+          <div>
+            <Label className="text-sm font-semibold mb-1.5 block">Alamat</Label>
+            <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Alamat halte" className="h-10" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-sm font-semibold mb-1.5 block">Latitude</Label>
+              <Input type="number" step="any" value={form.latitude}
+                onChange={(e) => setForm({ ...form, latitude: parseFloat(e.target.value) || 0 })}
+                placeholder="-6.2088" className="h-10" />
+            </div>
+            <div>
+              <Label className="text-sm font-semibold mb-1.5 block">Longitude</Label>
+              <Input type="number" step="any" value={form.longitude}
+                onChange={(e) => setForm({ ...form, longitude: parseFloat(e.target.value) || 0 })}
+                placeholder="106.8456" className="h-10" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold block">Fasilitas Aksesibilitas</Label>
+            {[
+              { key: 'has_ramp', label: 'Ramp' },
+              { key: 'has_elevator', label: 'Elevator' },
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-2">
+                <input type="checkbox" id={key} checked={form[key as keyof typeof form] as boolean}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.checked })} className="h-4 w-4" />
+                <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 pt-2 border-t border-border">
+            <input type="checkbox" id="stop_active" checked={form.is_active}
+              onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4" />
+            <Label htmlFor="stop_active" className="text-sm cursor-pointer">Aktif</Label>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={onClose}>Batal</Button>
+          <Button className="flex-1" onClick={() => { if (!form.name) return; onSave(form as Stop); }}>
+            {isEdit ? 'Simpan' : 'Tambah'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ROUTE MODAL ── disesuaikan dengan database (pakai trans_id, origin_stop_id, dest_stop_id)
+function RouteModal({ route, transList, stopsList, onSave, onClose }: {
+  route: Partial<Route>;
+  transList: Trans[];
+  stopsList: Stop[];
+  onSave: (r: Route) => void;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState({ ...emptyRoute, ...route });
+  const isEdit = !!route.route_name;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold">{isEdit ? 'Edit Rute' : 'Tambah Rute'}</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="space-y-4 mb-6">
+          <div>
+            <Label className="text-sm font-semibold mb-1.5 block">Nama Rute</Label>
+            <Input value={form.route_name} onChange={(e) => setForm({ ...form, route_name: e.target.value })}
+              placeholder="Nama rute" className="h-10" />
+          </div>
+          <div>
+            <Label className="text-sm font-semibold mb-1.5 block">Transportasi</Label>
+            <select value={form.trans_id} onChange={(e) => setForm({ ...form, trans_id: e.target.value })}
+              className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
+              <option value="">Pilih transportasi...</option>
+              {transList.map(t => <option key={t.trans_id} value={t.trans_id}>{t.name} ({t.type})</option>)}
+            </select>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold mb-1.5 block">Halte Asal</Label>
+            <select value={form.origin_stop_id} onChange={(e) => {
+              const stop = stopsList.find(s => s.stop_id === e.target.value);
+              setForm({ ...form, origin_stop_id: e.target.value, origin_stop_name: stop?.name || '' });
+            }} className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
+              <option value="">Pilih halte asal...</option>
+              {stopsList.map(s => <option key={s.stop_id} value={s.stop_id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold mb-1.5 block">Halte Tujuan</Label>
+            <select value={form.destination_stop_id} onChange={(e) => {
+              const stop = stopsList.find(s => s.stop_id === e.target.value);
+              setForm({ ...form, destination_stop_id: e.target.value, dest_stop_name: stop?.name || '' });
+            }} className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
+              <option value="">Pilih halte tujuan...</option>
+              {stopsList.filter(s => s.stop_id !== form.origin_stop_id).map(s =>
+                <option key={s.stop_id} value={s.stop_id}>{s.name}</option>
+              )}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 pt-2 border-t border-border">
+            <input type="checkbox" id="route_active" checked={form.is_active}
+              onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4" />
+            <Label htmlFor="route_active" className="text-sm cursor-pointer">Aktif</Label>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={onClose}>Batal</Button>
+          <Button className="flex-1" onClick={() => {
+            if (!form.route_name || !form.trans_id || !form.origin_stop_id || !form.destination_stop_id) return;
+            onSave(form as Route);
+          }}>
+            {isEdit ? 'Simpan' : 'Tambah'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── DELETE MODAL ──
+function DeleteModal({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm mx-4 shadow-xl">
+        <h3 className="text-lg font-bold mb-2">Konfirmasi Hapus</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          Apakah kamu yakin ingin menghapus <strong>{name}</strong>? Tindakan ini tidak dapat dibatalkan.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={onCancel}>Batal</Button>
+          <Button className="flex-1 bg-rose-600 hover:bg-rose-700 text-white" onClick={onConfirm}>Hapus</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN COMPONENT ──
+export default function AdminData() {
+  const [activeTab, setActiveTab] = useState<'trans' | 'stops' | 'routes'>('trans');
+  const [search, setSearch] = useState('');
+
+  const [transList, setTransList] = useState(dummyTrans);
+  const [stopsList, setStopsList] = useState(dummyStops);
+  const [routesList, setRoutesList] = useState(dummyRoutes);
+
+  // Filter states
+  const [filterType, setFilterType] = useState('All');
+  const [filterFacility, setFilterFacility] = useState('All');
+
+  const [transModal, setTransModal] = useState<Partial<Trans> | null>(null);
+  const [stopModal, setStopModal] = useState<Partial<Stop> | null>(null);
+  const [routeModal, setRouteModal] = useState<Partial<Route> | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ name: string; onConfirm: () => void } | null>(null);
+
+  // ── FILTERED DATA ──
+  const filteredTrans = transList.filter(t => {
+    const matchSearch = t.name.toLowerCase().includes(search.toLowerCase());
+    const matchType = filterType === 'All' || t.type === filterType;
+    return matchSearch && matchType;
+  });
+
+  const filteredStops = stopsList.filter(s => {
+    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.address.toLowerCase().includes(search.toLowerCase());
+    const matchFacility =
+      filterFacility === 'All' ||
+      (filterFacility === 'Ramp' && s.has_ramp) ||
+      (filterFacility === 'Elevator' && s.has_elevator) ||
+      (filterFacility === 'Ramp & Elevator' && s.has_ramp && s.has_elevator) ||
+      (filterFacility === 'Tanpa Fasilitas' && !s.has_ramp && !s.has_elevator);
+    return matchSearch && matchFacility;
+  });
+
+  const filteredRoutes = routesList.filter(r =>
+    r.route_name.toLowerCase().includes(search.toLowerCase()) ||
+    r.origin_stop_name.toLowerCase().includes(search.toLowerCase()) ||
+    r.dest_stop_name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // ── SAVE HANDLERS ──
+  const handleSaveTrans = (t: Trans) => {
+    const exists = transList.find(x => x.trans_id === t.trans_id);
+    if (exists) setTransList(prev => prev.map(x => x.trans_id === t.trans_id ? t : x));
+    else setTransList(prev => [...prev, { ...t, trans_id: `TRN${Date.now()}` }]);
+    setTransModal(null);
+  };
+
+  const handleSaveStop = (s: Stop) => {
+    const exists = stopsList.find(x => x.stop_id === s.stop_id);
+    if (exists) setStopsList(prev => prev.map(x => x.stop_id === s.stop_id ? s : x));
+    else setStopsList(prev => [...prev, { ...s, stop_id: `STP${Date.now()}` }]);
+    setStopModal(null);
+  };
+
+  const handleSaveRoute = (r: Route) => {
+    const trans = transList.find(t => t.trans_id === r.trans_id);
+    const enriched = { ...r, trans_name: trans?.name || '' };
+    const exists = routesList.find(x => x.route_id === r.route_id);
+    if (exists) setRoutesList(prev => prev.map(x => x.route_id === r.route_id ? enriched : x));
+    else setRoutesList(prev => [...prev, { ...enriched, route_id: `RTE${Date.now()}` }]);
+    setRouteModal(null);
+  };
+
+  // ── STATS ──
+  const transStats = {
+    all: transList.length,
+    Bus: transList.filter(t => t.type === 'Bus').length,
+    MRT: transList.filter(t => t.type === 'MRT').length,
+    Train: transList.filter(t => t.type === 'Train').length,
+    LRT: transList.filter(t => t.type === 'LRT').length,
+  };
+
+  const stopStats = {
+    all: stopsList.length,
+    ramp: stopsList.filter(s => s.has_ramp).length,
+    elevator: stopsList.filter(s => s.has_elevator).length,
+    both: stopsList.filter(s => s.has_ramp && s.has_elevator).length,
+    none: stopsList.filter(s => !s.has_ramp && !s.has_elevator).length,
+  };
+
+  const tabs = [
+    { key: 'trans', label: 'Transportasi', count: transList.length },
+    { key: 'stops', label: 'Halte', count: stopsList.length },
+    { key: 'routes', label: 'Rute', count: routesList.length },
+  ];
+
+  return (
+    <div className="min-h-screen flex bg-background">
+      <AdminSidebar />
+
+      {/* Main content */}
+      <main className="flex-1 overflow-auto">
+        <div className="p-8">
+
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold mb-1">Manajemen Data</h1>
+            <p className="text-muted-foreground text-sm">Kelola data transportasi, halte, dan rute ARAHIN</p>
+          </div>
+
+          {/* ── STATS: TRANSPORTASI ── */}
+          {activeTab === 'trans' && (
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+              {[
+                { label: 'Total', val: transStats.all, color: 'text-primary' },
+                { label: 'Bus', val: transStats.Bus, color: 'text-orange-600' },
+                { label: 'MRT', val: transStats.MRT, color: 'text-blue-600' },
+                { label: 'Train', val: transStats.Train, color: 'text-emerald-600' },
+                { label: 'LRT', val: transStats.LRT, color: 'text-purple-600' },
+              ].map((s) => (
+                <div key={s.label} className="bg-card rounded-xl border border-border p-4">
+                  <div className={`text-2xl font-bold ${s.color} mb-1`}>{s.val}</div>
+                  <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── STATS: HALTE ── */}
+          {activeTab === 'stops' && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              {[
+                { label: 'Total Halte', val: stopStats.all, color: 'text-primary' },
+                { label: 'Ada Ramp', val: stopStats.ramp, color: 'text-emerald-600' },
+                { label: 'Ada Elevator', val: stopStats.elevator, color: 'text-blue-600' },
+                { label: 'Tanpa Fasilitas', val: stopStats.none, color: 'text-rose-600' },
+              ].map((s) => (
+                <div key={s.label} className="bg-card rounded-xl border border-border p-4">
+                  <div className={`text-2xl font-bold ${s.color} mb-1`}>{s.val}</div>
+                  <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className="flex items-center gap-2 mb-6 border-b border-border">
+            {tabs.map((tab) => (
+              <button key={tab.key}
+                onClick={() => { setActiveTab(tab.key as typeof activeTab); setSearch(''); setFilterType('All'); setFilterFacility('All'); }}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors -mb-px
+                  ${activeTab === tab.key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+                {tab.label}
+                <span className="bg-muted text-muted-foreground text-xs px-1.5 py-0.5 rounded-full">{tab.count}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* ── SEARCH + FILTER + ADD ── */}
+          <div className="flex flex-col gap-3 mb-6">
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={`Cari ${activeTab === 'trans' ? 'transportasi' : activeTab === 'stops' ? 'halte' : 'rute'}...`}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10 h-11"
+                />
+              </div>
+              <Button className="gap-2 h-11" onClick={() => {
+                if (activeTab === 'trans') setTransModal(emptyTrans);
+                else if (activeTab === 'stops') setStopModal(emptyStop);
+                else setRouteModal(emptyRoute);
+              }}>
+                <Plus className="h-4 w-4" />
+                Tambah {activeTab === 'trans' ? 'Transportasi' : activeTab === 'stops' ? 'Halte' : 'Rute'}
+              </Button>
+            </div>
+
+            {/* Filter Tipe Transportasi */}
+            {activeTab === 'trans' && (
+              <div className="flex flex-wrap gap-2">
+                {['All', 'Bus', 'MRT', 'Train', 'LRT'].map((f) => (
+                  <Button key={f} size="sm"
+                    variant={filterType === f ? 'default' : 'outline'}
+                    className="h-9 px-3 text-xs font-semibold"
+                    onClick={() => setFilterType(f)}>
+                    {f === 'All' ? 'Semua Tipe' : f}
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            {/* Filter Fasilitas Halte */}
+            {activeTab === 'stops' && (
+              <div className="flex flex-wrap gap-2">
+                {['All', 'Ramp', 'Elevator', 'Ramp & Elevator', 'Tanpa Fasilitas'].map((f) => (
+                  <Button key={f} size="sm"
+                    variant={filterFacility === f ? 'default' : 'outline'}
+                    className="h-9 px-3 text-xs font-semibold"
+                    onClick={() => setFilterFacility(f)}>
+                    {f === 'All' ? 'Semua Fasilitas' : f}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── TAB: TRANSPORTASI ── */}
+          {activeTab === 'trans' && (
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Transportasi</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Tipe</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Fasilitas</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Status</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredTrans.map((t) => (
+                    <tr key={t.trans_id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-semibold">{t.name}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{t.trans_id}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 px-2.5 py-1 rounded-full font-semibold">
+                          {t.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {t.is_low_entry && <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Low Entry</span>}
+                          {t.has_wheelchair_slot && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Slot Kursi Roda</span>}
+                          {t.has_priority_seat && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Kursi Prioritas</span>}
+                          {t.has_women_area && <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">Area Khusus Wanita</span>}
+                          {!t.is_low_entry && !t.has_wheelchair_slot && !t.has_priority_seat && !t.has_women_area && (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${t.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                          {t.is_active ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setTransModal(t)}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" />Edit
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                            onClick={() => setDeleteModal({ name: t.name, onConfirm: () => { setTransList(prev => prev.filter(x => x.trans_id !== t.trans_id)); setDeleteModal(null); } })}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredTrans.length === 0 && (
+                    <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground text-sm">Tidak ada data.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ── TAB: HALTE ── */}
+          {activeTab === 'stops' && (
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Halte</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Alamat</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Koordinat</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Fasilitas</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Status</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredStops.map((s) => (
+                    <tr key={s.stop_id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-semibold">{s.name}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{s.stop_id}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{s.address}</td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs text-muted-foreground font-mono">
+                          <div>{s.latitude.toFixed(5)}</div>
+                          <div>{s.longitude.toFixed(5)}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {s.has_ramp && <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Ramp</span>}
+                          {s.has_elevator && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Elevator</span>}
+                          {!s.has_ramp && !s.has_elevator && <span className="text-xs text-muted-foreground">-</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${s.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                          {s.is_active ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setStopModal(s)}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" />Edit
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                            onClick={() => setDeleteModal({ name: s.name, onConfirm: () => { setStopsList(prev => prev.filter(x => x.stop_id !== s.stop_id)); setDeleteModal(null); } })}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredStops.length === 0 && (
+                    <tr><td colSpan={6} className="px-6 py-12 text-center text-muted-foreground text-sm">Tidak ada data.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ── TAB: RUTE ── */}
+          {activeTab === 'routes' && (
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Nama Rute</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Transportasi</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Asal → Tujuan</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Status</th>
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredRoutes.map((r) => {
+                    const trans = transList.find(t => t.trans_id === r.trans_id);
+                    return (
+                      <tr key={r.route_id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-semibold">{r.route_name}</div>
+                          <div className="text-xs text-muted-foreground font-mono">{r.route_id}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm">{trans?.name || '-'}</div>
+                          <div className="text-xs text-muted-foreground">{trans?.type || ''}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium">{r.origin_stop_name}</span>
+                            <span className="text-muted-foreground">→</span>
+                            <span className="font-medium">{r.dest_stop_name}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                            {r.origin_stop_id} → {r.destination_stop_id}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${r.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                            {r.is_active ? 'Aktif' : 'Nonaktif'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setRouteModal(r)}>
+                              <Pencil className="h-3.5 w-3.5 mr-1" />Edit
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                              onClick={() => setDeleteModal({ name: r.route_name, onConfirm: () => { setRoutesList(prev => prev.filter(x => x.route_id !== r.route_id)); setDeleteModal(null); } })}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredRoutes.length === 0 && (
+                    <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground text-sm">Tidak ada data.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+        </div>
+      </main>
+
+      {/* Modals */}
+      {transModal && <TransModal trans={transModal} onSave={handleSaveTrans} onClose={() => setTransModal(null)} />}
+      {stopModal && <StopModal stop={stopModal} onSave={handleSaveStop} onClose={() => setStopModal(null)} />}
+      {routeModal && <RouteModal route={routeModal} transList={transList} stopsList={stopsList} onSave={handleSaveRoute} onClose={() => setRouteModal(null)} />}
+      {deleteModal && <DeleteModal name={deleteModal.name} onConfirm={deleteModal.onConfirm} onCancel={() => setDeleteModal(null)} />}
+
+    </div>
+  );
+}

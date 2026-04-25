@@ -23,6 +23,10 @@ import Reporting from "./pages/Reporting";
 import NotFound from "./pages/NotFound";
 import RouteMap from "./pages/RouteMap";
 import VerifyEmail from "./pages/VerifyEmail";
+import AdminGuides from "./pages/admin/Guides";
+import AdminSubscriptions from "./pages/admin/Subscriptions";
+import AdminReports from "./pages/admin/Reports";
+import AdminTransport from "./pages/admin/Data";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +54,10 @@ const App = () => (
           <Route path="/route-map" element={<RouteMap />} />
           <Route path="*" element={<NotFound />} />
           <Route path="/verify-email" element={<VerifyEmail/>} />
+          <Route path="/admin/guides" element={<AdminGuides />} />
+          <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/data" element={<AdminTransport />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
