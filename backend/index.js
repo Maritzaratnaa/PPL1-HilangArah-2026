@@ -8,8 +8,9 @@ const searchRoutes = require('./routes/searchRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const adminSubRoutes = require('./routes/adminSubRoutes');
-const adminRoleRoutes = require('./routes/adminRoleRoutes');
+const adminRoleRoutes = require('./routes/adminManageRoutes');
 const adminReportRoutes = require('./routes/adminReportRoutes');
+const adminTransportRoutes = require('./routes/adminTransportRoutes');
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 const adminGuideRoutes = require('./routes/adminGuideRoutes');
 
@@ -33,8 +34,9 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 
 app.use('/api/admin/subscriptions', adminSubRoutes);
-app.use('/api/admin/role', adminRoleRoutes);
+app.use('/api/admin/manage', adminRoleRoutes);
 app.use('/api/admin/reports', adminReportRoutes);
+app.use('/api/admin/transportations', adminTransportRoutes);
 app.use('/api/admin', adminDashboardRoutes);
 app.use('/api/admin/guides', adminGuideRoutes);
 
