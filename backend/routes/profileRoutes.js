@@ -5,7 +5,7 @@ const authController = require('../controllers/profileController');
 const profileController = require('../controllers/profileController'); 
 const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/', authMiddleware, profileController.getProfile);
-router.put('/', authMiddleware, profileController.updateProfile);
+router.get('/', authMiddleware.verifyToken, profileController.getProfile);
+router.put('/', authMiddleware.verifyToken, profileController.updateProfile);
 
 module.exports = router;

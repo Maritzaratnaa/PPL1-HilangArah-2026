@@ -9,12 +9,12 @@ const {
     deleteSubscription 
 } = require('../controllers/adminSubController');
 
-const authMiddleware = require('../middleware/authMiddleware'); 
+const {verifyToken, isAdmin} = require('../middleware/authMiddleware'); 
 
-router.get('', authMiddleware, authMiddleware.isAdmin, getAllSubscriptions);
-router.get('/:subs_id', authMiddleware, authMiddleware.isAdmin, getSubscriptionDetail);
-router.put('/:subs_id/assign-guide', authMiddleware, authMiddleware.isAdmin, assignGuideToSubscription);
-router.put('/:subs_id/status', authMiddleware, authMiddleware.isAdmin, updateSubscriptionStatus);
-router.delete('/:subs_id', authMiddleware, authMiddleware.isAdmin, deleteSubscription);
+router.get('', verifyToken, isAdmin, getAllSubscriptions);
+router.get('/:subs_id', verifyToken, isAdmin, getSubscriptionDetail);
+router.put('/:subs_id/assign-guide', verifyToken, isAdmin, assignGuideToSubscription);
+router.put('/:subs_id/status', verifyToken, isAdmin, updateSubscriptionStatus);
+router.delete('/:subs_id', verifyToken, isAdmin, deleteSubscription);
 
 module.exports = router;

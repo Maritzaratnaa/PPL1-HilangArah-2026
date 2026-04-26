@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { createSubscription, getMySubscription,cancelSubscription, activateSubscription, getPaymentToken } = require('../controllers/subscriptionController');
-const authenticateToken = require('../middleware/authMiddleware');
+const {verifyToken} = require('../middleware/authMiddleware');
 
-router.post('/', authenticateToken, createSubscription);
+router.post('/',verifyToken, createSubscription);
 
-router.get('/my-subs', authenticateToken, getMySubscription);
-router.delete('/my-subs', authenticateToken, cancelSubscription);
-router.put('/activate', authenticateToken, activateSubscription);
-router.post('/payment-token', authenticateToken, getPaymentToken);
+router.get('/my-subs',verifyToken, getMySubscription);
+router.delete('/my-subs',verifyToken, cancelSubscription);
+router.put('/activate',verifyToken, activateSubscription);
+router.post('/payment-token',verifyToken, getPaymentToken);
 
 module.exports = router;
