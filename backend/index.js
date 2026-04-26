@@ -10,6 +10,7 @@ const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const adminSubRoutes = require('./routes/adminSubRoutes');
 const adminRoleRoutes = require('./routes/adminRoleRoutes');
 const adminReportRoutes = require('./routes/adminReportRoutes');
+const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 
 const app = express();
 app.use(cors( {
@@ -33,6 +34,7 @@ app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/admin/subscriptions', adminSubRoutes);
 app.use('/api/admin/role', adminRoleRoutes);
 app.use('/api/admin/reports', adminReportRoutes);
+app.use('/api/admin', adminDashboardRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
