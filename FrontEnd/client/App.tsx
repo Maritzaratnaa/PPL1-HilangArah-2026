@@ -27,6 +27,7 @@ import AdminGuides from "./pages/admin/Guides";
 import AdminSubscriptions from "./pages/admin/Subscriptions";
 import AdminReports from "./pages/admin/Reports";
 import AdminTransport from "./pages/admin/Data";
+import AdminUsers from "./pages/admin/Users";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
           <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/data" element={<AdminTransport />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
