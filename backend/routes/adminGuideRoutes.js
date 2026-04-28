@@ -6,16 +6,18 @@ const {
     getGuideDetail, 
     createGuide, 
     toggleGuideStatus, 
-    deleteGuide 
+    updateGuide,
+    deleteGuide
 } = require('../controllers/adminGuideController');
 
-const authMiddleware = require('../middleware/authMiddleware'); 
+const { verifyToken, isAdmin } = require('../middleware/authMiddleware'); 
 
-// Rute Manajemen Pemandu (Semua dilindungi untuk Admin)
-router.get('/guides', authMiddleware.verifyToken, authMiddleware.isAdmin, getAllGuides);
-router.post('/guides', authMiddleware.verifyToken, authMiddleware.isAdmin, createGuide);
-router.get('/guides/:employee_id', authMiddleware.verifyToken, authMiddleware.isAdmin, getGuideDetail);
-router.put('/guides/:employee_id/status', authMiddleware.verifyToken, authMiddleware.isAdmin, toggleGuideStatus);
-router.delete('/guides/:employee_id', authMiddleware.verifyToken, authMiddleware.isAdmin, deleteGuide);
+// 👇 PERBAIKAN: Gunakan verifyToken, bukan authMiddleware
+router.get('/', verifyToken, isAdmin, getAllGuides);
+router.post('/', verifyToken, isAdmin, createGuide);
+router.get('/:employee_id', verifyToken, isAdmin, getGuideDetail);
+router.put('/:employee_id', verifyToken, isAdmin, updateGuide); 
+router.put('/:employee_id/status', verifyToken, isAdmin, toggleGuideStatus);
+router.delete('/:employee_id', verifyToken, isAdmin, deleteGuide);
 
 module.exports = router;
