@@ -1,64 +1,20 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  Search,
-  Trash2,
-  Pencil,
-  Plus,
-  X,
-  UserCheck,
-  Users,
-  Zap,
-  BarChart3,
-  FileText,
-  Bus,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Trash2, Pencil, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 
-const dummyGuides = [
-  {
-    employee_id: "EMP001",
-    full_name: "Andi Prasetyo",
-    phone_number: "+62 812 1111 2222",
-    domicile: "Jakarta Selatan",
-    is_available: true,
-  },
-  {
-    employee_id: "EMP002",
-    full_name: "Sari Dewi",
-    phone_number: "+62 813 2222 3333",
-    domicile: "Jakarta Barat",
-    is_available: true,
-  },
-  {
-    employee_id: "EMP003",
-    full_name: "Budi Hartono",
-    phone_number: "+62 814 3333 4444",
-    domicile: "Jakarta Pusat",
-    is_available: false,
-  },
-  {
-    employee_id: "EMP004",
-    full_name: "Rina Kusuma",
-    phone_number: "+62 815 4444 5555",
-    domicile: "Jakarta Timur",
-    is_available: true,
-  },
-  {
-    employee_id: "EMP005",
-    full_name: "Doni Setiawan",
-    phone_number: "+62 816 5555 6666",
-    domicile: "Jakarta Utara",
-    is_available: false,
-  },
-];
+// Sesuaikan interface dengan format dari Database
+interface Guide {
+  employee_id: string;
+  full_name: string;
+  phone_number: string;
+  domicile: string;
+  is_available: boolean; 
+}
 
-type Guide = (typeof dummyGuides)[0];
-
-const emptyForm = {
+const emptyForm: Guide = {
   employee_id: "",
   full_name: "",
   phone_number: "",
@@ -72,11 +28,11 @@ function GuideModal({
   onClose,
 }: {
   guide: Partial<Guide> & { employee_id: string };
-  onSave: (g: Guide) => void;
+  onSave: (g: Partial<Guide>) => void;
   onClose: () => void;
 }) {
   const [form, setForm] = useState({ ...emptyForm, ...guide });
-  const isEdit = !!guide.full_name;
+  const isEdit = !!guide.employee_id; // Cek isEdit dari ada/tidaknya ID
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -86,33 +42,20 @@ function GuideModal({
           <h3 className="text-lg font-bold">
             {isEdit ? "Edit Pemandu" : "Tambah Pemandu"}
           </h3>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-          >
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="space-y-4 mb-6">
+          {isEdit && (
+            <div>
+              <Label className="text-sm font-semibold mb-1.5 block">ID Karyawan</Label>
+              <Input value={form.employee_id} disabled className="h-10 bg-muted/50" />
+            </div>
+          )}
           <div>
-            <Label className="text-sm font-semibold mb-1.5 block">
-              ID Karyawan
-            </Label>
-            <Input
-              value={form.employee_id}
-              onChange={(e) =>
-                setForm({ ...form, employee_id: e.target.value })
-              }
-              placeholder="EMP001"
-              disabled={isEdit}
-              className="h-10"
-            />
-          </div>
-          <div>
-            <Label className="text-sm font-semibold mb-1.5 block">
-              Nama Lengkap
-            </Label>
+            <Label className="text-sm font-semibold mb-1.5 block">Nama Lengkap</Label>
             <Input
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
@@ -121,22 +64,16 @@ function GuideModal({
             />
           </div>
           <div>
-            <Label className="text-sm font-semibold mb-1.5 block">
-              Nomor Telepon
-            </Label>
+            <Label className="text-sm font-semibold mb-1.5 block">Nomor Telepon</Label>
             <Input
               value={form.phone_number}
-              onChange={(e) =>
-                setForm({ ...form, phone_number: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
               placeholder="+62 812 xxxx xxxx"
               className="h-10"
             />
           </div>
           <div>
-            <Label className="text-sm font-semibold mb-1.5 block">
-              Domisili
-            </Label>
+            <Label className="text-sm font-semibold mb-1.5 block">Domisili</Label>
             <Input
               value={form.domicile}
               onChange={(e) => setForm({ ...form, domicile: e.target.value })}
@@ -144,34 +81,18 @@ function GuideModal({
               className="h-10"
             />
           </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="is_available"
-              checked={form.is_available}
-              onChange={(e) =>
-                setForm({ ...form, is_available: e.target.checked })
-              }
-              className="h-4 w-4"
-            />
-            <Label
-              htmlFor="is_available"
-              className="text-sm font-semibold cursor-pointer"
-            >
-              Tersedia untuk bertugas
-            </Label>
-          </div>
         </div>
 
         <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={onClose}>
-            Batal
-          </Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>Batal</Button>
           <Button
             className="flex-1"
             onClick={() => {
-              if (!form.employee_id || !form.full_name) return;
-              onSave(form as Guide);
+              if (!form.full_name || !form.phone_number || !form.domicile) {
+                alert("Semua field wajib diisi!");
+                return;
+              }
+              onSave(form);
             }}
           >
             {isEdit ? "Simpan Perubahan" : "Tambah Pemandu"}
@@ -182,35 +103,18 @@ function GuideModal({
   );
 }
 
-function DeleteModal({
-  guide,
-  onConfirm,
-  onCancel,
-}: {
-  guide: Guide;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
+function DeleteModal({ guide, onConfirm, onCancel }: { guide: Guide; onConfirm: () => void; onCancel: () => void; }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm mx-4 shadow-xl">
         <h3 className="text-lg font-bold mb-2">Hapus Pemandu</h3>
         <p className="text-sm text-muted-foreground mb-6">
-          Apakah kamu yakin ingin menghapus pemandu{" "}
-          <strong>{guide.full_name}</strong>? Tindakan ini tidak dapat
-          dibatalkan.
+          Apakah kamu yakin ingin menghapus pemandu <strong>{guide.full_name}</strong>?
         </p>
         <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={onCancel}>
-            Batal
-          </Button>
-          <Button
-            className="flex-1 bg-rose-600 hover:bg-rose-700 text-white"
-            onClick={onConfirm}
-          >
-            Hapus
-          </Button>
+          <Button variant="outline" className="flex-1" onClick={onCancel}>Batal</Button>
+          <Button className="flex-1 bg-rose-600 hover:bg-rose-700 text-white" onClick={onConfirm}>Hapus</Button>
         </div>
       </div>
     </div>
@@ -218,12 +122,40 @@ function DeleteModal({
 }
 
 export default function AdminGuides() {
-  const [guides, setGuides] = useState(dummyGuides);
+  const [guides, setGuides] = useState<Guide[]>([]);
   const [search, setSearch] = useState("");
   const [modalGuide, setModalGuide] = useState<Partial<Guide> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Guide | null>(null);
   const [filterAvailability, setFilterAvailability] = useState("All");
 
+  const API_URL = "http://localhost:3000/api/admin/guides";
+  const token = localStorage.getItem("token"); // Ambil token admin dari storage
+
+  // --- MENGAMBIL DATA DARI BACKEND ---
+  const fetchGuides = async () => {
+    try {
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (res.ok) {
+        // PERBAIKAN: Cek angka 1 dari database
+        const mappedGuides = json.data.list.map((g: any) => ({
+          ...g,
+          is_available: g.is_available === 1 
+        }));
+        setGuides(mappedGuides);
+      }
+    } catch (error) {
+      console.error("Gagal mengambil data pemandu", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGuides();
+  }, []);
+
+  // --- FILTERING LOKAL ---
   const filtered = guides.filter((g) => {
     const matchSearch =
       g.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -236,83 +168,105 @@ export default function AdminGuides() {
     return matchSearch && matchFilter;
   });
 
-  const handleSave = (guide: Guide) => {
-    const exists = guides.find((g) => g.employee_id === guide.employee_id);
-    if (exists) {
-      setGuides((prev) =>
-        prev.map((g) => (g.employee_id === guide.employee_id ? guide : g)),
-      );
-    } else {
-      setGuides((prev) => [...prev, guide]);
+  // --- SIMPAN (CREATE & UPDATE) ---
+  const handleSave = async (guideData: Partial<Guide>) => {
+    const isEdit = !!guideData.employee_id;
+    const url = isEdit ? `${API_URL}/${guideData.employee_id}` : API_URL;
+    const method = isEdit ? "PUT" : "POST";
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(guideData),
+      });
+      
+      const json = await res.json();
+      if (res.ok) {
+        alert(json.message);
+        fetchGuides(); // Refresh data setelah berhasil
+        setModalGuide(null);
+      } else {
+        alert(json.message);
+      }
+    } catch (error) {
+      alert("Terjadi kesalahan jaringan.");
     }
-    setModalGuide(null);
   };
 
-  const handleDelete = (employeeId: string) => {
-    setGuides((prev) => prev.filter((g) => g.employee_id !== employeeId));
-    setDeleteTarget(null);
+  // --- HAPUS ---
+  const handleDelete = async (employeeId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/${employeeId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (res.ok) {
+        fetchGuides(); // Refresh data
+        setDeleteTarget(null);
+      } else {
+        alert(json.message); // Tampilkan alert jika gagal
+      }
+    } catch (error) {
+      alert("Gagal menghapus data.");
+    }
   };
 
-  const toggleAvailability = (employeeId: string) => {
-    setGuides((prev) =>
-      prev.map((g) =>
-        g.employee_id === employeeId
-          ? { ...g, is_available: !g.is_available }
-          : g,
-      ),
-    );
+  // --- UBAH STATUS TERSEDIA/TIDAK TERSEDIA ---
+  const toggleAvailability = async (guide: Guide) => {
+    // PERBAIKAN: Gunakan boolean !guide.is_available
+    const newStatus = !guide.is_available; 
+    try {
+      const res = await fetch(`${API_URL}/${guide.employee_id}/status`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        // PERBAIKAN: Kirim is_available ke backend
+        body: JSON.stringify({ is_available: newStatus }),
+      });
+      
+      if (res.ok) {
+        fetchGuides(); // Refresh data
+      } else {
+        const json = await res.json();
+        alert(json.message);
+      }
+    } catch (error) {
+      alert("Gagal mengubah status.");
+    }
   };
 
   return (
     <div className="min-h-screen flex bg-background">
       <AdminSidebar />
-
-      {/* Main content */}
       <main className="flex-1 overflow-auto">
         <div className="p-8">
-          {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-2xl font-bold mb-1">Manajemen Pemandu</h1>
-              <p className="text-muted-foreground text-sm">
-                Kelola data pemandu ARAHIN
-              </p>
+              <p className="text-muted-foreground text-sm">Kelola data pemandu ARAHIN</p>
             </div>
             <Button className="gap-2" onClick={() => setModalGuide(emptyForm)}>
-              <Plus className="h-4 w-4" />
-              Tambah Pemandu
+              <Plus className="h-4 w-4" /> Tambah Pemandu
             </Button>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[
-              {
-                label: "Total Pemandu",
-                val: guides.length,
-                color: "text-primary",
-              },
-              {
-                label: "Tersedia",
-                val: guides.filter((g) => g.is_available).length,
-                color: "text-emerald-600",
-              },
-              {
-                label: "Tidak Tersedia",
-                val: guides.filter((g) => !g.is_available).length,
-                color: "text-rose-600",
-              },
+              { label: "Total Pemandu", val: guides.length, color: "text-primary" },
+              { label: "Tersedia", val: guides.filter((g) => g.is_available).length, color: "text-emerald-600" },
+              { label: "Tidak Tersedia", val: guides.filter((g) => !g.is_available).length, color: "text-rose-600" },
             ].map((s) => (
-              <div
-                key={s.label}
-                className="bg-card rounded-xl border border-border p-5"
-              >
-                <div className={`text-3xl font-bold ${s.color} mb-1`}>
-                  {s.val}
-                </div>
-                <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                  {s.label}
-                </div>
+              <div key={s.label} className="bg-card rounded-xl border border-border p-5">
+                <div className={`text-3xl font-bold ${s.color} mb-1`}>{s.val}</div>
+                <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{s.label}</div>
               </div>
             ))}
           </div>
@@ -348,111 +302,54 @@ export default function AdminGuides() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                    Pemandu
-                  </th>
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                    ID Karyawan
-                  </th>
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                    Domisili
-                  </th>
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                    Status
-                  </th>
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                    Aksi
-                  </th>
+                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Pemandu</th>
+                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">ID Karyawan</th>
+                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Domisili</th>
+                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Status</th>
+                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((guide) => (
-                  <tr
-                    key={guide.employee_id}
-                    className="hover:bg-muted/30 transition-colors"
-                  >
+                  <tr key={guide.employee_id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
-                          {guide.full_name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase()}
+                          {guide.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-sm font-semibold">
-                            {guide.full_name}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {guide.phone_number}
-                          </div>
+                          <div className="text-sm font-semibold">{guide.full_name}</div>
+                          <div className="text-xs text-muted-foreground">{guide.phone_number}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground font-mono">
-                      {guide.employee_id}
-                    </td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground font-mono">{guide.employee_id}</td>
                     <td className="px-6 py-4 text-sm">{guide.domicile}</td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                          guide.is_available
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-                            : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
-                        }`}
-                      >
-                        {guide.is_available
-                          ? "Tersedia"
-                          : "Tidak Tersedia"}
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${guide.is_available ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                        {guide.is_available ? "Tersedia" : "Tidak Tersedia"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs"
-                          onClick={() => setModalGuide(guide)}
-                        >
-                          <Pencil className="h-3.5 w-3.5 mr-1" />
-                          Edit
+                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setModalGuide(guide)}>
+                          <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          className={`h-8 text-xs ${
-                            guide.is_available
-                              ? "text-rose-600 border-rose-200 hover:bg-rose-50"
-                              : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                          }`}
-                          onClick={() => toggleAvailability(guide.employee_id)}
+                          className={`h-8 text-xs ${guide.is_available ? "text-rose-600 border-rose-200" : "text-emerald-600 border-emerald-200"}`}
+                          onClick={() => toggleAvailability(guide)}
                         >
                           {guide.is_available ? "Nonaktifkan" : "Aktifkan"}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
-                          onClick={() => setDeleteTarget(guide)}
-                        >
+                        <Button size="sm" variant="outline" className="h-8 text-xs text-rose-600 border-rose-200" onClick={() => setDeleteTarget(guide)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-12 text-center text-muted-foreground text-sm"
-                    >
-                      Tidak ada pemandu yang ditemukan.
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
@@ -460,20 +357,8 @@ export default function AdminGuides() {
       </main>
 
       {/* Modals */}
-      {modalGuide && (
-        <GuideModal
-          guide={modalGuide as Guide}
-          onSave={handleSave}
-          onClose={() => setModalGuide(null)}
-        />
-      )}
-      {deleteTarget && (
-        <DeleteModal
-          guide={deleteTarget}
-          onConfirm={() => handleDelete(deleteTarget.employee_id)}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      {modalGuide && <GuideModal guide={modalGuide as Guide} onSave={handleSave} onClose={() => setModalGuide(null)} />}
+      {deleteTarget && <DeleteModal guide={deleteTarget} onConfirm={() => handleDelete(deleteTarget.employee_id)} onCancel={() => setDeleteTarget(null)} />}
     </div>
   );
 }

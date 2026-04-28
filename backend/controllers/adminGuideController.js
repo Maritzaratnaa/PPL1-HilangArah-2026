@@ -1,24 +1,22 @@
 const pool = require('../db');
-const crypto = require('crypto');
 
 // ==========================================
-// 1. GET ALL GUIDES & STATS (Untuk Tabel & Statistik Atas)
+// 1. GET ALL GUIDES & STATS
 // ==========================================
 const getAllGuides = async (req, res) => {
     try {
         const { search } = req.query;
 
-        // Query untuk Statistik (Top Cards)
+        // Query Statistik menyesuaikan kolom is_available (1 = Tersedia, 0 = Tidak)
         const statsQuery = `
             SELECT 
                 COUNT(*) AS total_pemandu,
-                SUM(IF(status = 'Tersedia', 1, 0)) AS tersedia,
-                SUM(IF(status = 'Tidak Tersedia', 1, 0)) AS tidak_tersedia
+                SUM(IF(is_available = 1, 1, 0)) AS tersedia,
+                SUM(IF(is_available = 0, 1, 0)) AS tidak_tersedia
             FROM guides
         `;
         const [statsResult] = await pool.query(statsQuery);
 
-        // Query untuk Tabel dengan fitur Search
         let tableQuery = `SELECT * FROM guides WHERE 1=1`;
         const queryParams = [];
 
@@ -60,109 +58,109 @@ const getGuideDetail = async (req, res) => {
             return res.status(404).json({ message: "Data pemandu tidak ditemukan." });
         }
 
-        res.status(200).json({
-            message: "Berhasil mengambil detail pemandu",
-            data: guide[0]
-        });
-
+        res.status(200).json({ message: "Berhasil mengambil detail", data: guide[0] });
     } catch (error) {
-        console.error("❌ Error Get Guide Detail:", error);
         res.status(500).json({ message: "Terjadi kesalahan server." });
     }
 };
 
 // ==========================================
-// 3. CREATE NEW GUIDE (+ Tambah Pemandu)
+// 3. CREATE NEW GUIDE 
 // ==========================================
 const createGuide = async (req, res) => {
     try {
         const { full_name, phone_number, domicile } = req.body;
 
         if (!full_name || !phone_number || !domicile) {
-            return res.status(400).json({ message: "Nama, nomor telepon, dan domisili wajib diisi!" });
+            return res.status(400).json({ message: "Nama, telepon, dan domisili wajib diisi!" });
         }
 
-        // Bikin ID Karyawan unik (Bisa disesuaikan formatnya, misal EMP + 3 digit acak)
         const randomNum = Math.floor(100 + Math.random() * 900);
-        const employee_id = `EMP${randomNum}`; 
-        // Atau pakai crypto.randomUUID() jika database pakai tipe VARCHAR(36)
+        const employee_id = `G-${randomNum}`; // Format disesuaikan dengan screenshot: G-001
         
         const insertQuery = `
-            INSERT INTO guides (employee_id, full_name, phone_number, domicile, status) 
-            VALUES (?, ?, ?, ?, 'Tersedia')
+            INSERT INTO guides (employee_id, full_name, phone_number, domicile, is_available) 
+            VALUES (?, ?, ?, ?, 1)
         `;
         
         await pool.query(insertQuery, [employee_id, full_name, phone_number, domicile]);
 
-        res.status(201).json({ 
-            message: "Pemandu berhasil ditambahkan!",
-            employee_id: employee_id 
-        });
-
+        res.status(201).json({ message: "Pemandu berhasil ditambahkan!", employee_id });
     } catch (error) {
         console.error("❌ Error Create Guide:", error);
-        res.status(500).json({ message: "Terjadi kesalahan server saat menambah pemandu." });
+        res.status(500).json({ message: "Gagal menambah pemandu." });
     }
 };
 
 // ==========================================
-// 4. TOGGLE STATUS (Aktifkan / Nonaktifkan)
+// 4. TOGGLE STATUS
 // ==========================================
 const toggleGuideStatus = async (req, res) => {
     try {
         const { employee_id } = req.params;
-        const { status } = req.body; // 'Tersedia' atau 'Tidak Tersedia'
+        const { is_available } = req.body; // Menerima boolean (true/false) dari frontend
 
-        if (!['Tersedia', 'Tidak Tersedia'].includes(status)) {
-            return res.status(400).json({ message: "Status tidak valid! Gunakan 'Tersedia' atau 'Tidak Tersedia'." });
-        }
+        // Konversi boolean true/false menjadi angka 1/0 untuk MySQL
+        const val = is_available ? 1 : 0; 
 
-        const [result] = await pool.query(`UPDATE guides SET status = ? WHERE employee_id = ?`, [status, employee_id]);
+        const [result] = await pool.query(`UPDATE guides SET is_available = ? WHERE employee_id = ?`, [val, employee_id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Data pemandu tidak ditemukan." });
         }
 
-        res.status(200).json({ message: `Status pemandu berhasil diubah menjadi ${status}` });
-
+        res.status(200).json({ message: `Status berhasil diubah.` });
     } catch (error) {
-        console.error("❌ Error Toggle Status:", error);
-        res.status(500).json({ message: "Terjadi kesalahan server saat mengubah status pemandu." });
+        res.status(500).json({ message: "Gagal mengubah status pemandu." });
     }
 };
 
 // ==========================================
-// 5. DELETE GUIDE (Hapus)
+// 5. UPDATE GUIDE (Edit)
+// ==========================================
+const updateGuide = async (req, res) => {
+    try {
+        const { employee_id } = req.params;
+        const { full_name, phone_number, domicile } = req.body;
+
+        const [result] = await pool.query(
+            `UPDATE guides SET full_name = ?, phone_number = ?, domicile = ? WHERE employee_id = ?`, 
+            [full_name, phone_number, domicile, employee_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Data tidak ditemukan." });
+        }
+
+        res.status(200).json({ message: "Data pemandu berhasil diperbarui!" });
+    } catch (error) {
+        res.status(500).json({ message: "Gagal memperbarui pemandu." });
+    }
+};
+
+// ==========================================
+// 6. DELETE GUIDE
 // ==========================================
 const deleteGuide = async (req, res) => {
     try {
         const { employee_id } = req.params;
-
-        // Cek apakah pemandu sedang melayani langganan aktif
-        const [activeSubs] = await pool.query(`SELECT subs_id FROM subs WHERE employee_id = ? AND status = 'Active'`, [employee_id]);
-        
-        if (activeSubs.length > 0) {
-            return res.status(400).json({ message: "Pemandu tidak bisa dihapus karena sedang melayani langganan aktif!" });
-        }
-
         const [result] = await pool.query(`DELETE FROM guides WHERE employee_id = ?`, [employee_id]);
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Data pemandu tidak ditemukan." });
+            return res.status(404).json({ message: "Data tidak ditemukan." });
         }
-
-        res.status(200).json({ message: "Data pemandu berhasil dihapus." });
-
+        res.status(200).json({ message: "Data berhasil dihapus." });
     } catch (error) {
-        console.error("❌ Error Delete Guide:", error);
-        res.status(500).json({ message: "Terjadi kesalahan server saat menghapus data." });
+        res.status(500).json({ message: "Gagal menghapus data." });
     }
 };
 
+// 👇 PASTIKAN SEMUA FUNGSI DIEKSPOR DI SINI
 module.exports = {
     getAllGuides,
     getGuideDetail,
     createGuide,
     toggleGuideStatus,
+    updateGuide,
     deleteGuide
 };
