@@ -1,64 +1,75 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Trash2, X, Users, UserCheck, Zap, FileText, BarChart3, Bus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 
-const dummyReports = [
-  {
-    report_id: 'RPT001',
-    reporter_name: 'Budi Santoso',
-    category: 'Fasilitas',
-    stop_name: 'Halte Sudirman',
-    description: 'Lift di halte ini sudah tidak berfungsi sejak 3 hari yang lalu. Sangat menyulitkan pengguna kursi roda.',
-    status: 'Pending',
-    created_at: '2026-03-20 08:30',
-    resolved_by: null,
-  },
-  {
-    report_id: 'RPT002',
-    reporter_name: 'Siti Rahma',
-    category: 'Fasilitas',
-    stop_name: 'Halte Blok M',
-    description: 'Ramp untuk kursi roda rusak dan berbahaya untuk digunakan.',
-    status: 'Processed',
-    created_at: '2026-03-19 14:20',
-    resolved_by: 'Admin',
-  },
-  {
-    report_id: 'RPT003',
-    reporter_name: 'Ahmad Rizal',
-    category: 'Pemandu',
-    stop_name: null,
-    description: 'Pemandu tidak datang tepat waktu dan tidak responsif saat dihubungi.',
-    status: 'Resolved',
-    created_at: '2026-03-18 10:00',
-    resolved_by: 'Admin',
-  },
-  {
-    report_id: 'RPT004',
-    reporter_name: 'Rinta Sari',
-    category: 'Fasilitas',
-    stop_name: 'Stasiun Manggarai',
-    description: 'Guiding block di stasiun ini banyak yang rusak dan terhalang oleh pedagang.',
-    status: 'Pending',
-    created_at: '2026-03-21 09:15',
-    resolved_by: null,
-  },
-  {
-    report_id: 'RPT005',
-    reporter_name: 'Dewi Ayu',
-    category: 'Pemandu',
-    stop_name: null,
-    description: 'Pemandu bersikap tidak sopan dan tidak sabar saat mendampingi.',
-    status: 'Processed',
-    created_at: '2026-03-17 16:45',
-    resolved_by: 'Admin',
-  },
-];
+export interface Report {
+  report_id: string;
+  reporter_name: string;
+  category: string;
+  stop_name: string | null;
+  description: string;
+  status: string;
+  created_at: string;
+  resolved_by: string | null;
+}
 
-type Report = typeof dummyReports[0];
+// const dummyReports = [
+//   {
+//     report_id: 'RPT001',
+//     reporter_name: 'Budi Santoso',
+//     category: 'Fasilitas',
+//     stop_name: 'Halte Sudirman',
+//     description: 'Lift di halte ini sudah tidak berfungsi sejak 3 hari yang lalu. Sangat menyulitkan pengguna kursi roda.',
+//     status: 'Pending',
+//     created_at: '2026-03-20 08:30',
+//     resolved_by: null,
+//   },
+//   {
+//     report_id: 'RPT002',
+//     reporter_name: 'Siti Rahma',
+//     category: 'Fasilitas',
+//     stop_name: 'Halte Blok M',
+//     description: 'Ramp untuk kursi roda rusak dan berbahaya untuk digunakan.',
+//     status: 'Processed',
+//     created_at: '2026-03-19 14:20',
+//     resolved_by: 'Admin',
+//   },
+//   {
+//     report_id: 'RPT003',
+//     reporter_name: 'Ahmad Rizal',
+//     category: 'Pemandu',
+//     stop_name: null,
+//     description: 'Pemandu tidak datang tepat waktu dan tidak responsif saat dihubungi.',
+//     status: 'Resolved',
+//     created_at: '2026-03-18 10:00',
+//     resolved_by: 'Admin',
+//   },
+//   {
+//     report_id: 'RPT004',
+//     reporter_name: 'Rinta Sari',
+//     category: 'Fasilitas',
+//     stop_name: 'Stasiun Manggarai',
+//     description: 'Guiding block di stasiun ini banyak yang rusak dan terhalang oleh pedagang.',
+//     status: 'Pending',
+//     created_at: '2026-03-21 09:15',
+//     resolved_by: null,
+//   },
+//   {
+//     report_id: 'RPT005',
+//     reporter_name: 'Dewi Ayu',
+//     category: 'Pemandu',
+//     stop_name: null,
+//     description: 'Pemandu bersikap tidak sopan dan tidak sabar saat mendampingi.',
+//     status: 'Processed',
+//     created_at: '2026-03-17 16:45',
+//     resolved_by: 'Admin',
+//   },
+// ];
+
+// type Report = typeof dummyReports[0];
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   Pending: { label: 'Pending', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300' },
@@ -171,13 +182,61 @@ function DeleteModal({ report, onConfirm, onCancel }: {
   );
 }
 
+// Integrasi API Ambil Data
 export default function AdminReports() {
-  const [reports, setReports] = useState(dummyReports);
+  const [reports, setReports] = useState<Report[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterCategory, setFilterCategory] = useState('All');
   const [detailTarget, setDetailTarget] = useState<Report | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Report | null>(null);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:3000/api/admin/reports/all', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+          setReports(result.data || []);
+        }
+      }
+      catch (error) {
+        console.error("Gagal mengambil data laporan: ", error);
+      }
+    };
+    fetchReports();
+  }, []);
+
+  // Integrasi API Update Data
+  const handleStatusChange = async (reportId: string, status: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3000/api/admin/reports/status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ report_id: reportId, status: status }) 
+      });
+
+      if (response.ok) {
+        setReports(prev => prev.map(r => r.report_id === reportId ? { ...r, status } : r));
+      }
+      else {
+        alert("Gagal mengubah status di server");
+      }
+    }
+    catch (error) {
+      console.error("Error update status:", error);
+    }
+  };
 
   const filtered = reports.filter(r => {
     const matchSearch =
@@ -189,13 +248,27 @@ export default function AdminReports() {
     return matchSearch && matchStatus && matchCategory;
   });
 
-  const handleStatusChange = (reportId: string, status: string) => {
-    setReports(prev => prev.map(r => r.report_id === reportId ? { ...r, status } : r));
-  };
+  // Integrasi API Delete Data
+  const handleDelete = async (reportId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3000/api/admin/reports/${reportId}`, {
+        method: 'DELETE',
+        headers: {'Authorization': `Bearer ${token}`}
+      });
 
-  const handleDelete = (reportId: string) => {
-    setReports(prev => prev.filter(r => r.report_id !== reportId));
-    setDeleteTarget(null);
+      if(response.ok) {
+        setReports(prev => prev.filter(r => r.report_id !== reportId));
+        setDeleteTarget(null);
+      }
+      else {
+        alert("Gagal menghapus laporan di server.");
+      }
+    }
+    catch (error) {
+      console.error("Error delete report: ", error);
+      alert("Terjadi kesalahan koneksi saat menghapus data.");
+    }
   };
 
   return (

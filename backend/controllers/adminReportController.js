@@ -5,10 +5,19 @@ const { report } = require('../routes/authRoutes');
 const getAllReports = async (req, res) => {
     try {
         const query =
-            `SELECT reports.*, users.email as reporter_email
-            FROM reports
-            JOIN users ON reports.reporter_id = users.user_id
-            ORDER BY reports.created_At DESC`;
+            `SELECT 
+                r.report_id, 
+                p.full_name AS reporter_name, 
+                r.category, 
+                s.name AS stop_name, 
+                r.description, 
+                r.status, 
+                r.created_at, 
+                r.resolved_by
+            FROM reports r
+            LEFT JOIN profiles p ON r.reporter_id = p.user_id
+            LEFT JOIN stops s ON r.stop_id = s.stop_id
+            ORDER BY r.created_at DESC`;
         const [reports] = await pool.execute(query);
 
             res.status(200).json({
@@ -59,7 +68,27 @@ const updateReportStatus = async (req, res) => {
     }
 };
 
+// Hapus Laporan
+const deleteReport = async (req, res) => {
+    try {
+        const {id} = req.params;
+
+        const query = `DELETE FROM reports WHERE report_id = ?`;
+        const [result] = await pool.query(query, [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({message: "Laporan tidak ditemukan atau sudah dihapus."});
+        }
+        res.status(200).json({message: "Laporan berhasil dihapus secara permanen!"});
+    }
+    catch (error) {
+        console.error("Error Delete Report: ", error);
+        res.status(500).json({message: "Gagal menghapus laporan dari database."});
+    }
+};
+
 module.exports = {
     getAllReports,
-    updateReportStatus
+    updateReportStatus,
+    deleteReport
 };

@@ -4,6 +4,7 @@ const adminReportController = require('../controllers/adminReportController');
 const {verifyToken, isAdmin} = require('../middleware/authMiddleware');
 
 router.get('/all', verifyToken, isAdmin, adminReportController.getAllReports);
-router.patch('/status', verifyToken, isAdmin, adminReportController.updateReportStatus);
+router.put('/status', verifyToken, isAdmin, adminReportController.updateReportStatus);
+router.delete('/:id',verifyToken, isAdmin, adminReportController.deleteReport);
 
 module.exports = router;
