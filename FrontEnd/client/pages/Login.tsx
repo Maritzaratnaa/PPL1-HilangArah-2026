@@ -27,14 +27,25 @@ export default function Login() {
         localStorage.setItem("token", json.token);
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("userName", json.user.full_name);
-        localStorage.setItem('userCategory', json.user.category);
-        navigate("/home");
-      } else {
+
+        const userRole = json.user.role || json.user.category;
+        localStorage.setItem('userCategory', userRole);
+
+        if (userRole === "Admin") {
+          navigate("/admin/reports");
+        }
+        else {
+          navigate("/home");
+        }
+      }
+      else {
         alert(json.message);
       }
-    } catch (err) {
+    }
+    catch (err) {
       alert("Gagal menghubungi server.");
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   };
