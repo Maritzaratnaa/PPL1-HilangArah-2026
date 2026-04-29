@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Trash2, Pencil, Plus, X, Users, UserCheck, Zap, BarChart3, FileText, Bus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 
-// ── DUMMY DATA ── disesuaikan dengan database
+// ── DUMMY DATA ── (Untuk Transportasi dan Halte sementara)
 const dummyTrans = [
   { trans_id: 'TRN001', name: 'TransJakarta Koridor 1', type: 'Bus', is_low_entry: true, has_wheelchair_slot: true, has_priority_seat: true, has_women_area: true, is_active: true },
   { trans_id: 'TRN002', name: 'MRT Jakarta', type: 'MRT', is_low_entry: true, has_wheelchair_slot: true, has_priority_seat: true, has_women_area: false, is_active: true },
@@ -20,43 +20,6 @@ const dummyStops = [
   { stop_id: 'STP003', name: 'Halte Bundaran HI', address: 'Jl. MH Thamrin', latitude: -6.19467, longitude: 106.82299, has_ramp: true, has_elevator: true, is_active: true },
   { stop_id: 'STP004', name: 'Halte Harmoni', address: 'Jl. Gajah Mada', latitude: -6.13682, longitude: 106.81342, has_ramp: false, has_elevator: false, is_active: true },
   { stop_id: 'STP005', name: 'Stasiun Manggarai', address: 'Jl. Manggarai Utara', latitude: -6.21409, longitude: 106.85062, has_ramp: true, has_elevator: true, is_active: false },
-];
-
-const dummyRoutes: Route[] = [
-  {
-    route_id: 'RTE001', trans_id: 'TRN001',
-    route_name: 'Koridor 1 - Blok M - Kota',
-    origin_stop_id: 'STP002', destination_stop_id: 'STP001',
-    origin_stop_name: 'Halte Blok M', dest_stop_name: 'Halte Kota',
-    is_active: true,
-    route_stops: [
-      { stop_id: 'STP002', stop_name: 'Halte Blok M', stop_order: 1, est_time_minutes: 0 },
-      { stop_id: 'STP003', stop_name: 'Halte Bundaran HI', stop_order: 2, est_time_minutes: 10 },
-      { stop_id: 'STP001', stop_name: 'Halte Sudirman', stop_order: 3, est_time_minutes: 20 },
-    ],
-  },
-  {
-    route_id: 'RTE002', trans_id: 'TRN002',
-    route_name: 'MRT Lebak Bulus - Bundaran HI',
-    origin_stop_id: 'STP001', destination_stop_id: 'STP003',
-    origin_stop_name: 'Stasiun Lebak Bulus', dest_stop_name: 'Stasiun Bundaran HI',
-    is_active: true,
-    route_stops: [
-      { stop_id: 'STP001', stop_name: 'Stasiun Lebak Bulus', stop_order: 1, est_time_minutes: 0 },
-      { stop_id: 'STP003', stop_name: 'Stasiun Bundaran HI', stop_order: 2, est_time_minutes: 12 },
-    ],
-  },
-  {
-    route_id: 'RTE003', trans_id: 'TRN003',
-    route_name: 'KRL Bogor - Jakarta Kota',
-    origin_stop_id: 'STP005', destination_stop_id: 'STP001',
-    origin_stop_name: 'Stasiun Bogor', dest_stop_name: 'Stasiun Jakarta Kota',
-    is_active: true,
-    route_stops: [
-      { stop_id: 'STP005', stop_name: 'Stasiun Manggarai', stop_order: 1, est_time_minutes: 0 },
-      { stop_id: 'STP001', stop_name: 'Stasiun Jakarta Kota', stop_order: 2, est_time_minutes: 45 },
-    ],
-  },
 ];
 
 type Trans = typeof dummyTrans[0];
@@ -100,7 +63,7 @@ const emptyRoute: Route = {
   route_stops: [],
 };
 
-// ── TRANS MODAL ── disesuaikan dengan database (tambah has_women_area)
+// ── TRANS MODAL ──
 function TransModal({ trans, onSave, onClose }: { trans: Partial<Trans>; onSave: (t: Trans) => void; onClose: () => void }) {
   const [form, setForm] = useState({ ...emptyTrans, ...trans });
   const isEdit = !!trans.name;
@@ -157,7 +120,7 @@ function TransModal({ trans, onSave, onClose }: { trans: Partial<Trans>; onSave:
   );
 }
 
-// ── STOP MODAL ── disesuaikan dengan database (tambah latitude, longitude)
+// ── STOP MODAL ──
 function StopModal({ stop, onSave, onClose }: { stop: Partial<Stop>; onSave: (s: Stop) => void; onClose: () => void }) {
   const [form, setForm] = useState({ ...emptyStop, ...stop });
   const isEdit = !!stop.name;
@@ -411,9 +374,12 @@ export default function AdminData() {
   const [activeTab, setActiveTab] = useState<'trans' | 'stops' | 'routes'>('trans');
   const [search, setSearch] = useState('');
 
+  // Transport & Stops menggunakan Dummy Data Sementara
   const [transList, setTransList] = useState(dummyTrans);
   const [stopsList, setStopsList] = useState(dummyStops);
-  const [routesList, setRoutesList] = useState(dummyRoutes);
+  
+  // Routes di-set kosong karena akan di-fetch dari Backend API
+  const [routesList, setRoutesList] = useState<Route[]>([]);
 
   // Filter states
   const [filterType, setFilterType] = useState('All');
@@ -423,6 +389,104 @@ export default function AdminData() {
   const [stopModal, setStopModal] = useState<Partial<Stop> | null>(null);
   const [routeModal, setRouteModal] = useState<Partial<Route> | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ name: string; onConfirm: () => void } | null>(null);
+
+  // --- API SETTINGS ---
+  const API_URL_ROUTES = "http://localhost:3000/api/admin/transportations/routes";
+  const token = localStorage.getItem("token");
+
+  // ==========================================
+  // 🚀 LOGIKA API RUTE (FETCH, SAVE, DELETE)
+  // ==========================================
+
+  const fetchRoutes = async () => {
+    try {
+      const res = await fetch(API_URL_ROUTES, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      
+      if (res.ok) {
+        // Konversi format DB ke format State UI
+        const mappedRoutes = json.data.map((r: any) => ({
+          route_id: r.route_id,
+          trans_id: r.trans_id,
+          route_name: r.route_name,
+          origin_stop_id: r.origin_stop_id,
+          destination_stop_id: r.destination_stop_id,
+          origin_stop_name: r.origin_stop_name || '',
+          dest_stop_name: r.destination_stop_name || '', // Di UI menggunakan dest_stop_name
+          is_active: r.is_active === 1, // Ubah tinyint(1) ke boolean true/false
+          route_stops: [], // Di-set kosong karena backend belum punya tabel route_stops
+        }));
+        setRoutesList(mappedRoutes);
+      }
+    } catch (error) {
+      console.error("Gagal mengambil data rute:", error);
+    }
+  };
+
+  // Muat rute saat pertama kali halaman dibuka
+  useEffect(() => {
+    fetchRoutes();
+  }, []);
+
+  const handleSaveRoute = async (r: Route) => {
+    const isEdit = !!r.route_id && r.route_id !== '';
+    const url = isEdit ? `${API_URL_ROUTES}/${r.route_id}` : API_URL_ROUTES;
+    const method = isEdit ? "PUT" : "POST";
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          route_name: r.route_name,
+          origin_stop_id: r.origin_stop_id,
+          destination_stop_id: r.destination_stop_id,
+          trans_id: r.trans_id,
+          is_active: r.is_active ? 1 : 0 // Ubah boolean kembali ke angka
+        }),
+      });
+      
+      const json = await res.json();
+      if (res.ok) {
+        alert(json.message);
+        fetchRoutes(); // Refresh data dari DB
+        setRouteModal(null); // Tutup modal
+      } else {
+        alert(json.message);
+      }
+    } catch (error) {
+      alert("Terjadi kesalahan jaringan.");
+    }
+  };
+
+  const handleDeleteRoute = async (route_id: string) => {
+    try {
+      const res = await fetch(`${API_URL_ROUTES}/${route_id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (res.ok) {
+        fetchRoutes(); // Refresh data
+        setDeleteModal(null);
+      } else {
+        const json = await res.json();
+        alert(json.message);
+      }
+    } catch (error) {
+      alert("Gagal menghapus rute.");
+    }
+  };
+
+  // ==========================================
+  // 🛑 END LOGIKA API RUTE
+  // ==========================================
+
 
   // ── FILTERED DATA ──
   const filteredTrans = transList.filter(t => {
@@ -448,7 +512,7 @@ export default function AdminData() {
     r.dest_stop_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ── SAVE HANDLERS ──
+  // ── LOCAL SAVE HANDLERS (Untuk Transport & Stop Dummy) ──
   const handleSaveTrans = (t: Trans) => {
     const exists = transList.find(x => x.trans_id === t.trans_id);
     if (exists) setTransList(prev => prev.map(x => x.trans_id === t.trans_id ? t : x));
@@ -461,15 +525,6 @@ export default function AdminData() {
     if (exists) setStopsList(prev => prev.map(x => x.stop_id === s.stop_id ? s : x));
     else setStopsList(prev => [...prev, { ...s, stop_id: `STP${Date.now()}` }]);
     setStopModal(null);
-  };
-
-  const handleSaveRoute = (r: Route) => {
-    const trans = transList.find(t => t.trans_id === r.trans_id);
-    const enriched = { ...r, trans_name: trans?.name || '' };
-    const exists = routesList.find(x => x.route_id === r.route_id);
-    if (exists) setRoutesList(prev => prev.map(x => x.route_id === r.route_id ? enriched : x));
-    else setRoutesList(prev => [...prev, { ...enriched, route_id: `RTE${Date.now()}` }]);
-    setRouteModal(null);
   };
 
   // ── STATS ──
@@ -1034,14 +1089,7 @@ export default function AdminData() {
                               onClick={() =>
                                 setDeleteModal({
                                   name: r.route_name,
-                                  onConfirm: () => {
-                                    setRoutesList((prev) =>
-                                      prev.filter(
-                                        (x) => x.route_id !== r.route_id,
-                                      ),
-                                    );
-                                    setDeleteModal(null);
-                                  },
+                                  onConfirm: () => handleDeleteRoute(r.route_id),
                                 })
                               }
                             >
