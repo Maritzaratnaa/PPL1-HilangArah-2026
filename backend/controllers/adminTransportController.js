@@ -172,6 +172,21 @@ const updateRoute = async (req, res) => {
     }
 };
 
+const deleteRoute = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [result] = await pool.query(`DELETE FROM routes WHERE route_id = ?`, [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Data rute tidak ditemukan." });
+        }
+        res.status(200).json({ message: "Data rute berhasil dihapus!" });
+    } catch (error) {
+        console.error("Error Delete Route: ", error);
+        res.status(500).json({ message: "Gagal menghapus data rute." });
+    }
+};
+
 // Get Data Halte
 const getAllStops = async (req, res) => {
     try {
@@ -273,6 +288,7 @@ module.exports = {
     getAllRoutes,
     createRoute,
     updateRoute,
+    deleteRoute,
     getAllStops,
     createStop,
     updateStop
