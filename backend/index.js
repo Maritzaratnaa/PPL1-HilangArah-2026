@@ -13,6 +13,7 @@ const adminReportRoutes = require('./routes/adminReportRoutes');
 const adminTransportRoutes = require('./routes/adminTransportRoutes');
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 const adminGuideRoutes = require('./routes/adminGuideRoutes');
+const adminUserRoutes = require('./routes/adminUserRoutes');
 
 const app = express();
 app.use(cors( {
@@ -39,6 +40,7 @@ app.use('/api/admin/reports', adminReportRoutes);
 app.use('/api/admin/transportations', adminTransportRoutes);
 app.use('/api/admin', adminDashboardRoutes);
 app.use('/api/admin/guides', adminGuideRoutes);
+app.use('/api/admin/users', adminUserRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
