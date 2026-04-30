@@ -5,25 +5,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
+import { preview } from 'vite';
 
-// ── DUMMY DATA ── (Untuk Transportasi dan Halte sementara)
-const dummyTrans = [
-  { trans_id: 'TRN001', name: 'TransJakarta Koridor 1', type: 'Bus', is_low_entry: true, has_wheelchair_slot: true, has_priority_seat: true, has_women_area: true, is_active: true },
-  { trans_id: 'TRN002', name: 'MRT Jakarta', type: 'MRT', is_low_entry: true, has_wheelchair_slot: true, has_priority_seat: true, has_women_area: false, is_active: true },
-  { trans_id: 'TRN003', name: 'KRL Commuterline', type: 'Train', is_low_entry: false, has_wheelchair_slot: false, has_priority_seat: true, has_women_area: true, is_active: true },
-  { trans_id: 'TRN004', name: 'LRT Jakarta', type: 'LRT', is_low_entry: true, has_wheelchair_slot: true, has_priority_seat: true, has_women_area: false, is_active: false },
-];
+type Trans = {
+  trans_id: string;
+  name: string;
+  type: string;
+  is_low_entry: boolean;
+  has_wheelchair_slot: boolean;
+  has_priority_seat: boolean;
+  has_women_area: boolean;
+  is_active: boolean;
+};
 
-const dummyStops = [
-  { stop_id: 'STP001', name: 'Halte Sudirman', address: 'Jl. Jend. Sudirman', latitude: -6.20876, longitude: 106.82301, has_ramp: true, has_elevator: true, is_active: true },
-  { stop_id: 'STP002', name: 'Halte Blok M', address: 'Jl. Melawai', latitude: -6.24412, longitude: 106.79884, has_ramp: true, has_elevator: false, is_active: true },
-  { stop_id: 'STP003', name: 'Halte Bundaran HI', address: 'Jl. MH Thamrin', latitude: -6.19467, longitude: 106.82299, has_ramp: true, has_elevator: true, is_active: true },
-  { stop_id: 'STP004', name: 'Halte Harmoni', address: 'Jl. Gajah Mada', latitude: -6.13682, longitude: 106.81342, has_ramp: false, has_elevator: false, is_active: true },
-  { stop_id: 'STP005', name: 'Stasiun Manggarai', address: 'Jl. Manggarai Utara', latitude: -6.21409, longitude: 106.85062, has_ramp: true, has_elevator: true, is_active: false },
-];
+type Stop = {
+  stop_id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  has_ramp: boolean;
+  has_elevator: boolean;
+  is_active: boolean;
+  hub_id: string;
+};
 
-type Trans = typeof dummyTrans[0];
-type Stop = typeof dummyStops[0];
 type RouteStop = {
   stop_id: string;
   stop_name: string;
@@ -52,7 +58,8 @@ const emptyTrans: Trans = {
 const emptyStop: Stop = {
   stop_id: '', name: '', address: '',
   latitude: 0, longitude: 0,
-  has_ramp: false, has_elevator: false, is_active: true
+  has_ramp: false, has_elevator: false,
+  is_active: true, hub_id: ''
 };
 
 const emptyRoute: Route = {
@@ -375,11 +382,11 @@ export default function AdminData() {
   const [search, setSearch] = useState('');
 
   // Transport & Stops menggunakan Dummy Data Sementara
-  const [transList, setTransList] = useState(dummyTrans);
-  const [stopsList, setStopsList] = useState(dummyStops);
-  
+  const [transList, setTransList] = useState([]);
+  const [stopsList, setStopsList] = useState([]);
+
   // Routes di-set kosong karena akan di-fetch dari Backend API
-  const [routesList, setRoutesList] = useState<Route[]>([]);
+  const [routesList, setRoutesList] = useState([]);
 
   // Filter states
   const [filterType, setFilterType] = useState('All');
@@ -392,6 +399,8 @@ export default function AdminData() {
 
   // --- API SETTINGS ---
   const API_URL_ROUTES = "http://localhost:3000/api/admin/transportations/routes";
+  const API_URL_TRANS = "http://localhost:3000/api/admin/transportations/trans";
+  const API_URL_STOPS = "http://localhost:3000/api/admin/transportations/stops";
   const token = localStorage.getItem("token");
 
   // ==========================================
@@ -404,7 +413,7 @@ export default function AdminData() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
-      
+
       if (res.ok) {
         // Konversi format DB ke format State UI
         const mappedRoutes = json.data.map((r: any) => ({
@@ -416,7 +425,7 @@ export default function AdminData() {
           origin_stop_name: r.origin_stop_name || '',
           dest_stop_name: r.destination_stop_name || '', // Di UI menggunakan dest_stop_name
           is_active: r.is_active === 1, // Ubah tinyint(1) ke boolean true/false
-          route_stops: [], // Di-set kosong karena backend belum punya tabel route_stops
+          route_stops: r.route_stops || [], // Ambil dari API
         }));
         setRoutesList(mappedRoutes);
       }
@@ -425,9 +434,11 @@ export default function AdminData() {
     }
   };
 
-  // Muat rute saat pertama kali halaman dibuka
+  // Muat data saat pertama kali halaman dibuka
   useEffect(() => {
     fetchRoutes();
+    fetchTrans();
+    fetchStops();
   }, []);
 
   const handleSaveRoute = async (r: Route) => {
@@ -438,19 +449,20 @@ export default function AdminData() {
     try {
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           route_name: r.route_name,
           origin_stop_id: r.origin_stop_id,
           destination_stop_id: r.destination_stop_id,
           trans_id: r.trans_id,
-          is_active: r.is_active ? 1 : 0 // Ubah boolean kembali ke angka
+          is_active: r.is_active ? 1 : 0, // Ubah boolean kembali ke angka
+          route_stops: r.route_stops
         }),
       });
-      
+
       const json = await res.json();
       if (res.ok) {
         alert(json.message);
@@ -470,7 +482,7 @@ export default function AdminData() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (res.ok) {
         fetchRoutes(); // Refresh data
         setDeleteModal(null);
@@ -496,7 +508,7 @@ export default function AdminData() {
   });
 
   const filteredStops = stopsList.filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.address.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || (s.address || '').toLowerCase().includes(search.toLowerCase());
     const matchFacility =
       filterFacility === 'All' ||
       (filterFacility === 'Ramp' && s.has_ramp) ||
@@ -512,19 +524,178 @@ export default function AdminData() {
     r.dest_stop_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ── LOCAL SAVE HANDLERS (Untuk Transport & Stop Dummy) ──
-  const handleSaveTrans = (t: Trans) => {
-    const exists = transList.find(x => x.trans_id === t.trans_id);
-    if (exists) setTransList(prev => prev.map(x => x.trans_id === t.trans_id ? t : x));
-    else setTransList(prev => [...prev, { ...t, trans_id: `TRN${Date.now()}` }]);
-    setTransModal(null);
+  // Integrasi API Transportasi
+  const fetchTrans = async () => {
+    try {
+      const res = await fetch(API_URL_TRANS, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+
+      if (res.ok) {
+        const mappedTrans = json.data.map((t: any) => ({
+          trans_id: t.trans_id,
+          name: t.name,
+          type: t.type,
+          is_low_entry: t.is_low_entry === 1,
+          has_wheelchair_slot: t.has_wheelchair_slot === 1,
+          has_priority_seat: t.has_priority_seat === 1,
+          has_women_area: t.has_women_area === 1,
+          is_active: t.is_active === 1,
+        }));
+        setTransList(mappedTrans);
+      }
+    }
+    catch (error) {
+      console.error("Gagal mengambil data transportasi: ", error);
+    }
   };
 
-  const handleSaveStop = (s: Stop) => {
-    const exists = stopsList.find(x => x.stop_id === s.stop_id);
-    if (exists) setStopsList(prev => prev.map(x => x.stop_id === s.stop_id ? s : x));
-    else setStopsList(prev => [...prev, { ...s, stop_id: `STP${Date.now()}` }]);
-    setStopModal(null);
+  const handleSaveTrans = async (t: Trans) => {
+    const isEdit = !!t.trans_id && t.trans_id !== '';
+    const url = isEdit ? `${API_URL_TRANS}/${t.trans_id}` : API_URL_TRANS;
+    const method = isEdit ? "PUT" : "POST";
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: t.name,
+          type: t.type,
+          is_low_entry: t.is_low_entry ? 1 : 0,
+          has_wheelchair_slot: t.has_wheelchair_slot ? 1 : 0,
+          has_priority_seat: t.has_priority_seat ? 1 : 0,
+          has_women_area: t.has_women_area ? 1 : 0,
+          is_active: t.is_active ? 1 : 0
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok) {
+        alert(json.message || "Data transportasi berhasil disimpan.");
+        fetchTrans();
+        setTransModal(null);
+      }
+      else {
+        alert(json.message);
+      }
+    }
+    catch (error) {
+      alert("Terjadi kesalahan jaringan.");
+    }
+  };
+
+  const handleDeleteTrans = async (trans_id: string) => {
+    try {
+      const res = await fetch(`${API_URL_TRANS}/${trans_id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        fetchTrans();
+        setDeleteModal(null);
+      }
+      else {
+        const json = await res.json();
+        alert(json.message);
+      }
+    }
+    catch (error) {
+      alert("Gagal menghapus transportasi.");
+    }
+  };
+
+  // Integrasi API Halte
+  const fetchStops = async () => {
+    try {
+      const res = await fetch(API_URL_STOPS, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+
+      if (res.ok) {
+        const mappedStops = json.data.map((s: any) => ({
+          stop_id: s.stop_id,
+          name: s.name,
+          address: s.address || '',
+          latitude: parseFloat(s.latitude) || 0,
+          longitude: parseFloat(s.longitude) || 0,
+          hub_id: s.hub_id || '',
+          has_ramp: s.has_ramp === 1,
+          has_elevator: s.has_elevator === 1,
+          is_active: s.is_active === 1,
+        }));
+        setStopsList(mappedStops);
+      }
+    }
+    catch (error) {
+      console.error("Gagal mengambil data halte: ", error);
+    }
+  };
+
+  const handleSaveStops = async (s: Stop) => {
+    const isEdit = !!s.stop_id && s.stop_id !== '';
+    const url = isEdit ? `${API_URL_STOPS}/${s.stop_id}` : API_URL_STOPS;
+    const method = isEdit ? "PUT" : "POST";
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: s.name,
+          address: s.address || '',
+          latitude: s.latitude,
+          longitude: s.longitude,
+          hub_id: s.hub_id || '',
+          has_ramp: s.has_ramp ? 1 : 0,
+          has_elevator: s.has_elevator ? 1 : 0,
+          is_active: s.is_active ? 1 : 0
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok) {
+        alert(json.message || "Data halte berhasil disimpan.");
+        fetchStops();
+        setStopModal(null);
+      }
+      else {
+        alert(json.message);
+      }
+    }
+    catch (error) {
+      alert("Terjadi kesalahan jaringan.");
+    }
+  };
+
+  const handleDeleteStops = async (stops_id: string) => {
+    try {
+      const res = await fetch(`${API_URL_STOPS}/${stops_id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        fetchStops();
+        setDeleteModal(null);
+      }
+      else {
+        const json = await res.json();
+        alert(json.message);
+      }
+    }
+    catch (error) {
+      alert("Gagal menghapus halte.");
+    }
   };
 
   // ── STATS ──
@@ -824,14 +995,7 @@ export default function AdminData() {
                             onClick={() =>
                               setDeleteModal({
                                 name: t.name,
-                                onConfirm: () => {
-                                  setTransList((prev) =>
-                                    prev.filter(
-                                      (x) => x.trans_id !== t.trans_id,
-                                    ),
-                                  );
-                                  setDeleteModal(null);
-                                },
+                                onConfirm: () => handleDeleteTrans(t.trans_id),
                               })
                             }
                           >
@@ -947,12 +1111,7 @@ export default function AdminData() {
                             onClick={() =>
                               setDeleteModal({
                                 name: s.name,
-                                onConfirm: () => {
-                                  setStopsList((prev) =>
-                                    prev.filter((x) => x.stop_id !== s.stop_id),
-                                  );
-                                  setDeleteModal(null);
-                                },
+                                onConfirm: () => handleDeleteStops(s.stop_id),
                               })
                             }
                           >
@@ -1128,7 +1287,7 @@ export default function AdminData() {
       {stopModal && (
         <StopModal
           stop={stopModal}
-          onSave={handleSaveStop}
+          onSave={handleSaveStops}
           onClose={() => setStopModal(null)}
         />
       )}
