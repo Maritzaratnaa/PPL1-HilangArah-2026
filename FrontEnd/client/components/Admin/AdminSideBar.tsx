@@ -212,6 +212,7 @@ export function AdminSidebar() {
         {/* Navigation Section */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
           {navItems.map((item) => {
+            if (item.label === 'Manajemen Admin' && adminEmail !== 'arahin.support@gmail.com') return null;
             const isActive = location.pathname === item.href;
             return (
               <Link key={item.href} to={item.href}>
