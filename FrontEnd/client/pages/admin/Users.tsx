@@ -146,7 +146,7 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
             { label: "Nomor Telepon", value: user.phone_number || "-" },
             { label: "Kategori", value: user.category_status },
             { label: "Role", value: user.role },
-            { label: "Status", value: user.is_Active ? "Aktif" : "Nonaktif" },
+            { label: "Status", value: user.is_Active ? "Aktif" : "Suspended" },
             {
               label: "Bergabung",
               value: new Date(user.created_at).toLocaleDateString("id-ID", {
@@ -161,6 +161,16 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
               <span className="font-semibold">{item.value}</span>
             </div>
           ))}
+
+          {/* Alert Khusus untuk Akun Suspended */}
+          {!user.is_Active && (
+            <div className="mt-4 p-3 rounded-lg bg-rose-50 border border-rose-200 flex gap-2 items-start text-rose-700 text-xs leading-relaxed dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-300">
+              <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong>Akses Login Diblokir:</strong> Akun ini berstatus Suspended. Pengguna tidak dapat melakukan login ke dalam aplikasi ARAHIN sampai statusnya diaktifkan kembali.
+              </div>
+            </div>
+          )}
         </div>
         <Button variant="outline" className="w-full" onClick={onClose}>
           Tutup
@@ -258,7 +268,7 @@ export default function AdminUsers() {
       showToast(
         newStatus
           ? `${user.full_name} berhasil diaktifkan.`
-          : `${user.full_name} berhasil dinonaktifkan.`,
+          : `${user.full_name} berhasil disuspend.`,
         "success"
       );
     } catch (err: unknown) {
@@ -329,7 +339,7 @@ export default function AdminUsers() {
             {[
               { label: "Total Pengguna", val: statsTotal, color: "text-primary" },
               { label: "Pengguna Aktif", val: users.filter((u) => u.is_Active).length, color: "text-emerald-600" },
-              { label: "Pengguna Nonaktif", val: users.filter((u) => !u.is_Active).length, color: "text-rose-600" },
+              { label: "Pengguna Suspended", val: users.filter((u) => !u.is_Active).length, color: "text-rose-600" },
             ].map((s) => (
               <div
                 key={s.label}
@@ -461,7 +471,7 @@ export default function AdminUsers() {
                                 : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
                             }`}
                           >
-                            {user.is_Active ? "Aktif" : "Nonaktif"}
+                            {user.is_Active ? "Aktif" : "Suspended"}
                           </span>
                         </td>
 
@@ -501,7 +511,7 @@ export default function AdminUsers() {
                                 <UserCheck className="h-3.5 w-3.5 mr-1" />
                               )}
                               {!isActioning &&
-                                (user.is_Active ? "Nonaktifkan" : "Aktifkan")}
+                                (user.is_Active ? "Suspend" : "Aktifkan")}
                             </Button>
                             <Button
                               size="sm"
@@ -521,6 +531,16 @@ export default function AdminUsers() {
               </tbody>
             </table>
           </div>
+
+          {/* Menampilkan Jumlah Pengguna Sesuai Filter */}
+          {!loading && (
+            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground bg-card border border-border p-4 rounded-xl">
+              <span>
+                Menampilkan <strong>{users.length}</strong> pengguna berdasarkan filter yang dipilih.
+              </span>
+            </div>
+          )}
+
         </div>
       </main>
 
