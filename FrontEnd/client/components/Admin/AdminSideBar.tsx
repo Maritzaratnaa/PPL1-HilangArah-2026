@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   BarChart3, 
@@ -7,8 +7,11 @@ import {
   Zap, 
   FileText, 
   Bus,
+  Shield, // <-- Icon baru untuk Manajemen Admin
   LogOut,
-  ChevronUp
+  ChevronUp,
+  Sun,    // <-- Icon untuk Light Mode
+  Moon    // <-- Icon untuk Dark Mode
 } from 'lucide-react';
 
 const navItems = [
@@ -18,14 +21,45 @@ const navItems = [
   { label: 'Manajemen Subscription', icon: <Zap className="h-4 w-4" />, href: '/admin/subscriptions' },
   { label: 'Manajemen Laporan', icon: <FileText className="h-4 w-4" />, href: '/admin/reports' },
   { label: 'Manajemen Data', icon: <Bus className="h-4 w-4" />, href: '/admin/data' },
+  // Tambahan Menu Manajemen Admin
+  { label: 'Manajemen Admin', icon: <Shield className="h-4 w-4" />, href: '/admin/manage' },
 ];
 
 export function AdminSidebar() {
   const location = useLocation();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Efek untuk memuat tema dari localStorage saat komponen pertama kali di-render
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  // Fungsi untuk mengganti tema (Light <-> Dark)
+  const toggleTheme = () => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDarkMode(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDarkMode(true);
+    }
+  };
 
   return (
-    <aside className="w-64 flex-shrink-0 border-r border-border bg-muted/30 flex flex-col min-h-screen">
+    <aside className="w-64 flex-shrink-0 border-r border-border bg-muted/30 flex flex-col h-screen sticky top-0">
+      
       {/* Logo Section */}
       <div className="p-6 border-b border-border">
         <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary">
@@ -36,7 +70,8 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation Section */}
-      <nav className="flex-1 p-4 space-y-1">
+      {/* Menambahkan overflow-y-auto di sini agar isi navigasi bisa discroll jika kepanjangan */}
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -56,12 +91,28 @@ export function AdminSidebar() {
 
       {/* Admin Account Section with Logout Pop-up */}
       <div className="p-4 border-t border-border relative">
-        {/* Tombol Logout (Muncul jika isAccountOpen true) */}
+        
+        {/* Pop-up Menu (Logout & Theme Toggle) */}
         {isAccountOpen && (
-          <div className="absolute bottom-20 left-4 right-4 bg-card border border-border rounded-xl shadow-lg p-2 mb-2 animate-in fade-in slide-in-from-bottom-2">
+          <div className="absolute bottom-20 left-4 right-4 bg-card border border-border rounded-xl shadow-lg p-2 mb-2 flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-2">
+            
+            {/* Tombol Toggle Tema */}
+            <button 
+              onClick={toggleTheme}
+              className="flex items-center justify-between px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors w-full"
+            >
+              <div className="flex items-center gap-3">
+                {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
+              </div>
+            </button>
+
+            <div className="h-px bg-border my-1" /> {/* Garis pemisah */}
+
+            {/* Tombol Logout */}
             <Link 
               to="/login" 
-              className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
             >
               <LogOut className="h-4 w-4" />
               Keluar Panel
