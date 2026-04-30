@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Trash2, X, Users, UserCheck, Zap, FileText, BarChart3, Bus } from 'lucide-react';
+import { 
+  Search, 
+  Trash2, 
+  X, 
+  ChevronDown, 
+  Check 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
@@ -16,61 +21,6 @@ export interface Report {
   resolved_by: string | null;
 }
 
-// const dummyReports = [
-//   {
-//     report_id: 'RPT001',
-//     reporter_name: 'Budi Santoso',
-//     category: 'Fasilitas',
-//     stop_name: 'Halte Sudirman',
-//     description: 'Lift di halte ini sudah tidak berfungsi sejak 3 hari yang lalu. Sangat menyulitkan pengguna kursi roda.',
-//     status: 'Pending',
-//     created_at: '2026-03-20 08:30',
-//     resolved_by: null,
-//   },
-//   {
-//     report_id: 'RPT002',
-//     reporter_name: 'Siti Rahma',
-//     category: 'Fasilitas',
-//     stop_name: 'Halte Blok M',
-//     description: 'Ramp untuk kursi roda rusak dan berbahaya untuk digunakan.',
-//     status: 'Processed',
-//     created_at: '2026-03-19 14:20',
-//     resolved_by: 'Admin',
-//   },
-//   {
-//     report_id: 'RPT003',
-//     reporter_name: 'Ahmad Rizal',
-//     category: 'Pemandu',
-//     stop_name: null,
-//     description: 'Pemandu tidak datang tepat waktu dan tidak responsif saat dihubungi.',
-//     status: 'Resolved',
-//     created_at: '2026-03-18 10:00',
-//     resolved_by: 'Admin',
-//   },
-//   {
-//     report_id: 'RPT004',
-//     reporter_name: 'Rinta Sari',
-//     category: 'Fasilitas',
-//     stop_name: 'Stasiun Manggarai',
-//     description: 'Guiding block di stasiun ini banyak yang rusak dan terhalang oleh pedagang.',
-//     status: 'Pending',
-//     created_at: '2026-03-21 09:15',
-//     resolved_by: null,
-//   },
-//   {
-//     report_id: 'RPT005',
-//     reporter_name: 'Dewi Ayu',
-//     category: 'Pemandu',
-//     stop_name: null,
-//     description: 'Pemandu bersikap tidak sopan dan tidak sabar saat mendampingi.',
-//     status: 'Processed',
-//     created_at: '2026-03-17 16:45',
-//     resolved_by: 'Admin',
-//   },
-// ];
-
-// type Report = typeof dummyReports[0];
-
 const statusConfig: Record<string, { label: string; color: string }> = {
   Pending: { label: 'Pending', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300' },
   Processed: { label: 'Diproses', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' },
@@ -82,11 +32,82 @@ const categoryConfig: Record<string, string> = {
   Pemandu: 'bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300',
 };
 
+// Fungsi bantuan agar tidak error jika status dari backend tidak dikenali
+const getStatusInfo = (status: string) => {
+  return statusConfig[status] || { label: status || 'Unknown', color: 'bg-slate-100 text-slate-700' };
+};
+
+const getCategoryColor = (category: string) => {
+  return categoryConfig[category] || 'bg-slate-100 text-slate-700';
+};
+
+// --- KOMPONEN BARU: Dropdown Filter Custom ---
+function DropdownFilter({
+  label,
+  options,
+  selectedValue,
+  onSelect,
+  displayMap
+}: {
+  label: string;
+  options: string[];
+  selectedValue: string;
+  onSelect: (val: string) => void;
+  displayMap?: Record<string, any>;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <Button
+        variant="outline"
+        className="h-11 flex items-center gap-2 px-4 bg-card"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="text-muted-foreground font-normal">{label}:</span>
+        <span className="font-semibold text-foreground">
+          {selectedValue === 'All' 
+            ? 'Semua' 
+            : (displayMap && displayMap[selectedValue] ? displayMap[selectedValue].label : selectedValue)}
+        </span>
+        <ChevronDown className={`h-4 w-4 ml-1 opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </Button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-lg z-50 py-1.5 overflow-hidden animate-in fade-in slide-in-from-top-2">
+            {options.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => {
+                  onSelect(opt);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
+                  selectedValue === opt 
+                    ? 'bg-muted/80 font-semibold text-foreground' 
+                    : 'hover:bg-muted/50 text-muted-foreground'
+                }`}
+              >
+                <span>{opt === 'All' ? 'Semua' : (displayMap && displayMap[opt] ? displayMap[opt].label : opt)}</span>
+                {selectedValue === opt && <Check className="h-4 w-4 text-primary" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function DetailModal({ report, onClose, onStatusChange }: {
   report: Report;
   onClose: () => void;
   onStatusChange: (id: string, status: string) => void;
 }) {
+  const statusInfo = getStatusInfo(report.status);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -99,25 +120,23 @@ function DetailModal({ report, onClose, onStatusChange }: {
         </div>
 
         <div className="space-y-4 mb-6">
-          {/* Status + kategori */}
           <div className="flex items-center gap-2">
-            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${statusConfig[report.status].color}`}>
-              {statusConfig[report.status].label}
+            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${statusInfo.color}`}>
+              {statusInfo.label}
             </span>
-            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${categoryConfig[report.category]}`}>
-              {report.category}
+            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${getCategoryColor(report.category)}`}>
+              {report.category || 'Lainnya'}
             </span>
           </div>
 
-          {/* Info */}
           <div className="rounded-xl border border-border p-4 space-y-3">
             <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Informasi Laporan</div>
             {[
               { label: 'ID Laporan', value: report.report_id },
-              { label: 'Pelapor', value: report.reporter_name },
-              { label: 'Kategori', value: report.category },
+              { label: 'Pelapor', value: report.reporter_name || 'Anonim' },
+              { label: 'Kategori', value: report.category || '-' },
               { label: 'Lokasi', value: report.stop_name || '-' },
-              { label: 'Tanggal', value: report.created_at },
+              { label: 'Tanggal', value: report.created_at || '-' },
               { label: 'Diselesaikan oleh', value: report.resolved_by || '-' },
             ].map((item) => (
               <div key={item.label} className="flex justify-between text-sm">
@@ -127,14 +146,12 @@ function DetailModal({ report, onClose, onStatusChange }: {
             ))}
           </div>
 
-          {/* Deskripsi */}
           <div className="rounded-xl border border-border p-4">
             <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Deskripsi Laporan</div>
-            <p className="text-sm leading-relaxed">{report.description}</p>
+            <p className="text-sm leading-relaxed">{report.description || '-'}</p>
           </div>
         </div>
 
-        {/* Status change */}
         <div className="mb-4">
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Tandai Sebagai</div>
           <div className="flex gap-2">
@@ -171,7 +188,7 @@ function DeleteModal({ report, onConfirm, onCancel }: {
       <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm mx-4 shadow-xl">
         <h3 className="text-lg font-bold mb-2">Hapus Laporan</h3>
         <p className="text-sm text-muted-foreground mb-6">
-          Apakah kamu yakin ingin menghapus laporan dari <strong>{report.reporter_name}</strong>? Tindakan ini tidak dapat dibatalkan.
+          Apakah kamu yakin ingin menghapus laporan dari <strong>{report.reporter_name || 'pengguna ini'}</strong>? Tindakan ini tidak dapat dibatalkan.
         </p>
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={onCancel}>Batal</Button>
@@ -239,12 +256,19 @@ export default function AdminReports() {
   };
 
   const filtered = reports.filter(r => {
+    // Mencegah error jika field null (toUpperCase/toLowerCase pada null akan crash)
+    const reporterName = r.reporter_name || '';
+    const reportId = r.report_id || '';
+    const description = r.description || '';
+    
     const matchSearch =
-      r.reporter_name.toLowerCase().includes(search.toLowerCase()) ||
-      r.report_id.toLowerCase().includes(search.toLowerCase()) ||
-      r.description.toLowerCase().includes(search.toLowerCase());
+      reporterName.toLowerCase().includes(search.toLowerCase()) ||
+      reportId.toLowerCase().includes(search.toLowerCase()) ||
+      description.toLowerCase().includes(search.toLowerCase());
+      
     const matchStatus = filterStatus === 'All' || r.status === filterStatus;
     const matchCategory = filterCategory === 'All' || r.category === filterCategory;
+    
     return matchSearch && matchStatus && matchCategory;
   });
 
@@ -299,42 +323,33 @@ export default function AdminReports() {
             ))}
           </div>
 
-          {/* Search + Filter */}
-          <div className="flex flex-col gap-3 mb-6">
-            <div className="relative">
+          {/* Search + 2 Dropdown Filters */}
+          <div className="flex flex-col md:flex-row gap-3 mb-6">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Cari berdasarkan nama pelapor, ID, atau deskripsi..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 h-11"
+                className="pl-10 h-11 w-full"
               />
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <div className="flex gap-2">
-                {['All', 'Pending', 'Processed', 'Resolved'].map((s) => (
-                  <Button
-                    key={s}
-                    size="sm"
-                    variant={filterStatus === s ? 'default' : 'outline'}
-                    className="h-9 px-3 text-xs font-semibold"
-                    onClick={() => setFilterStatus(s)}>
-                    {s === 'All' ? 'Semua Status' : statusConfig[s].label}
-                  </Button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                {['All', 'Fasilitas', 'Pemandu'].map((c) => (
-                  <Button
-                    key={c}
-                    size="sm"
-                    variant={filterCategory === c ? 'default' : 'outline'}
-                    className="h-9 px-3 text-xs font-semibold"
-                    onClick={() => setFilterCategory(c)}>
-                    {c === 'All' ? 'Semua Kategori' : c}
-                  </Button>
-                ))}
-              </div>
+
+            <div className="flex gap-3 flex-shrink-0">
+              <DropdownFilter
+                label="Status"
+                options={['All', 'Pending', 'Processed', 'Resolved']}
+                selectedValue={filterStatus}
+                onSelect={setFilterStatus}
+                displayMap={statusConfig}
+              />
+              
+              <DropdownFilter
+                label="Kategori"
+                options={['All', 'Fasilitas', 'Pemandu']}
+                selectedValue={filterCategory}
+                onSelect={setFilterCategory}
+              />
             </div>
           </div>
 
@@ -353,51 +368,57 @@ export default function AdminReports() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filtered.map((report) => (
-                  <tr key={report.report_id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
-                          {report.reporter_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                {filtered.map((report) => {
+                  const safeName = report.reporter_name || 'NN';
+                  const initials = safeName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                  const statusInfo = getStatusInfo(report.status);
+
+                  return (
+                    <tr key={report.report_id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
+                            {initials}
+                          </div>
+                          <div className="text-sm font-semibold">{safeName}</div>
                         </div>
-                        <div className="text-sm font-semibold">{report.reporter_name}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${categoryConfig[report.category]}`}>
-                        {report.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">{report.stop_name || '-'}</td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-muted-foreground truncate max-w-[200px]">{report.description}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${statusConfig[report.status].color}`}>
-                        {statusConfig[report.status].label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-muted-foreground">{report.created_at}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs"
-                          onClick={() => setDetailTarget(report)}>
-                          Detail
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
-                          onClick={() => setDeleteTarget(report)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${getCategoryColor(report.category)}`}>
+                          {report.category || '-'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{report.stop_name || '-'}</td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-muted-foreground truncate max-w-[200px]">{report.description}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${statusInfo.color}`}>
+                          {statusInfo.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-muted-foreground">{report.created_at}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs"
+                            onClick={() => setDetailTarget(report)}>
+                            Detail
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                            onClick={() => setDeleteTarget(report)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground text-sm">
