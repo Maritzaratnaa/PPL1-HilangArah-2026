@@ -27,6 +27,7 @@ export default function Login() {
         localStorage.setItem("token", json.token);
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("userName", json.user.full_name);
+        localStorage.setItem("userEmail", json.user.email);
 
         const userRole = json.user.role || json.user.category;
         localStorage.setItem('userCategory', userRole);

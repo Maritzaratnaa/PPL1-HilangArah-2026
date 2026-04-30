@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
+import { useNavigate } from "react-router-dom";
 
 interface Admin {
   user_id: string | number;
@@ -139,6 +140,7 @@ function RemoveAdminModal({
 }
 
 export default function Admin() {
+  const navigate = useNavigate();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [statsTotal, setStatsTotal] = useState(0);
   const [search, setSearch] = useState("");
@@ -159,6 +161,13 @@ export default function Admin() {
     const timeout = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timeout);
   }, [search]);
+
+  useEffect(() => {
+    const email = localStorage.getItem("userEmail");
+    if (email !== "arahin.support@gmail.com") {
+      navigate("/admin/reports");
+    }
+  }, [navigate]);
 
   // GET Admins (Sesuai dengan getAllAdmins)
   const fetchAdmins = useCallback(async () => {

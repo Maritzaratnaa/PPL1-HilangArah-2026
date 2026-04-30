@@ -107,4 +107,34 @@ const removeAdminAccess = async (req, res) => {
     }
 };
 
-module.exports = {getAllAdmins, assignAdminRole, updateAdmin, removeAdminAccess};
+const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const { old_password, new_password } = req.body;
+
+        if (!old_password || !new_password) {
+            return res.status(400).json({ message: "Password lama dan password baru harus diisi!" });
+        }
+
+        const [users] = await pool.query(`SELECT password FROM users WHERE user_id = ?`, [userId]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: "Admin tidak ditemukan." });
+        }
+
+        const user = users[0];
+        const isMatch = await bcrypt.compare(old_password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: "Password lama salah!" });
+        }
+
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+        await pool.query(`UPDATE users SET password = ? WHERE user_id = ?`, [hashedPassword, userId]);
+
+        res.status(200).json({ message: "Password berhasil diubah!" });
+    } catch (error) {
+        console.error("Error Change Password:", error);
+        res.status(500).json({ message: "Gagal mengubah password." });
+    }
+};
+
+module.exports = {getAllAdmins, assignAdminRole, updateAdmin, removeAdminAccess, changePassword};
