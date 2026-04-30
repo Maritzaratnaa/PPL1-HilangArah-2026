@@ -18,4 +18,9 @@ router.post('/stops', verifyToken, isAdmin, adminTransportController.createStop)
 router.put('/stops/:id', verifyToken, isAdmin, adminTransportController.updateStop);
 router.delete('/stops/:id', verifyToken, isAdmin, adminTransportController.deleteStop);
 
+router.get('/route-stops', verifyToken, isAdmin, adminTransportController.getAllRouteStops);
+router.post('/route-stops', verifyToken, isAdmin, adminTransportController.createRouteStop);
+router.put('/route-stops/:id', verifyToken, isAdmin, adminTransportController.updateRouteStop);
+router.delete('/route-stops/:id', verifyToken, isAdmin, adminTransportController.deleteRouteStop);
+
 module.exports = router;
