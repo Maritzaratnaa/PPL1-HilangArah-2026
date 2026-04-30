@@ -69,21 +69,21 @@ const getGuideDetail = async (req, res) => {
 // ==========================================
 const createGuide = async (req, res) => {
     try {
-        const { full_name, phone_number, domicile } = req.body;
+        const { full_name, phone_number, domicile, gender, age, detail } = req.body;
 
-        if (!full_name || !phone_number || !domicile) {
-            return res.status(400).json({ message: "Nama, telepon, dan domisili wajib diisi!" });
+        if (!full_name || !phone_number || !domicile || !gender) {
+            return res.status(400).json({ message: "Nama, telepon, domisili, dan jenis kelamin wajib diisi!" });
         }
 
         const randomNum = Math.floor(100 + Math.random() * 900);
         const employee_id = `G-${randomNum}`; // Format disesuaikan dengan screenshot: G-001
         
         const insertQuery = `
-            INSERT INTO guides (employee_id, full_name, phone_number, domicile, is_available) 
-            VALUES (?, ?, ?, ?, 1)
+            INSERT INTO guides (employee_id, full_name, phone_number, domicile, is_available, gender, age, detail) 
+            VALUES (?, ?, ?, ?, 1, ?, ?, ?)
         `;
         
-        await pool.query(insertQuery, [employee_id, full_name, phone_number, domicile]);
+        await pool.query(insertQuery, [employee_id, full_name, phone_number, domicile, gender, age || null, detail || null]);
 
         res.status(201).json({ message: "Pemandu berhasil ditambahkan!", employee_id });
     } catch (error) {
@@ -121,11 +121,11 @@ const toggleGuideStatus = async (req, res) => {
 const updateGuide = async (req, res) => {
     try {
         const { employee_id } = req.params;
-        const { full_name, phone_number, domicile } = req.body;
+        const { full_name, phone_number, domicile, gender, age, detail } = req.body;
 
         const [result] = await pool.query(
-            `UPDATE guides SET full_name = ?, phone_number = ?, domicile = ? WHERE employee_id = ?`, 
-            [full_name, phone_number, domicile, employee_id]
+            `UPDATE guides SET full_name = ?, phone_number = ?, domicile = ?, gender = ?, age = ?, detail = ? WHERE employee_id = ?`, 
+            [full_name, phone_number, domicile, gender, age || null, detail || null, employee_id]
         );
 
         if (result.affectedRows === 0) {
