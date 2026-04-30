@@ -1,10 +1,10 @@
 const pool = require('../db');
-const {v4: uuidv4} = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 
 // Get Data Transport
 const getAllTransports = async (req, res) => {
     try {
-        const {type} = req.query;
+        const { type } = req.query;
         const summaryQuery = `SELECT type, COUNT(*) as total FROM trans GROUP BY type`;
         const [summaryData] = await pool.query(summaryQuery);
 
@@ -19,14 +19,14 @@ const getAllTransports = async (req, res) => {
         const [transports] = await pool.query(dataQuery, queryParams);
 
         res.status(200).json({
-    message: "Berhasil, mengambil data transportasi",
+            message: "Berhasil, mengambil data transportasi",
             summary: summaryData,
             data: transports
         });
     }
     catch (error) {
-        console. error("Error Get Transport: ", error);
-        res.status(500).json({message: "Gagal mengambil data transportasi."});
+        console.error("Error Get Transport: ", error);
+        res.status(500).json({ message: "Gagal mengambil data transportasi." });
     }
 };
 
@@ -34,32 +34,32 @@ const getAllTransports = async (req, res) => {
 // Create Data Transport
 const createTransport = async (req, res) => {
     try {
-        const {name, type, is_low_entry, has_wheelchair_slot, has_priority_seat, has_women_area, is_active } = req.body;
+        const { name, type, is_low_entry, has_wheelchair_slot, has_priority_seat, has_women_area, is_active } = req.body;
         const trans_id = uuidv4();
         const query = `
-            INSERT INTO trans trans (trans_id, name, type, is_low_entry, has_wheelchair_slot, has_priority_seat, has_women_area, is_active) 
+            INSERT INTO trans (trans_id, name, type, is_low_entry, has_wheelchair_slot, has_priority_seat, has_women_area, is_active) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
         await pool.query(query, [
-            trans_id, name, type, 
-            is_low_entry || 0, has_wheelchair_slot || 0, 
-            has_priority_seat || 0, has_women_area || 0, 
+            trans_id, name, type,
+            is_low_entry || 0, has_wheelchair_slot || 0,
+            has_priority_seat || 0, has_women_area || 0,
             is_active !== undefined ? is_active : 1
         ]);
 
-        res.status(201).json({message: "Data transportasi berhasil ditambahkan!"})
+        res.status(201).json({ message: "Data transportasi berhasil ditambahkan!" })
     }
     catch (error) {
         console.error("Error Create Transport: ", error);
-        res.status(500).json({message: "Gagal menambahkan data transportasi."});
+        res.status(500).json({ message: "Gagal menambahkan data transportasi." });
     }
 };
 
 // Update Data Transport
 const updateTransport = async (req, res) => {
     try {
-        const {id} = req.params;
-        const {name, type, is_low_entry, has_wheelchair_slot, has_priority_seat, has_women_area, is_active } = req.body;
+        const { id } = req.params;
+        const { name, type, is_low_entry, has_wheelchair_slot, has_priority_seat, has_women_area, is_active } = req.body;
 
         const query = `
             UPDATE trans 
@@ -71,21 +71,21 @@ const updateTransport = async (req, res) => {
         ]);
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({message: "Admin tidak ditemukan atau gagal diperbarui."});
+            return res.status(404).json({ message: "Admin tidak ditemukan atau gagal diperbarui." });
         }
 
-        res.status(200).json({message: "Data transportasi berhasil diubah!"});
+        res.status(200).json({ message: "Data transportasi berhasil diubah!" });
     }
     catch (error) {
         console.error("Error Update Transport: ", error);
-        res.status(500).json({message: "Gagal mengperbarui data transportasi."});
+        res.status(500).json({ message: "Gagal mengperbarui data transportasi." });
     }
 };
 
 // Get Data Rute
 const getAllRoutes = async (req, res) => {
     try {
-        const query = 
+        const query =
             `SELECT 
                 r.route_id, 
                 r.route_name, 
@@ -102,18 +102,18 @@ const getAllRoutes = async (req, res) => {
             LEFT JOIN stops d ON r.destination_stop_id = d.stop_id
             LEFT JOIN trans t ON r.trans_id = t.trans_id
             ORDER BY r.route_name ASC`;
-        
+
         const [routes] = await pool.query(query);
 
         res.status(200).json({
-    message: "Berhasil mengambil data rute",
+            message: "Berhasil mengambil data rute",
             total_routes: routes.length,
             data: routes
         });
     }
     catch (error) {
         console.error("Error Get Routes: ", error);
-        res.status(500).json({message: "Gagal mengambil data rute."});
+        res.status(500).json({ message: "Gagal mengambil data rute." });
     }
 };
 
@@ -124,24 +124,24 @@ const createRoute = async (req, res) => {
         const route_id = uuidv4();
 
         if (!route_name || !origin_stop_id || !destination_stop_id || !trans_id) {
-            return res.status(400).json({message: "Nama Rute, Asal, Tujuan, dan Transportasi wajib diisi!" });
+            return res.status(400).json({ message: "Nama Rute, Asal, Tujuan, dan Transportasi wajib diisi!" });
         }
 
         const query = `
             INSERT INTO routes (route_id, route_name, origin_stop_id, destination_stop_id, is_active, trans_id) 
             VALUES (?, ?, ?, ?, ?, ?)`;
-        
+
         await pool.query(query, [
-            route_id, route_name, origin_stop_id, destination_stop_id, 
-            is_active !== undefined ? is_active : 1, 
+            route_id, route_name, origin_stop_id, destination_stop_id,
+            is_active !== undefined ? is_active : 1,
             trans_id
         ]);
 
-        res.status(201).json({message: "Data rute berhasil ditambahkan!" });
+        res.status(201).json({ message: "Data rute berhasil ditambahkan!" });
     }
     catch (error) {
         console.error("Error Create Route: ", error);
-        res.status(500).json({message: "Gagal menambahkan data rute." });
+        res.status(500).json({ message: "Gagal menambahkan data rute." });
     }
 };
 
@@ -155,20 +155,20 @@ const updateRoute = async (req, res) => {
             UPDATE routes 
             SET route_name = ?, origin_stop_id = ?, destination_stop_id = ?, trans_id = ?, is_active = ?
             WHERE route_id = ?`;
-        
+
         const [result] = await pool.query(query, [
             route_name, origin_stop_id, destination_stop_id, trans_id, is_active, id
         ]);
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({message: "Data rute tidak ditemukan."});
+            return res.status(404).json({ message: "Data rute tidak ditemukan." });
         }
 
-        res.status(200).json({message: "Data rute berhasil diupdate!"});
+        res.status(200).json({ message: "Data rute berhasil diupdate!" });
     }
     catch (error) {
         console.error("Error Update Route: ", error);
-        res.status(500).json({message: "Gagal mengupdate data rute."});
+        res.status(500).json({ message: "Gagal mengupdate data rute." });
     }
 };
 
@@ -236,11 +236,11 @@ const createStop = async (req, res) => {
         const query = `
             INSERT INTO stops (stop_id, name, address, latitude, longitude, has_ramp, has_elevator, is_active, hub_id) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        
+
         await pool.query(query, [
-            stop_id, name, address || null, latitude || null, longitude || null, 
-            has_ramp || 0, has_elevator || 0, 
-            is_active !== undefined ? is_active : 1, 
+            stop_id, name, address || null, latitude || null, longitude || null,
+            has_ramp || 0, has_elevator || 0,
+            is_active !== undefined ? is_active : 1,
             hub_id || null
         ]);
 
@@ -262,10 +262,10 @@ const updateStop = async (req, res) => {
             UPDATE stops 
             SET name = ?, address = ?, latitude = ?, longitude = ?, has_ramp = ?, has_elevator = ?, is_active = ?, hub_id = ?
             WHERE stop_id = ?`;
-        
+
         const [result] = await pool.query(query, [
-            name, address || null, latitude || null, longitude || null, 
-            has_ramp, has_elevator, is_active, hub_id || null, 
+            name, address || null, latitude || null, longitude || null,
+            has_ramp, has_elevator, is_active, hub_id || null,
             id
         ]);
 
@@ -281,15 +281,47 @@ const updateStop = async (req, res) => {
     }
 };
 
+const deleteTransport = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [result] = await pool.query(`DELETE FROM trans WHERE trans_id = ?`, [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Data transportasi tidak ditemukan." });
+        }
+        res.status(200).json({ message: "Data transportasi berhasil dihapus!" });
+    } catch (error) {
+        console.error("Error Delete Transport: ", error);
+        res.status(500).json({ message: "Gagal menghapus data transportasi." });
+    }
+};
+
+const deleteStop = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [result] = await pool.query(`DELETE FROM stops WHERE stop_id = ?`, [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Data halte tidak ditemukan." });
+        }
+        res.status(200).json({ message: "Data halte berhasil dihapus!" });
+    } catch (error) {
+        console.error("Error Delete Stop: ", error);
+        res.status(500).json({ message: "Gagal menghapus data halte." });
+    }
+};
+
 module.exports = {
     getAllTransports,
     createTransport,
     updateTransport,
+    deleteTransport,
     getAllRoutes,
     createRoute,
     updateRoute,
     deleteRoute,
     getAllStops,
     createStop,
-    updateStop
+    updateStop,
+    deleteStop
 };
