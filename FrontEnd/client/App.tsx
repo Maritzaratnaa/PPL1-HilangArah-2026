@@ -28,6 +28,8 @@ import AdminSubscriptions from "./pages/admin/Subscriptions";
 import AdminReports from "./pages/admin/Reports";
 import AdminTransport from "./pages/admin/Data";
 import AdminUsers from "./pages/admin/Users";
+import Dashboard from "./pages/admin/Dashboard";
+import AdminManage from "./pages/admin/Admin";
 
 const queryClient = new QueryClient();
 
@@ -60,10 +62,12 @@ const App = () => (
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/data" element={<AdminTransport />} />
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/Admin/Dashboard" element={<Dashboard/>} />
+          <Route path="/Admin/Manage" element={<AdminManage/>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(<App/>);

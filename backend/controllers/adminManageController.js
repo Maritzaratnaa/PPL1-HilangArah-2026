@@ -74,14 +74,14 @@ const updateAdmin = async (req, res) => {
             return res.status(400).json({message: "Username dan status harus diisi!"});
         }
 
-        const query = `UPDATE users SET username = ?, status = ? WHERE user_id = ? AND role = 'Admin'`;
+        const query = `UPDATE users SET username = ?, is_active = ? WHERE user_id = ? AND role = 'Admin'`;
         const [result] = await pool.query(query, [username, status, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({message: "Admin tidak ditemukan atau gagal diperbarui."});
         }
 
-        res.status(200).json({message: "Admin tidak ditemuka natau gagal diperbarui."})
+        res.status(200).json({message: "Data admin berhasil diperbarui"})
     }
     catch (error) {
         console.error("Error Update Admin: ", error);
