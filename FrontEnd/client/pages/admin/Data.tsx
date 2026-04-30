@@ -425,7 +425,7 @@ export default function AdminData() {
           origin_stop_name: r.origin_stop_name || '',
           dest_stop_name: r.destination_stop_name || '', // Di UI menggunakan dest_stop_name
           is_active: r.is_active === 1, // Ubah tinyint(1) ke boolean true/false
-          route_stops: [], // Di-set kosong karena backend belum punya tabel route_stops
+          route_stops: r.route_stops || [], // Ambil dari API
         }));
         setRoutesList(mappedRoutes);
       }
@@ -458,7 +458,8 @@ export default function AdminData() {
           origin_stop_id: r.origin_stop_id,
           destination_stop_id: r.destination_stop_id,
           trans_id: r.trans_id,
-          is_active: r.is_active ? 1 : 0 // Ubah boolean kembali ke angka
+          is_active: r.is_active ? 1 : 0, // Ubah boolean kembali ke angka
+          route_stops: r.route_stops
         }),
       });
 
