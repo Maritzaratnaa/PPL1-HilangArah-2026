@@ -1,8 +1,12 @@
 const pool = require('../db');
+const autoExpireSubscriptions = require('../utils/autoExpire');
 
 // GET ALL SUBSCRIPTIONS (Dengan Filter & Search)
 const getAllSubscriptions = async (req, res) => {
     try {
+        // Lakukan evaluasi secara kilat untuk membebaskan pemandu & mengubah status jika ada yang expired hari ini
+        await autoExpireSubscriptions();
+
         // Tangkap query dari URL, misal: ?status=Active&search=Bunga
         const { status, search } = req.query;
         
@@ -105,6 +109,9 @@ const assignGuideToSubscription = async (req, res) => {
         const updateQuery = `UPDATE subs SET employee_id = ? WHERE subs_id = ?`;
         await pool.query(updateQuery, [employee_id, subs_id]);
 
+        // Ubah status pemandu menjadi Tidak Tersedia (0) karena sedang ditugaskan
+        await pool.query(`UPDATE guides SET is_available = 0 WHERE employee_id = ?`, [employee_id]);
+
         res.status(200).json({ message: "Berhasil menugaskan pemandu pada langganan ini." });
 
     } catch (error) {
@@ -123,6 +130,10 @@ const updateSubscriptionStatus = async (req, res) => {
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ message: "Status tidak valid!" });
         }
+
+        // Ambil employee_id dari langganan saat ini (jika ada)
+        const [currentSub] = await pool.query(`SELECT employee_id FROM subs WHERE subs_id = ?`, [subs_id]);
+        const employee_id = currentSub.length > 0 ? currentSub[0].employee_id : null;
 
         // Jika admin mengubah jadi Active, otomatis set start_date dan end_date
         let query = `UPDATE subs SET status = ?`;
@@ -147,6 +158,11 @@ const updateSubscriptionStatus = async (req, res) => {
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Data langganan tidak ditemukan." });
+        }
+
+        // Jika status menjadi Expired atau Cancelled, kembalikan status pemandu menjadi Tersedia (1)
+        if ((status === 'Expired' || status === 'Cancelled') && employee_id) {
+            await pool.query(`UPDATE guides SET is_available = 1 WHERE employee_id = ?`, [employee_id]);
         }
 
         res.status(200).json({ message: `Berhasil mengubah status langganan menjadi ${status}` });
