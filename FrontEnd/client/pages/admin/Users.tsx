@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
+import { Pagination } from '@/components/Admin/Pagination';
 
 interface User {
   user_id: string;
@@ -32,7 +33,6 @@ interface Stats {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
-// Label tampilan UI → value di database
 const CATEGORIES: { label: string; value: string }[] = [
   { label: "Semua Kategori", value: "All" },
   { label: "Penyandang Disabilitas", value: "disability" },
@@ -98,32 +98,30 @@ function DeleteModal({
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={!loading ? onCancel : undefined} />
-      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm mx-4 shadow-xl">
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm shadow-xl overflow-y-auto max-h-[90vh]">
         <h3 className="text-lg font-bold mb-2">Hapus Pengguna</h3>
         <p className="text-sm text-muted-foreground mb-6">
           Apakah kamu yakin ingin menghapus akun{" "}
           <strong>{user.full_name}</strong>? Tindakan ini tidak dapat
           dibatalkan.
         </p>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 min-w-[100px]"
             onClick={onCancel}
             disabled={loading}
           >
             Batal
           </Button>
           <Button
-            className="flex-1 bg-rose-600 hover:bg-rose-700 text-white"
+            className="flex-1 min-w-[100px] bg-rose-600 hover:bg-rose-700 text-white"
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1" />
-            ) : null}
+            {loading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
             {loading ? "Menghapus..." : "Hapus"}
           </Button>
         </div>
@@ -134,9 +132,9 @@ function DeleteModal({
 
 function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md mx-4 shadow-xl">
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl overflow-y-auto max-h-[90vh]">
         <h3 className="text-lg font-bold mb-4">Detail Pengguna</h3>
         <div className="space-y-3 mb-6">
           {[
@@ -156,18 +154,17 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
               }),
             },
           ].map((item) => (
-            <div key={item.label} className="flex justify-between text-sm">
+            <div key={item.label} className="flex flex-wrap justify-between text-sm gap-1 border-b border-border/50 pb-2">
               <span className="text-muted-foreground">{item.label}</span>
-              <span className="font-semibold">{item.value}</span>
+              <span className="font-semibold break-all text-right">{item.value}</span>
             </div>
           ))}
 
-          {/* Alert Khusus untuk Akun Suspended */}
           {!user.is_Active && (
             <div className="mt-4 p-3 rounded-lg bg-rose-50 border border-rose-200 flex gap-2 items-start text-rose-700 text-xs leading-relaxed dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-300">
               <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
               <div>
-                <strong>Akses Login Diblokir:</strong> Akun ini berstatus Suspended. Pengguna tidak dapat melakukan login ke dalam aplikasi ARAHIN sampai statusnya diaktifkan kembali.
+                <strong>Akses Login Diblokir:</strong> Akun ini berstatus Suspended. Pengguna tidak dapat melakukan login sampai statusnya diaktifkan kembali.
               </div>
             </div>
           )}
@@ -182,25 +179,25 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
-  // Stats dihitung langsung dari array users — tidak pernah drift
   const [statsTotal, setStatsTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
 
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null); // user_id yang sedang di-action
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [detailTarget, setDetailTarget] = useState<User | null>(null);
 
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const showToast = (message: string, type: ToastType) => {
     setToast({ message, type });
   };
 
-  // Debounce search input 400ms
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timeout);
@@ -211,7 +208,6 @@ export default function AdminUsers() {
     try {
       const params = new URLSearchParams();
       if (debouncedSearch) params.append("search", debouncedSearch);
-      // Kirim value DB (bukan label UI) ke backend
       if (filterCategory !== "All") params.append("category", filterCategory);
 
       const res = await fetch(
@@ -225,7 +221,6 @@ export default function AdminUsers() {
       }
 
       const json = await res.json();
-      // Simpan total dari backend (mencerminkan semua user, bukan hanya yang difilter)
       setStatsTotal(json.data.stats.total);
       setUsers(json.data.list);
     } catch (err: unknown) {
@@ -258,7 +253,6 @@ export default function AdminUsers() {
         throw new Error(err.message || "Gagal mengubah status.");
       }
 
-      // Update state lokal (optimistic) — stats dihitung ulang otomatis dari users
       setUsers((prev) =>
         prev.map((u) =>
           u.user_id === user.user_id ? { ...u, is_Active: newStatus } : u
@@ -318,14 +312,21 @@ export default function AdminUsers() {
     }
   };
 
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, filterCategory]);
+
+  const paginatedUsers = users.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="min-h-screen flex bg-background">
       <AdminSidebar />
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">
+      <main className="flex-1 overflow-x-hidden">
+        <div className="p-4 md:p-8">
           {/* Header */}
-          <div className="mb-8 flex items-start justify-between">
+          <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-1">Manajemen Pengguna</h1>
               <p className="text-muted-foreground text-sm">
@@ -334,8 +335,8 @@ export default function AdminUsers() {
             </div>
           </div>
 
-          {/* Stats — active/inactive dihitung dari users state agar selalu akurat */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {[
               { label: "Total Pengguna", val: statsTotal, color: "text-primary" },
               { label: "Pengguna Aktif", val: users.filter((u) => u.is_Active).length, color: "text-emerald-600" },
@@ -343,16 +344,16 @@ export default function AdminUsers() {
             ].map((s) => (
               <div
                 key={s.label}
-                className="bg-card rounded-xl border border-border p-5"
+                className="bg-card rounded-xl border border-border p-5 shadow-sm"
               >
-                <div className={`text-3xl font-bold ${s.color} mb-1`}>
+                <div className={`text-2xl md:text-3xl font-bold ${s.color} mb-1 truncate`}>
                   {loading ? (
                     <span className="inline-block h-9 w-12 bg-muted animate-pulse rounded-md" />
                   ) : (
                     s.val
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                <div className="text-[10px] md:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">
                   {s.label}
                 </div>
               </div>
@@ -360,23 +361,23 @@ export default function AdminUsers() {
           </div>
 
           {/* Search + Filter */}
-          <div className="flex flex-col gap-3 mb-6">
+          <div className="flex flex-col gap-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cari pengguna berdasarkan nama, email, atau username..."
+                placeholder="Cari pengguna..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 h-11"
+                className="pl-10 h-11 w-full"
               />
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 no-scrollbar">
               {CATEGORIES.map((cat) => (
                 <Button
                   key={cat.value}
                   size="sm"
                   variant={filterCategory === cat.value ? "default" : "outline"}
-                  className="h-9 px-3 text-xs font-semibold"
+                  className="h-9 px-3 text-xs font-semibold whitespace-nowrap"
                   onClick={() => setFilterCategory(cat.value)}
                 >
                   {cat.label}
@@ -385,162 +386,153 @@ export default function AdminUsers() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  {["Pengguna", "Kategori", "Status", "Bergabung", "Aksi"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4"
-                      >
-                        {h}
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {loading ? (
-                  // Skeleton rows
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i}>
-                      {Array.from({ length: 5 }).map((_, j) => (
-                        <td key={j} className="px-6 py-4">
-                          <div className="h-4 bg-muted animate-pulse rounded-md w-3/4" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : users.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-12 text-center text-muted-foreground text-sm"
-                    >
-                      Tidak ada pengguna yang ditemukan.
-                    </td>
+          {/* Table dengan Horizontal Scroll */}
+          <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+            <div className="overflow-x-auto w-full scrollbar-thin">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    {["Pengguna", "Kategori", "Status", "Bergabung", "Aksi"].map(
+                      (h) => (
+                        <th
+                          key={h}
+                          className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap"
+                        >
+                          {h}
+                        </th>
+                      )
+                    )}
                   </tr>
-                ) : (
-                  users.map((user) => {
-                    const isActioning = actionLoading === user.user_id;
-                    return (
-                      <tr
-                        key={user.user_id}
-                        className="hover:bg-muted/30 transition-colors"
-                      >
-                        {/* Pengguna */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
-                              {user.full_name
-                                ? user.full_name
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")
-                                    .slice(0, 2)
-                                    .toUpperCase()
-                                : "?"}
-                            </div>
-                            <div>
-                              <div className="text-sm font-semibold">
-                                {user.full_name || "-"}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {user.email}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Kategori */}
-                        <td className="px-6 py-4">
-                          <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 px-2.5 py-1 rounded-full font-semibold">
-                            {user.category_status || "-"}
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td className="px-6 py-4">
-                          <span
-                            className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                              user.is_Active
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-                                : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
-                            }`}
-                          >
-                            {user.is_Active ? "Aktif" : "Suspended"}
-                          </span>
-                        </td>
-
-                        {/* Bergabung */}
-                        <td className="px-6 py-4 text-sm text-muted-foreground">
-                          {formatDate(user.created_at)}
-                        </td>
-
-                        {/* Aksi */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs"
-                              onClick={() => setDetailTarget(user)}
-                              disabled={isActioning}
-                            >
-                              Detail
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className={`h-8 text-xs ${
-                                user.is_Active
-                                  ? "text-rose-600 border-rose-200 hover:bg-rose-50"
-                                  : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                              }`}
-                              onClick={() => toggleStatus(user)}
-                              disabled={isActioning}
-                            >
-                              {isActioning ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : user.is_Active ? (
-                                <UserX className="h-3.5 w-3.5 mr-1" />
-                              ) : (
-                                <UserCheck className="h-3.5 w-3.5 mr-1" />
-                              )}
-                              {!isActioning &&
-                                (user.is_Active ? "Suspend" : "Aktifkan")}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
-                              onClick={() => setDeleteTarget(user)}
-                              disabled={isActioning}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </td>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <td key={j} className="px-6 py-4">
+                            <div className="h-4 bg-muted animate-pulse rounded-md w-3/4" />
+                          </td>
+                        ))}
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                    ))
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-6 py-12 text-center text-muted-foreground text-sm"
+                      >
+                        Tidak ada pengguna yang ditemukan.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedUsers.map((user) => {
+                      const isActioning = actionLoading === user.user_id;
+                      return (
+                        <tr
+                          key={user.user_id}
+                          className="hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
+                                {user.full_name
+                                  ? user.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                                  : "?"}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold truncate max-w-[150px]">
+                                  {user.full_name || "-"}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                  {user.email}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 px-2.5 py-1 rounded-full font-semibold">
+                              {user.category_status || "-"}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${
+                                user.is_Active
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                  : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
+                              }`}
+                            >
+                              {user.is_Active ? "Aktif" : "Suspended"}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                            {formatDate(user.created_at)}
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-[10px] px-2"
+                                onClick={() => setDetailTarget(user)}
+                                disabled={isActioning}
+                              >
+                                Detail
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className={`h-8 text-[10px] px-2 ${
+                                  user.is_Active
+                                    ? "text-rose-600 border-rose-200 hover:bg-rose-50"
+                                    : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                                }`}
+                                onClick={() => toggleStatus(user)}
+                                disabled={isActioning}
+                              >
+                                {isActioning ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : user.is_Active ? (
+                                  <UserX className="h-3.5 w-3.5 mr-1" />
+                                ) : (
+                                  <UserCheck className="h-3.5 w-3.5 mr-1" />
+                                )}
+                                {!isActioning && (user.is_Active ? "Suspend" : "Aktifkan")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-[10px] px-2 text-rose-600 border-rose-200 hover:bg-rose-50"
+                                onClick={() => setDeleteTarget(user)}
+                                disabled={isActioning}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {/* Menampilkan Jumlah Pengguna Sesuai Filter */}
           {!loading && (
-            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground bg-card border border-border p-4 rounded-xl">
-              <span>
-                Menampilkan <strong>{users.length}</strong> pengguna berdasarkan filter yang dipilih.
-              </span>
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={users.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+              />
             </div>
           )}
-
         </div>
       </main>
 
@@ -562,7 +554,6 @@ export default function AdminUsers() {
         />
       )}
 
-      {/* Toast */}
       {toast && (
         <Toast
           message={toast.message}

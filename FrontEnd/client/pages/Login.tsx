@@ -113,15 +113,6 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <Link
-                  to="#"
-                  className="text-base font-semibold text-primary hover:underline underline-offset-2 high-contrast:border high-contrast:border-primary high-contrast:px-2 high-contrast:py-1"
-                >
-                  Lupa Password?
-                </Link>
-              </div>
-
               <Button
                 type="submit"
                 size="lg"

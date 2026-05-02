@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { preview } from 'vite';
+import { Pagination } from '@/components/Admin/Pagination';
 
 type Trans = {
   trans_id: string;
@@ -106,14 +107,14 @@ function TransModal({ trans, onSave, onClose }: { trans: Partial<Trans>; onSave:
               <div key={key} className="flex items-center gap-2">
                 <input type="checkbox" id={key} checked={form[key as keyof typeof form] as boolean}
                   onChange={(e) => setForm({ ...form, [key]: e.target.checked })} className="h-4 w-4" />
-                <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
+                <Label htmlFor={key} className="text-sm accent-blue-600 cursor-pointer">{label}</Label>
               </div>
             ))}
           </div>
           <div className="flex items-center gap-2 pt-2 border-t border-border">
             <input type="checkbox" id="trans_active" checked={form.is_active}
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4" />
-            <Label htmlFor="trans_active" className="text-sm cursor-pointer">Aktif</Label>
+            <Label htmlFor="trans_active" className="text-sm accent-blue-600 cursor-pointer">Aktif</Label>
           </div>
         </div>
         <div className="flex gap-3">
@@ -172,14 +173,14 @@ function StopModal({ stop, onSave, onClose }: { stop: Partial<Stop>; onSave: (s:
               <div key={key} className="flex items-center gap-2">
                 <input type="checkbox" id={key} checked={form[key as keyof typeof form] as boolean}
                   onChange={(e) => setForm({ ...form, [key]: e.target.checked })} className="h-4 w-4" />
-                <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
+                <Label htmlFor={key} className="text-sm accent-blue-600 cursor-pointer">{label}</Label>
               </div>
             ))}
           </div>
           <div className="flex items-center gap-2 pt-2 border-t border-border">
             <input type="checkbox" id="stop_active" checked={form.is_active}
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4" />
-            <Label htmlFor="stop_active" className="text-sm cursor-pointer">Aktif</Label>
+            <Label htmlFor="stop_active" className="text-sm accent-blue-600 cursor-pointer">Aktif</Label>
           </div>
         </div>
         <div className="flex gap-3">
@@ -339,7 +340,7 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
           <div className="flex items-center gap-2 pt-2 border-t border-border">
             <input type="checkbox" id="route_active" checked={form.is_active}
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4" />
-            <Label htmlFor="route_active" className="text-sm cursor-pointer">Aktif</Label>
+            <Label htmlFor="route_active" className="text-sm accent-blue-600 cursor-pointer">Aktif</Label>
           </div>
         </div>
 
@@ -721,6 +722,21 @@ export default function AdminData() {
     { key: 'routes', label: 'Rute', count: routesList.length },
   ];
 
+  const [transPage, setTransPage] = useState(1);
+  const [stopsPage, setStopsPage] = useState(1);
+  const [routesPage, setRoutesPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  // Reset saat tab ganti
+  useEffect(() => {
+    setTransPage(1); setStopsPage(1); setRoutesPage(1);
+  }, [activeTab, search, filterType, filterFacility]);
+
+  const paginatedTrans = filteredTrans.slice((transPage - 1) * ITEMS_PER_PAGE, transPage * ITEMS_PER_PAGE);
+  const paginatedStops = filteredStops.slice((stopsPage - 1) * ITEMS_PER_PAGE, stopsPage * ITEMS_PER_PAGE);
+  const paginatedRoutes = filteredRoutes.slice((routesPage - 1) * ITEMS_PER_PAGE, routesPage * ITEMS_PER_PAGE);
+
+
   return (
     <div className="min-h-screen flex bg-background">
       <AdminSidebar />
@@ -900,6 +916,7 @@ export default function AdminData() {
 
           {/* ── TAB: TRANSPORTASI ── */}
           {activeTab === "trans" && (
+            <>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <table className="w-full">
                 <thead>
@@ -922,7 +939,7 @@ export default function AdminData() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredTrans.map((t) => (
+                  {paginatedTrans.map((t) => (
                     <tr
                       key={t.trans_id}
                       className="hover:bg-muted/30 transition-colors"
@@ -1005,7 +1022,7 @@ export default function AdminData() {
                       </td>
                     </tr>
                   ))}
-                  {filteredTrans.length === 0 && (
+                  {paginatedTrans.length === 0 && (
                     <tr>
                       <td
                         colSpan={5}
@@ -1017,11 +1034,23 @@ export default function AdminData() {
                   )}
                 </tbody>
               </table>
+
             </div>
+            <div className="mt-4">
+              <Pagination 
+                currentPage={transPage} 
+                totalItems={filteredTrans.length} 
+                itemsPerPage={ITEMS_PER_PAGE} 
+                onPageChange={setTransPage} 
+              />
+            </div>
+            </>
           )}
+          
 
           {/* ── TAB: HALTE ── */}
           {activeTab === "stops" && (
+            <>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <table className="w-full">
                 <thead>
@@ -1047,7 +1076,7 @@ export default function AdminData() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredStops.map((s) => (
+                  {paginatedStops.map((s) => (
                     <tr
                       key={s.stop_id}
                       className="hover:bg-muted/30 transition-colors"
@@ -1121,7 +1150,7 @@ export default function AdminData() {
                       </td>
                     </tr>
                   ))}
-                  {filteredStops.length === 0 && (
+                  {paginatedStops.length === 0 && (
                     <tr>
                       <td
                         colSpan={6}
@@ -1133,11 +1162,18 @@ export default function AdminData() {
                   )}
                 </tbody>
               </table>
+              
             </div>
+            <div className="mt-4">
+                <Pagination currentPage={stopsPage} totalItems={filteredStops.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setStopsPage} />
+            </div>
+            </>
           )}
+          
 
           {/* ── TAB: RUTE ── */}
           {activeTab === "routes" && (
+            <>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <table className="w-full">
                 <thead>
@@ -1163,7 +1199,7 @@ export default function AdminData() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredRoutes.map((r) => {
+                  {paginatedRoutes.map((r) => {
                     const trans = transList.find(
                       (t) => t.trans_id === r.trans_id,
                     );
@@ -1259,7 +1295,7 @@ export default function AdminData() {
                       </tr>
                     );
                   })}
-                  {filteredRoutes.length === 0 && (
+                  {paginatedRoutes.length === 0 && (
                     <tr>
                       <td
                         colSpan={6}
@@ -1272,7 +1308,12 @@ export default function AdminData() {
                 </tbody>
               </table>
             </div>
+            <div className="mt-4">
+                <Pagination currentPage={routesPage} totalItems={filteredRoutes.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setRoutesPage} />
+            </div>
+            </> 
           )}
+          
         </div>
       </main>
 

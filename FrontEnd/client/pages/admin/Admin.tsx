@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
 import { useNavigate } from "react-router-dom";
+import { Pagination } from '@/components/Admin/Pagination';
 
 interface Admin {
   user_id: string | number;
@@ -53,7 +54,7 @@ function Toast({ message, type, onClose }: { message: string; type: ToastType; o
       ) : (
         <AlertCircle className="h-4 w-4 flex-shrink-0" />
       )}
-      {message}
+      <span className="break-words">{message}</span>
     </div>
   );
 }
@@ -70,9 +71,9 @@ function AddAdminModal({
   const [userId, setUserId] = useState("");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={!loading ? onCancel : undefined} />
-      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm mx-4 shadow-xl">
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold mb-2">Tambah Admin Baru</h3>
         <p className="text-sm text-muted-foreground mb-4">
           Masukkan ID User pengguna yang ingin dijadikan Admin.
@@ -83,12 +84,12 @@ function AddAdminModal({
           onChange={(e) => setUserId(e.target.value)}
           className="mb-6"
         />
-        <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={onCancel} disabled={loading}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button variant="outline" className="flex-1 order-2 sm:order-1" onClick={onCancel} disabled={loading}>
             Batal
           </Button>
           <Button
-            className="flex-1"
+            className="flex-1 order-1 sm:order-2"
             onClick={() => onConfirm(userId)}
             disabled={loading || !userId.trim()}
           >
@@ -113,20 +114,20 @@ function RemoveAdminModal({
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={!loading ? onCancel : undefined} />
-      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm mx-4 shadow-xl">
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold mb-2">Cabut Akses Admin</h3>
         <p className="text-sm text-muted-foreground mb-6">
           Apakah kamu yakin ingin mencabut akses admin dari{" "}
-          <strong>{admin.username}</strong>? Akun ini akan kembali menjadi Pengguna biasa.
+          <strong className="break-all">{admin.username}</strong>? Akun ini akan kembali menjadi Pengguna biasa.
         </p>
-        <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={onCancel} disabled={loading}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button variant="outline" className="flex-1 order-2 sm:order-1" onClick={onCancel} disabled={loading}>
             Batal
           </Button>
           <Button
-            className="flex-1 bg-rose-600 hover:bg-rose-700 text-white"
+            className="flex-1 bg-rose-600 hover:bg-rose-700 text-white order-1 sm:order-2"
             onClick={onConfirm}
             disabled={loading}
           >
@@ -169,11 +170,9 @@ export default function Admin() {
     }
   }, [navigate]);
 
-  // GET Admins (Sesuai dengan getAllAdmins)
   const fetchAdmins = useCallback(async () => {
     setLoading(true);
     try {
-      // PERUBAHAN: dari /admins menjadi /admin/manage
       const res = await fetch(`${API_BASE}/admin/manage`, { headers: getAuthHeaders() });
 
       if (!res.ok) {
@@ -196,11 +195,9 @@ export default function Admin() {
     fetchAdmins();
   }, [fetchAdmins]);
 
-  // POST Assign Admin (Sesuai dengan assignAdminRole)
   const handleAssignAdmin = async (target_user_id: string) => {
     setActionLoading("add");
     try {
-      // PERUBAHAN: dari /admins/assign menjadi /admin/manage/assign
       const res = await fetch(`${API_BASE}/admin/manage/assign`, {
         method: "POST",
         headers: getAuthHeaders(),
@@ -221,13 +218,11 @@ export default function Admin() {
     }
   };
 
-  // PUT Update Admin Status (Sesuai dengan updateAdmin)
   const toggleAdminStatus = async (admin: Admin) => {
     setActionLoading(admin.user_id);
     try {
       const newStatus = admin.is_active ? "0" : "1"; 
       
-      // PERUBAHAN: dari /admins/${admin.user_id} menjadi /admin/manage/${admin.user_id}
       const res = await fetch(`${API_BASE}/admin/manage/${admin.user_id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
@@ -252,12 +247,10 @@ export default function Admin() {
     }
   };
 
-  // DELETE Remove Admin Role (Sesuai dengan removeAdminAccess)
   const removeAdminAccess = async () => {
     if (!removeTarget) return;
     setActionLoading(removeTarget.user_id);
     try {
-      // PERUBAHAN: dari /admins/${removeTarget.user_id} menjadi /admin/manage/${removeTarget.user_id}
       const res = await fetch(`${API_BASE}/admin/manage/${removeTarget.user_id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
@@ -281,40 +274,52 @@ export default function Admin() {
     }
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
   const filteredAdmins = admins.filter(
     (admin) =>
       admin.username.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       admin.email.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
+  const paginatedAdmins = filteredAdmins.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
   return (
     <div className="min-h-screen flex bg-background">
       <AdminSidebar />
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">
-          <div className="mb-8 flex items-start justify-between">
+      <main className="flex-1 overflow-x-hidden">
+        <div className="p-4 sm:p-8">
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-1">Manajemen Admin</h1>
               <p className="text-muted-foreground text-sm">Kelola akses dan hak prerogatif Admin Utama.</p>
             </div>
-            <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
+            <Button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto">
               <PlusCircle className="h-4 w-4" />
-              Tambah Admin
+              <span>Tambah Admin</span>
             </Button>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             {[
               { label: "Total Admin", val: statsTotal, color: "text-primary" },
               { label: "Admin Aktif", val: admins.filter((a) => a.is_active).length, color: "text-emerald-600" },
               { label: "Admin Nonaktif", val: admins.filter((a) => !a.is_active).length, color: "text-rose-600" },
             ].map((s) => (
-              <div key={s.label} className="bg-card rounded-xl border border-border p-5">
-                <div className={`text-3xl font-bold ${s.color} mb-1`}>
+              <div key={s.label} className="bg-card rounded-xl border border-border p-5 shadow-sm">
+                <div className={`text-2xl sm:text-3xl font-bold ${s.color} mb-1 truncate`}>
                   {loading ? <span className="inline-block h-9 w-12 bg-muted animate-pulse rounded-md" /> : s.val}
                 </div>
-                <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">
                   {s.label}
                 </div>
               </div>
@@ -324,110 +329,121 @@ export default function Admin() {
           <div className="mb-6 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cari admin berdasarkan username atau email..."
+              placeholder="Cari admin..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 h-11 max-w-md"
+              className="pl-10 h-11 w-full max-w-md"
             />
           </div>
 
-          <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  {["Info Admin", "Role", "Status", "Aksi"].map((h) => (
-                    <th key={h} className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {loading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <tr key={i}>
-                      {Array.from({ length: 4 }).map((_, j) => (
-                        <td key={j} className="px-6 py-4">
-                          <div className="h-4 bg-muted animate-pulse rounded-md w-3/4" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : filteredAdmins.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground text-sm">
-                      Tidak ada admin yang ditemukan.
-                    </td>
+          <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+            <div className="overflow-x-auto w-full scrollbar-thin">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    {["Info Admin", "Role", "Status", "Aksi"].map((h) => (
+                      <th key={h} className="text-left text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ) : (
-                  filteredAdmins.map((admin) => {
-                    const isActioning = actionLoading === admin.user_id;
-                    return (
-                      <tr key={admin.user_id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
-                              {admin.username.slice(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="text-sm font-semibold">{admin.username}</div>
-                              <div className="text-xs text-muted-foreground">{admin.email}</div>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300 px-2.5 py-1 rounded-full font-semibold flex items-center w-fit gap-1">
-                            <UserCog className="h-3 w-3" />
-                            {admin.role}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <span
-                            className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                              admin.is_active
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-                                : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
-                            }`}
-                          >
-                            {admin.is_active ? "Aktif" : "Nonaktif"}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs"
-                              onClick={() => toggleAdminStatus(admin)}
-                              disabled={isActioning}
-                            >
-                              {isActioning ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                "Ubah Status"
-                              )}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
-                              onClick={() => setRemoveTarget(admin)}
-                              disabled={isActioning}
-                            >
-                              <ShieldMinus className="h-3.5 w-3.5 mr-1" />
-                              Cabut Akses
-                            </Button>
-                          </div>
-                        </td>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {loading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 4 }).map((_, j) => (
+                          <td key={j} className="px-6 py-4">
+                            <div className="h-4 bg-muted animate-pulse rounded-md w-3/4" />
+                          </td>
+                        ))}
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                    ))
+                  ) : paginatedAdmins.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground text-sm">
+                        Tidak ada admin yang ditemukan.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedAdmins.map((admin) => {
+                      const isActioning = actionLoading === admin.user_id;
+                      return (
+                        <tr key={admin.user_id} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
+                                {admin.username.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold truncate max-w-[150px]">{admin.username}</div>
+                                <div className="text-xs text-muted-foreground truncate max-w-[150px]">{admin.email}</div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300 px-2.5 py-1 rounded-full font-semibold flex items-center w-fit gap-1">
+                              <UserCog className="h-3 w-3" />
+                              {admin.role}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${
+                                admin.is_active
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                  : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
+                              }`}
+                            >
+                              {admin.is_active ? "Aktif" : "Nonaktif"}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-[10px]"
+                                onClick={() => toggleAdminStatus(admin)}
+                                disabled={isActioning}
+                              >
+                                {isActioning ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  "Ubah Status"
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-[10px] text-rose-600 border-rose-200 hover:bg-rose-50"
+                                onClick={() => setRemoveTarget(admin)}
+                                disabled={isActioning}
+                              >
+                                <ShieldMinus className="h-3.5 w-3.5 mr-1" />
+                                Cabut Akses
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredAdmins.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
       </main>
