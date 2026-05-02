@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { preview } from 'vite';
 import { Pagination } from '@/components/Admin/Pagination';
+import { th } from 'zod/v4/locales';
 
 type Trans = {
   trans_id: string;
@@ -754,7 +755,7 @@ export default function AdminData() {
 
           {/* ── STATS: TRANSPORTASI ── */}
           {activeTab === "trans" && (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
               {[
                 { label: "Total", val: transStats.all, color: "text-primary" },
                 { label: "Bus", val: transStats.Bus, color: "text-orange-600" },
@@ -783,7 +784,7 @@ export default function AdminData() {
 
           {/* ── STATS: HALTE ── */}
           {activeTab === "stops" && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
               {[
                 {
                   label: "Total Halte",
@@ -918,123 +919,124 @@ export default function AdminData() {
           {activeTab === "trans" && (
             <>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Transportasi
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Tipe
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Fasilitas
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Status
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginatedTrans.map((t) => (
-                    <tr
-                      key={t.trans_id}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-semibold">{t.name}</div>
-                        <div className="text-xs text-muted-foreground font-mono">
-                          {t.trans_id}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 px-2.5 py-1 rounded-full font-semibold">
-                          {t.type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {t.is_low_entry && (
-                            <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                              Low Entry
-                            </span>
-                          )}
-                          {t.has_wheelchair_slot && (
-                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                              Slot Kursi Roda
-                            </span>
-                          )}
-                          {t.has_priority_seat && (
-                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                              Kursi Prioritas
-                            </span>
-                          )}
-                          {t.has_women_area && (
-                            <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">
-                              Area Khusus Wanita
-                            </span>
-                          )}
-                          {!t.is_low_entry &&
-                            !t.has_wheelchair_slot &&
-                            !t.has_priority_seat &&
-                            !t.has_women_area && (
-                              <span className="text-xs text-muted-foreground">
-                                -
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[950px]">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[30%]">
+                        Transportasi
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[10%]">
+                        Tipe
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[35%]">
+                        Fasilitas
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[10%]">
+                        Status
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[15%]">
+                        Aksi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {paginatedTrans.map((t) => (
+                      <tr
+                        key={t.trans_id}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-semibold">{t.name}</div>
+                          <div className="text-xs text-muted-foreground font-mono">
+                            {t.trans_id}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 px-2.5 py-1 rounded-full font-semibold">
+                            {t.type}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {t.is_low_entry && (
+                              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                                Low Entry
                               </span>
                             )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`text-xs px-2.5 py-1 rounded-full font-semibold ${t.is_active ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
+                            {t.has_wheelchair_slot && (
+                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                Slot Kursi Roda
+                              </span>
+                            )}
+                            {t.has_priority_seat && (
+                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                                Kursi Prioritas
+                              </span>
+                            )}
+                            {t.has_women_area && (
+                              <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">
+                                Area Khusus Wanita
+                              </span>
+                            )}
+                            {!t.is_low_entry &&
+                              !t.has_wheelchair_slot &&
+                              !t.has_priority_seat &&
+                              !t.has_women_area && (
+                                <span className="text-xs text-muted-foreground">
+                                  -
+                                </span>
+                              )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`text-xs px-2.5 py-1 rounded-full font-semibold ${t.is_active ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
+                          >
+                            {t.is_active ? "Aktif" : "Nonaktif"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs"
+                              onClick={() => setTransModal(t)}
+                            >
+                              <Pencil className="h-3.5 w-3.5 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                              onClick={() =>
+                                setDeleteModal({
+                                  name: t.name,
+                                  onConfirm: () => handleDeleteTrans(t.trans_id),
+                                })
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {paginatedTrans.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="px-6 py-12 text-center text-muted-foreground text-sm"
                         >
-                          {t.is_active ? "Aktif" : "Nonaktif"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-xs"
-                            onClick={() => setTransModal(t)}
-                          >
-                            <Pencil className="h-3.5 w-3.5 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
-                            onClick={() =>
-                              setDeleteModal({
-                                name: t.name,
-                                onConfirm: () => handleDeleteTrans(t.trans_id),
-                              })
-                            }
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {paginatedTrans.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={5}
-                        className="px-6 py-12 text-center text-muted-foreground text-sm"
-                      >
-                        Tidak ada data.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
+                          Tidak ada data.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div className="mt-4">
               <Pagination 
@@ -1052,117 +1054,118 @@ export default function AdminData() {
           {activeTab === "stops" && (
             <>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Halte
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Alamat
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Koordinat
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Fasilitas
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Status
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginatedStops.map((s) => (
-                    <tr
-                      key={s.stop_id}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-semibold">{s.name}</div>
-                        <div className="text-xs text-muted-foreground font-mono">
-                          {s.stop_id}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {s.address}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-xs text-muted-foreground font-mono">
-                          <div>{s.latitude.toFixed(5)}</div>
-                          <div>{s.longitude.toFixed(5)}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {s.has_ramp && (
-                            <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                              Ramp
-                            </span>
-                          )}
-                          {s.has_elevator && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                              Elevator
-                            </span>
-                          )}
-                          {!s.has_ramp && !s.has_elevator && (
-                            <span className="text-xs text-muted-foreground">
-                              -
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`text-xs px-2.5 py-1 rounded-full font-semibold ${s.is_active ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
-                        >
-                          {s.is_active ? "Aktif" : "Nonaktif"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-xs"
-                            onClick={() => setStopModal(s)}
-                          >
-                            <Pencil className="h-3.5 w-3.5 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
-                            onClick={() =>
-                              setDeleteModal({
-                                name: s.name,
-                                onConfirm: () => handleDeleteStops(s.stop_id),
-                              })
-                            }
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1050px]">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[20%]">
+                        Halte
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[20%]">
+                        Alamat
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[15%]">
+                        Koordinat
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[20%]">
+                        Fasilitas
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[10%]">
+                        Status
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[15%]">
+                        Aksi
+                      </th>
                     </tr>
-                  ))}
-                  {paginatedStops.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="px-6 py-12 text-center text-muted-foreground text-sm"
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {paginatedStops.map((s) => (
+                      <tr
+                        key={s.stop_id}
+                        className="hover:bg-muted/30 transition-colors"
                       >
-                        Tidak ada data.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-semibold">{s.name}</div>
+                          <div className="text-xs text-muted-foreground font-mono">
+                            {s.stop_id}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-muted-foreground">
+                          {s.address}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-xs text-muted-foreground font-mono">
+                            <div>{s.latitude.toFixed(5)}</div>
+                            <div>{s.longitude.toFixed(5)}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {s.has_ramp && (
+                              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                                Ramp
+                              </span>
+                            )}
+                            {s.has_elevator && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                Elevator
+                              </span>
+                            )}
+                            {!s.has_ramp && !s.has_elevator && (
+                              <span className="text-xs text-muted-foreground">
+                                -
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`text-xs px-2.5 py-1 rounded-full font-semibold ${s.is_active ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
+                          >
+                            {s.is_active ? "Aktif" : "Nonaktif"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs"
+                              onClick={() => setStopModal(s)}
+                            >
+                              <Pencil className="h-3.5 w-3.5 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                              onClick={() =>
+                                setDeleteModal({
+                                  name: s.name,
+                                  onConfirm: () => handleDeleteStops(s.stop_id),
+                                })
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {paginatedStops.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-6 py-12 text-center text-muted-foreground text-sm"
+                        >
+                          Tidak ada data.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div className="mt-4">
                 <Pagination currentPage={stopsPage} totalItems={filteredStops.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setStopsPage} />
@@ -1175,138 +1178,140 @@ export default function AdminData() {
           {activeTab === "routes" && (
             <>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Nama Rute
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Transportasi
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Asal → Tujuan
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Urutan Halte (Route Stops)
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Status
-                    </th>
-                    <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginatedRoutes.map((r) => {
-                    const trans = transList.find(
-                      (t) => t.trans_id === r.trans_id,
-                    );
-                    return (
-                      <tr
-                        key={r.route_id}
-                        className="hover:bg-muted/30 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-semibold">
-                            {r.route_name}
-                          </div>
-                          <div className="text-xs text-muted-foreground font-mono">
-                            {r.route_id}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm">{trans?.name || "-"}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {trans?.type || ""}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-medium">
-                              {r.origin_stop_name}
-                            </span>
-                            <span className="text-muted-foreground">→</span>
-                            <span className="font-medium">
-                              {r.dest_stop_name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {r.route_stops.length === 0 ? (
-                            <span className="text-xs text-muted-foreground">
-                              -
-                            </span>
-                          ) : (
-                            <div className="space-y-1">
-                              {r.route_stops.map((rs, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center gap-2 text-xs"
-                                >
-                                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center flex-shrink-0">
-                                    {rs.stop_order}
-                                  </span>
-                                  <span className="text-muted-foreground truncate max-w-[120px]">
-                                    {rs.stop_name}
-                                  </span>
-                                  <span className="text-muted-foreground flex-shrink-0">
-                                    {rs.est_time_minutes} mnt
-                                  </span>
-                                </div>
-                              ))}
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1200px]">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[20%]">
+                        Nama Rute
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[15%]">
+                        Transportasi
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[20%]">
+                        Asal → Tujuan
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[30%]">
+                        Urutan Halte (Route Stops)
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[8%]">
+                        Status
+                      </th>
+                      <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap w-[7%]">
+                        Aksi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {paginatedRoutes.map((r) => {
+                      const trans = transList.find(
+                        (t) => t.trans_id === r.trans_id,
+                      );
+                      return (
+                        <tr
+                          key={r.route_id}
+                          className="hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-semibold">
+                              {r.route_name}
                             </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`text-xs px-2.5 py-1 rounded-full font-semibold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
-                          >
-                            {r.is_active ? "Aktif" : "Nonaktif"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs"
-                              onClick={() => setRouteModal(r)}
+                            <div className="text-xs text-muted-foreground font-mono">
+                              {r.route_id}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm">{trans?.name || "-"}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {trans?.type || ""}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium">
+                                {r.origin_stop_name}
+                              </span>
+                              <span className="text-muted-foreground">→</span>
+                              <span className="font-medium">
+                                {r.dest_stop_name}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            {r.route_stops.length === 0 ? (
+                              <span className="text-xs text-muted-foreground">
+                                -
+                              </span>
+                            ) : (
+                              <div className="space-y-1">
+                                {r.route_stops.map((rs, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center gap-2 text-xs"
+                                  >
+                                    <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center flex-shrink-0">
+                                      {rs.stop_order}
+                                    </span>
+                                    <span className="text-muted-foreground truncate max-w-[120px]">
+                                      {rs.stop_name}
+                                    </span>
+                                    <span className="text-muted-foreground flex-shrink-0">
+                                      {rs.est_time_minutes} mnt
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`text-xs px-2.5 py-1 rounded-full font-semibold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
                             >
-                              <Pencil className="h-3.5 w-3.5 mr-1" />
-                              Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
-                              onClick={() =>
-                                setDeleteModal({
-                                  name: r.route_name,
-                                  onConfirm: () => handleDeleteRoute(r.route_id),
-                                })
-                              }
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
+                              {r.is_active ? "Aktif" : "Nonaktif"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs"
+                                onClick={() => setRouteModal(r)}
+                              >
+                                <Pencil className="h-3.5 w-3.5 mr-1" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                                onClick={() =>
+                                  setDeleteModal({
+                                    name: r.route_name,
+                                    onConfirm: () => handleDeleteRoute(r.route_id),
+                                  })
+                                }
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {paginatedRoutes.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-6 py-12 text-center text-muted-foreground text-sm"
+                        >
+                          Tidak ada data.
                         </td>
                       </tr>
-                    );
-                  })}
-                  {paginatedRoutes.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="px-6 py-12 text-center text-muted-foreground text-sm"
-                      >
-                        Tidak ada data.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div className="mt-4">
                 <Pagination currentPage={routesPage} totalItems={filteredRoutes.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setRoutesPage} />

@@ -113,8 +113,8 @@ function DetailModal({ report, onClose, onStatusChange }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-5 sticky top-0 bg-card z-10 pb-2">
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-bold">Detail Laporan</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
@@ -356,11 +356,11 @@ export default function AdminReports() {
           {/* Table Container dengan Horizontal Scroll */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
             <div className="overflow-x-auto w-full scrollbar-thin">
-              <table className="w-full min-w-[1000px]">
+              <table className="w-full min-w-[1100px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
                     {["Pelapor", "Kategori", "Lokasi", "Deskripsi", "Status", "Tanggal", "Aksi"].map((h) => (
-                      <th key={h} className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                      <th key={h} className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap">
                         {h}
                       </th>
                     ))}
