@@ -11,7 +11,7 @@ const getAllUsers = async (req, res) => {
             SELECT 
                 COUNT(*) AS total_users,
                 SUM(IF(is_Active = 1, 1, 0)) AS active_users,
-                SUM(IF(is_Active = 0, 1, 0)) AS inactive_users
+                SUM(IF(is_Active = 0, 1, 0)) AS suspended_users
             FROM users
             WHERE role = 'Pengguna'
         `;
@@ -26,7 +26,8 @@ const getAllUsers = async (req, res) => {
                 u.is_Active, 
                 u.created_at,
                 p.full_name, 
-                p.category_status 
+                p.category_status,
+                p.phone_number
             FROM users u
             LEFT JOIN profiles p ON u.user_id = p.user_id
             WHERE u.role = 'Pengguna'
@@ -54,7 +55,7 @@ const getAllUsers = async (req, res) => {
                 stats: {
                     total: statsResult[0].total_users || 0,
                     active: statsResult[0].active_users || 0,
-                    inactive: statsResult[0].inactive_users || 0
+                    suspended: statsResult[0].suspended_users || 0
                 },
                 list: users
             }
@@ -67,7 +68,7 @@ const getAllUsers = async (req, res) => {
 };
 
 // ==========================================
-// 2. TOGGLE STATUS AKTIF/NONAKTIF
+// 2. TOGGLE STATUS AKTIF/SUSPEND
 // ==========================================
 const toggleUserStatus = async (req, res) => {
     try {
@@ -85,7 +86,8 @@ const toggleUserStatus = async (req, res) => {
             return res.status(404).json({ message: "Pengguna tidak ditemukan." });
         }
 
-        res.status(200).json({ message: "Status pengguna berhasil diubah!" });
+        const statusText = is_Active ? "diaktifkan kembali" : "disuspend";
+        res.status(200).json({ message: `Akun pengguna berhasil ${statusText}!` });
     } catch (error) {
         console.error("❌ Error Toggle User Status:", error);
         res.status(500).json({ message: "Gagal mengubah status pengguna." });
@@ -99,7 +101,7 @@ const deleteUser = async (req, res) => {
     try {
         const { user_id } = req.params;
 
-        // Hapus profilnya dulu (untuk mencegah error Foreign Key jika belum pakai ON DELETE CASCADE)
+        // Hapus profilnya dulu (untuk mencegah error Foreign Key)
         await pool.query(`DELETE FROM profiles WHERE user_id = ?`, [user_id]);
         
         // Hapus akunnya dari tabel users

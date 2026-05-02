@@ -130,10 +130,11 @@ const login = async (req, res) => {
             });
         }
 
-        if (user.is_active === 0) { 
-            return res.status(403).json({ message: "Akun ini sudah dinonaktifkan. Silakan hubungi admin." });
+        if (user.is_Active === 0) { 
+            return res.status(403).json({ 
+                message: "Akun Anda telah disuspend karena melanggar ketentuan. Silakan hubungi admin ARAHIN." 
+            });
         }
-
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Email atau password salah!" });

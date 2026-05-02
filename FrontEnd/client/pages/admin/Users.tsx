@@ -32,13 +32,24 @@ interface Stats {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
-// Label tampilan UI → value di database
+// 👇 PERBAIKAN 1: Menambahkan Mapper agar tabel menampilkan Bahasa Indonesia
+const CATEGORY_MAP: Record<string, string> = {
+  'general': 'General',
+  'disability': 'Penyandang Disabilitas',
+  'elderly': 'Lansia',
+  'women': 'Perempuan',
+  'pregnant': 'Hamil',
+  'children': 'Anak-Anak',
+  'vulnerable-illness': 'Situasi Rentan'
+};
+
+// 👇 PERBAIKAN 2: Mengubah value 'vulnerable' menjadi 'vulnerable-illness' sesuai database
 const CATEGORIES: { label: string; value: string }[] = [
   { label: "Semua Kategori", value: "All" },
   { label: "Penyandang Disabilitas", value: "disability" },
   { label: "Lansia", value: "elderly" },
   { label: "Perempuan", value: "women" },
-  { label: "Situasi Rentan", value: "vulnerable" },
+  { label: "Situasi Rentan", value: "vulnerable-illness" }, 
   { label: "Anak-Anak", value: "children" },
   { label: "Hamil", value: "pregnant" },
   { label: "General", value: "general" },
@@ -139,13 +150,13 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
       <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md mx-4 shadow-xl">
         <h3 className="text-lg font-bold mb-4">Detail Pengguna</h3>
         <div className="space-y-3 mb-6">
+          {/* 👇 PERBAIKAN 3: Role Dihapus, dan Kategori menggunakan Mapper 👇 */}
           {[
-            { label: "Nama Lengkap", value: user.full_name },
+            { label: "Nama Lengkap", value: user.full_name || "-" },
             { label: "Username", value: user.username },
             { label: "Email", value: user.email },
             { label: "Nomor Telepon", value: user.phone_number || "-" },
-            { label: "Kategori", value: user.category_status },
-            { label: "Role", value: user.role },
+            { label: "Kategori", value: CATEGORY_MAP[user.category_status] || user.category_status || "-" },
             { label: "Status", value: user.is_Active ? "Aktif" : "Suspended" },
             {
               label: "Bergabung",
@@ -158,7 +169,7 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
           ].map((item) => (
             <div key={item.label} className="flex justify-between text-sm">
               <span className="text-muted-foreground">{item.label}</span>
-              <span className="font-semibold">{item.value}</span>
+              <span className="font-semibold text-right">{item.value}</span>
             </div>
           ))}
 
@@ -267,8 +278,8 @@ export default function AdminUsers() {
 
       showToast(
         newStatus
-          ? `${user.full_name} berhasil diaktifkan.`
-          : `${user.full_name} berhasil disuspend.`,
+          ? `Akun ${user.full_name || user.username} berhasil diaktifkan.`
+          : `Akun ${user.full_name || user.username} berhasil disuspend.`,
         "success"
       );
     } catch (err: unknown) {
@@ -296,7 +307,7 @@ export default function AdminUsers() {
       setUsers((prev) => prev.filter((u) => u.user_id !== deleteTarget.user_id));
       setStatsTotal((prev) => prev - 1);
 
-      showToast(`Akun ${deleteTarget.full_name} berhasil dihapus.`, "success");
+      showToast(`Akun ${deleteTarget.full_name || deleteTarget.username} berhasil dihapus.`, "success");
       setDeleteTarget(null);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan.";
@@ -455,10 +466,10 @@ export default function AdminUsers() {
                           </div>
                         </td>
 
-                        {/* Kategori */}
+                        {/* Kategori - Ditambahkan Map */}
                         <td className="px-6 py-4">
                           <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 px-2.5 py-1 rounded-full font-semibold">
-                            {user.category_status || "-"}
+                            {CATEGORY_MAP[user.category_status] || user.category_status || "-"}
                           </span>
                         </td>
 
