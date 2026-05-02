@@ -476,8 +476,7 @@ export default function AdminUsers() {
                               user.is_Active
                                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
                                 : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
-                            }`}
-                          >
+                            }`}>
                             {user.is_Active ? "Aktif" : "Suspended"}
                           </span>
                         </td>
@@ -509,54 +508,15 @@ export default function AdminUsers() {
                               }`}
                             >
                               {user.is_Active ? "Aktif" : "Suspended"}
-                            </span>
-                          </td>
-
+                            </Button>
+                          </div>
+                        
                           <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
                             {formatDate(user.created_at)}
                           </td>
-
+                        
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 text-[10px] px-2"
-                                onClick={() => setDetailTarget(user)}
-                                disabled={isActioning}
-                              >
-                                Detail
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className={`h-8 text-[10px] px-2 ${
-                                  user.is_Active
-                                    ? "text-rose-600 border-rose-200 hover:bg-rose-50"
-                                    : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                                }`}
-                                onClick={() => toggleStatus(user)}
-                                disabled={isActioning}
-                              >
-                                {isActioning ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : user.is_Active ? (
-                                  <UserX className="h-3.5 w-3.5 mr-1" />
-                                ) : (
-                                  <UserCheck className="h-3.5 w-3.5 mr-1" />
-                                )}
-                                {!isActioning && (user.is_Active ? "Suspend" : "Aktifkan")}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 text-[10px] px-2 text-rose-600 border-rose-200 hover:bg-rose-50"
-                                onClick={() => setDeleteTarget(user)}
-                                disabled={isActioning}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
+                            ...duplikat aksi...
                           </td>
                         </tr>
                       );
