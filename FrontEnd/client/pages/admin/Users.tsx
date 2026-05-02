@@ -460,8 +460,7 @@ export default function AdminUsers() {
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
                         {/* Kategori - Ditambahkan Map */}
                         <td className="px-6 py-4">
