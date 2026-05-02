@@ -1,4 +1,5 @@
 const pool = require('../db');
+const autoExpireSubscriptions = require('../utils/autoExpire');
 
 // ==========================================
 // 1. GET ALL GUIDES & STATS
@@ -6,6 +7,9 @@ const pool = require('../db');
 const getAllGuides = async (req, res) => {
     try {
         const { search } = req.query;
+
+        // Lakukan evaluasi kilat agar data pemandu terbaru (bebas tugas) langsung akurat
+        await autoExpireSubscriptions();
 
         // Query Statistik menyesuaikan kolom is_available (1 = Tersedia, 0 = Tidak)
         const statsQuery = `
