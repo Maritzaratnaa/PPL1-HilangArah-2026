@@ -22,10 +22,14 @@ import {
   Heart,
   Loader2,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function SubscriptionForm() {
   const navigate = useNavigate();
+
+  const location = useLocation();
+  const planLabel = location.state?.planLabel || 'Paket Bulanan';
+  const planAmount = location.state?.amount || 299000;
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -92,9 +96,16 @@ export default function SubscriptionForm() {
       const data = await res.json();
 
       if (res.ok) {
+        localStorage.setItem('activePlanLabel', planLabel);
+        localStorage.setItem('activePlanPeriod', location.state?.plan === 'daily' ? '1 Hari' : '1 Bulan');
         // 4. Jika sukses (201), lempar subs_id ke halaman Payment
         navigate("/subscription/Payment", {
-          state: { subs_id: data.subs_id },
+          state: {
+            subs_id: data.subs_id,
+            plan: location.state?.plan || 'monthly',
+            amount: planAmount,
+            planLabel: planLabel,
+          },
         });
       } else {
         // 5. Jika gagal (misal: 400 karena sudah punya langganan aktif)
@@ -380,54 +391,42 @@ export default function SubscriptionForm() {
               </Card>
             </div>
 
+            {/* Summary Card */}
             <div className="lg:col-span-4 lg:sticky lg:top-10">
               <Card className="bg-card border-border rounded-[var(--radius)] p-7 shadow-sm flex flex-col">
-                <h3 className="text-[18px] font-bold text-foreground mb-6">
-                  Ringkasan Langganan
-                </h3>
+                <h3 className="text-[18px] font-bold text-foreground mb-6">Ringkasan Langganan</h3>
                 <div className="flex items-center gap-4 mb-8 p-5 bg-muted/30 rounded-2xl border border-border">
-                  <div className="w-14 h-14 bg-background rounded-xl shadow-sm flex items-center justify-center text-[24px]">
-                    🧭
-                  </div>
+                  <div className="w-14 h-14 bg-background rounded-xl shadow-sm flex items-center justify-center text-[24px]">🧭</div>
                   <div>
                     <p className="text-[12px] font-bold text-primary uppercase tracking-wider">
-                      Paket Bulanan
+                      {planLabel}
                     </p>
-                    <p className="font-bold text-foreground text-[16px]">
-                      Akses Pemandu Pribadi
-                    </p>
+                    <p className="font-bold text-foreground text-[16px]">Akses Pemandu Pribadi</p>
                   </div>
                 </div>
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between items-center text-muted-foreground font-medium text-[16px]">
                     <span>Harga Paket</span>
                     <span className="font-bold text-foreground">
-                      Rp 299.000
+                      Rp {planAmount.toLocaleString('id-ID')}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-muted-foreground font-medium text-[16px]">
                     <span>Durasi</span>
-                    <span className="font-bold text-foreground">1 Bulan</span>
+                    <span className="font-bold text-foreground">
+                      {location.state?.plan === 'daily' ? '1 Hari' : '1 Bulan'}
+                    </span>
                   </div>
                   <div className="pt-4 border-t border-dashed border-border flex justify-between items-center">
-                    <span className="font-bold text-foreground text-[16px]">
-                      Total Tagihan
-                    </span>
+                    <span className="font-bold text-foreground text-[16px]">Total Tagihan</span>
                     <span className="text-[22px] font-bold text-primary">
-                      Rp 299.000
+                      Rp {planAmount.toLocaleString('id-ID')}
                     </span>
                   </div>
                 </div>
                 <div className="space-y-3.5 pt-6 border-t border-border">
-                  {[
-                    "1 Pemandu Terverifikasi",
-                    "Perjalanan Tak Terbatas",
-                    "Support Prioritas 24/7",
-                  ].map((b, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 text-[14px] font-bold text-muted-foreground"
-                    >
+                  {['1 Pemandu Terverifikasi', 'Perjalanan Tak Terbatas', 'Support Prioritas 24/7'].map((b, i) => (
+                    <div key={i} className="flex items-center gap-3 text-[14px] font-bold text-muted-foreground">
                       <ShieldCheck size={18} className="text-primary" />
                       {b}
                     </div>
