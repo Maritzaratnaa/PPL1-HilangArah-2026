@@ -49,7 +49,7 @@ export default function SubscriptionPayment() {
         },
         body: JSON.stringify({
           subs_id: subsId,
-          amount: 278100,
+          amount: planAmount,
         }),
       });
 
@@ -114,6 +114,10 @@ export default function SubscriptionPayment() {
 
   // Jika subsId tidak ada (sedang proses redirect), render kosong agar tidak error
   if (!subsId) return null;
+
+  const plan = location.state?.plan || 'monthly';
+  const planAmount = location.state?.amount || 299000;
+  const planLabel = location.state?.planLabel || 'Paket Bulanan';
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground font-['Atkinson_Hyperlegible',_sans-serif]">
@@ -189,46 +193,31 @@ export default function SubscriptionPayment() {
                 Rincian Pembayaran
               </h3>
 
-              {/* ID Referensi Langganan */}
+              {/* ID Referensi */}
               <div className="bg-muted/30 rounded-lg p-4 mb-6 border border-border text-center">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
-                  ID Langganan
-                </p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">ID Langganan</p>
                 <p className="text-[14px] font-mono font-bold text-primary truncate">
                   {subsId.split("-")[0].toUpperCase()}
                 </p>
               </div>
 
+              {/* Nama Paket */}
+              <div className="bg-primary/5 rounded-lg p-3 mb-6 border border-primary/20 text-center">
+                <p className="text-sm font-bold text-primary">{planLabel}</p>
+              </div>
+
               {/* Price Breakdown */}
               <div className="space-y-3 mb-6 pb-6 border-b border-border">
                 <div className="flex justify-between text-[16px]">
-                  <span className="text-muted-foreground font-medium">
-                    Paket Bulanan
-                  </span>
-                  <span className="font-bold text-foreground">Rp 299.000</span>
-                </div>
-                <div className="flex justify-between text-[16px]">
-                  <span className="text-muted-foreground font-medium">
-                    Biaya Admin
-                  </span>
-                  <span className="font-bold text-foreground">Rp 10.000</span>
-                </div>
-                <div className="flex justify-between text-[16px]">
-                  <span className="text-muted-foreground font-medium">
-                    Diskon
-                  </span>
-                  <span className="font-bold text-green-600">- Rp 30.900</span>
+                  <span className="text-muted-foreground font-medium">{planLabel}</span>
+                  <span className="font-bold text-foreground">Rp {planAmount.toLocaleString('id-ID')}</span>
                 </div>
               </div>
 
               {/* Total */}
               <div className="flex justify-between items-center mb-8">
-                <span className="font-bold text-foreground text-[16px]">
-                  Total
-                </span>
-                <span className="text-[24px] font-bold text-primary">
-                  Rp 278.100
-                </span>
+                <span className="font-bold text-foreground text-[16px]">Total</span>
+                <span className="text-[24px] font-bold text-primary">Rp {planAmount.toLocaleString('id-ID')}</span>
               </div>
 
               {/* Payment Button */}

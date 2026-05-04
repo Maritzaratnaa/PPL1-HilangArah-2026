@@ -102,6 +102,43 @@ export default function SubscriptionLanding() {
     ? { background: "#000000", borderTop: "2px solid #ffff00" }
     : { background: "#007C8A" };
 
+  const [selectedPlan, setSelectedPlan] = useState<'daily' | 'monthly'>('monthly');
+
+  const plans = {
+    daily: {
+      label: 'Paket Harian',
+      price: 'Rp 29.900',
+      period: '/hari',
+      note: 'Berlaku 1 hari · bayar sesuai kebutuhan',
+      amount: 29900,
+      features: [
+        '1 Pemandu Pribadi Tersertifikasi',
+        'Pendampingan perjalanan sepanjang hari',
+        'Perencanaan rute aksesibel',
+        'Kontak darurat terintegrasi',
+        'Dukungan prioritas 24/7',
+        'Akses fitur premium ARAHIN',
+      ],
+    },
+    monthly: {
+      label: 'Paket Bulanan',
+      price: 'Rp 299.000',
+      period: '/bln',
+      note: 'Tagihan bulanan · batalkan kapan saja',
+      amount: 299000,
+      features: [
+        '1 Pemandu Pribadi Tersertifikasi',
+        'Pendampingan perjalanan tak terbatas',
+        'Perencanaan rute aksesibel',
+        'Kontak darurat terintegrasi',
+        'Dukungan prioritas 24/7',
+        'Akses fitur premium ARAHIN',
+      ],
+    },
+  };
+
+  const activePlan = plans[selectedPlan];
+
   return (
     <div className={`min-h-screen flex flex-col font-['Atkinson_Hyperlegible',_sans-serif] transition-colors ${isHC ? "bg-black" : "bg-white dark:bg-gray-950"}`}>
       <Navbar />
@@ -134,7 +171,15 @@ export default function SubscriptionLanding() {
             
             <div className="flex flex-wrap gap-3">
               <button 
-                onClick={handleActionClick}
+                onClick={() => {
+                  if (hasSubs) {
+                    navigate("/subscription/Profile");
+                  } else {
+                    navigate("/subscription/Form", {
+                      state: { plan: selectedPlan, amount: activePlan.amount, planLabel: activePlan.label }
+                    });
+                  }
+                }}
                 disabled={isChecking}
                 className={`px-7 py-3.5 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-70 ${
                   isHC 
@@ -298,36 +343,52 @@ export default function SubscriptionLanding() {
           <Card className={`rounded-[20px] p-9 shadow-xl relative z-10 ${
             isHC ? "bg-black border-2 border-[#ffff00]" : "bg-white dark:bg-gray-900 border-none"
           }`}>
-            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-5 ${
-              isHC ? "bg-[#ffff00] text-black" : "bg-[#E6F4F6] dark:bg-gray-800 text-[#007C8A] dark:text-[#26c6da]"
-            }`}>
-              <Star size={12} fill="currentColor" /> Paling Populer
+            {/* Tab pilih paket */}
+            <div className={`flex rounded-xl p-1 mb-6 ${isHC ? "bg-black border border-[#ffff00]" : "bg-gray-100 dark:bg-gray-800"}`}>
+              {(['daily', 'monthly'] as const).map((plan) => (
+                <button
+                  key={plan}
+                  onClick={() => setSelectedPlan(plan)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                    selectedPlan === plan
+                      ? isHC
+                        ? "bg-[#ffff00] text-black"
+                        : "bg-white dark:bg-gray-700 text-[#007C8A] dark:text-[#26c6da] shadow-sm"
+                      : isHC
+                      ? "text-[#ffff00]"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}
+                >
+                  {plan === 'daily' ? '📅 Harian' : '🗓️ Bulanan'}
+                </button>
+              ))}
             </div>
-            
+
+            {selectedPlan === 'monthly' && (
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-5 ${
+                isHC ? "bg-[#ffff00] text-black" : "bg-[#E6F4F6] dark:bg-gray-800 text-[#007C8A] dark:text-[#26c6da]"
+              }`}>
+                <Star size={12} fill="currentColor" /> Paling Populer
+              </div>
+            )}
+
             <div className={`text-[13px] font-bold mb-2 uppercase tracking-wide ${isHC ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
-              Paket Bulanan
+              {activePlan.label}
             </div>
             <div className={`text-4xl font-bold flex items-baseline flex-wrap gap-1 ${isHC ? "text-[#ffff00]" : "text-[#007C8A] dark:text-[#26c6da]"}`}>
-              <span>Rp 299.000</span>
+              <span>{activePlan.price}</span>
               <span className={`text-base font-medium whitespace-nowrap ${isHC ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
-                /bln
+                {activePlan.period}
               </span>
             </div>
             <div className={`text-[12px] font-medium mt-2 mb-6 ${isHC ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
-              Tagihan bulanan · batalkan kapan saja
+              {activePlan.note}
             </div>
-            
+
             <hr className={`mb-6 ${isHC ? "border-[#ffff00]" : "border-gray-100 dark:border-gray-700"}`} />
 
             <div className="space-y-3.5 mb-8">
-              {[
-                "1 Pemandu Pribadi Tersertifikasi",
-                "Pendampingan perjalanan tak terbatas",
-                "Perencanaan rute aksesibel",
-                "Kontak darurat terintegrasi",
-                "Dukungan prioritas 24/7",
-                "Akses fitur premium ARAHIN",
-              ].map((feat, i) => (
+              {activePlan.features.map((feat, i) => (
                 <div key={i} className={`flex items-center gap-3 text-[14px] font-medium ${isHC ? "text-white" : "text-gray-900 dark:text-white"}`}>
                   <div className={`w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0 ${
                     isHC ? "bg-black text-[#ffff00] border border-[#ffff00]" : "bg-[#E6F4F6] dark:bg-gray-800 text-[#007C8A] dark:text-[#26c6da]"
@@ -339,12 +400,18 @@ export default function SubscriptionLanding() {
               ))}
             </div>
 
-            <button 
-              onClick={handleActionClick}
+            <button
+              onClick={() => {
+                if (hasSubs) {
+                  navigate("/subscription/Profile");
+                } else {
+                  navigate("/subscription/Form", { state: { plan: selectedPlan, amount: activePlan.amount, planLabel: activePlan.label } });
+                }
+              }}
               disabled={isChecking}
               className={`w-full py-4 rounded-xl font-bold transition-colors mb-4 text-[18px] disabled:opacity-70 ${
-                isHC 
-                  ? "bg-[#ffff00] text-black border-2 border-[#ffff00] hover:bg-[#ffff00]/90" 
+                isHC
+                  ? "bg-[#ffff00] text-black border-2 border-[#ffff00] hover:bg-[#ffff00]/90"
                   : "bg-[#007C8A] dark:bg-[#26c6da] text-white dark:text-gray-900 hover:bg-[#006874] dark:hover:bg-[#1fa0b0]"
               }`}
             >

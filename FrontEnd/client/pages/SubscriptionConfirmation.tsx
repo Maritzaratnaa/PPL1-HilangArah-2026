@@ -13,6 +13,10 @@ export default function SubscriptionConfirmation() {
   // Menangkap subs_id yang dikirim dari halaman pembayaran
   const subsId = location.state?.subs_id;
 
+  const planLabel = location.state?.planLabel 
+  || localStorage.getItem('activePlanLabel') 
+  || 'Paket Bulanan';
+
   // Memastikan halaman selalu termuat dari posisi paling atas
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -114,7 +118,7 @@ export default function SubscriptionConfirmation() {
                 <div className="bg-muted/30 border border-border rounded-2xl p-6 mb-12 text-left">
                   <div className="flex justify-between items-center mb-4">
                     <div>
-                      <span className="font-bold text-foreground text-[18px] block">Paket Bulanan (Premium)</span>
+                      <span className="font-bold text-foreground text-[18px] block">{planLabel}</span>
                       {subsId && (
                         <span className="text-xs text-muted-foreground font-mono mt-1 block">ID: {subsId.split('-')[0].toUpperCase()}</span>
                       )}
@@ -124,7 +128,7 @@ export default function SubscriptionConfirmation() {
                   <ul className="space-y-3 text-[16px] text-muted-foreground font-medium">
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                      Akses tak terbatas ke pemandu tersertifikasi
+                      Akses ke pemandu tersertifikasi
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-primary" />
