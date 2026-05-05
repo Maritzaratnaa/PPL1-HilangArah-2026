@@ -1,5 +1,6 @@
 const pool = require('../db');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto'); // <-- Tambahkan ini untuk membuat UUID
 
 const getAllAdmins = async (req, res) => {
     try {
@@ -23,45 +24,47 @@ const getAllAdmins = async (req, res) => {
 
 const assignAdminRole = async (req, res) => {
     try {
-        const { target_user_id } = req.body;
+        const { email, password } = req.body;
 
-        if (!target_user_id) {
-            return res.status(400).json({message: "ID User target harus disertakan!"});
+        // 1. Validasi input
+        if (!email || !password) {
+            return res.status(400).json({message: "Email dan password harus diisi!"});
         }
 
-        // Cek target user di database
-        const checkQuery = `SELECT username, role FROM users WHERE user_id = ?`;
-        const [users] = await pool.query(checkQuery, [target_user_id]);
+        // 2. Cek apakah email sudah terdaftar di database
+        const checkQuery = `SELECT user_id FROM users WHERE email = ?`;
+        const [existingUsers] = await pool.query(checkQuery, [email]);
     
-        if (users.length === 0) {
-            return res.status(404).json({message: "User tidak ditemukan di database."});
-        }
-
-        const targetUser = users[0];
-
-        // Cek apakah user sudah menjadi admin
-        if (targetUser.role === 'Admin') {
+        if (existingUsers.length > 0) {
             return res.status(400).json({
-                message: `User ${targetUser.username} sudah memiliki akses Admin.`
+                message: "Email sudah terdaftar! Silakan gunakan email lain untuk membuat admin baru."
             });
         }
 
-        // Update role user
-        const updateQuery = `UPDATE users SET role = 'Admin' Where user_id = ?`;
-        await pool.query(updateQuery, [target_user_id]);
+        // 3. Buat admin baru
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const username = email.split('@')[0];
+        
+        // Buat UUID baru secara otomatis dari backend
+        const newUserId = crypto.randomUUID(); 
 
-        res.status(200).json({
-            message: "Role user telah berhasil diubah.",
+        // Masukkan newUserId beserta kolom lainnya ke dalam query INSERT
+        const insertQuery = `INSERT INTO users (user_id, username, email, password, role, is_active, is_verified) VALUES (?, ?, ?, ?, 'Admin', 1, 1)`; 
+        await pool.query(insertQuery, [newUserId, username, email, hashedPassword]);
+
+        res.status(201).json({
+            message: "Admin baru berhasil ditambahkan.",
             data: {
-                username: targetUser.username,
+                user_id: newUserId,
+                username: username,
+                email: email,
                 new_role: 'Admin'
             }
         });
     }
-
     catch (error) {
-        console.error("Error Assign Admin Role: ", error);
-        res.status(500).json({message: "Terjadi kesalahan apda server saat mengubah role."});
+        console.error("Error Create Admin: ", error);
+        res.status(500).json({message: "Terjadi kesalahan pada server saat menambahkan admin baru."});
     }
 };
 
