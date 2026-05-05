@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const authMiddleware = (req, res, next) => {
+const verifyToken = (req, res, next) => {
     const token = req.header('Authorization')?.split(' ')[1];
 
     if (!token) {
@@ -17,4 +17,26 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
-module.exports = authMiddleware;
+const isAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'Admin') {
+        next();
+    }
+    else {
+        return res.status(403).json({ message: "Akses ditolak! Halaman ini khusus Admin." });
+    }
+};
+
+const isMainAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'Admin' && req.user.email === 'arahin.support@gmail.com') {
+        next();
+    }
+    else {
+        return res.status(403).json({message: "Akses ditolak! Hanya Admin Utama yang memiliki akses ini."})
+    }
+};
+
+module.exports = {
+    verifyToken,
+    isAdmin,
+    isMainAdmin
+}

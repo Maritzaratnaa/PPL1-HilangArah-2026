@@ -30,8 +30,8 @@ export function Footer() {
           {/* Main grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
 
-            {/* Brand column */}
-            <div className="md:col-span-2">
+          {/* Brand column */}
+          <div className="md:col-span-3">
               <div className="flex items-center gap-2 mb-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isHC ? 'bg-[#ffff00]' : 'bg-primary'}`}>
                   <span className={`${isHC ? 'text-black' : 'text-white'} text-sm font-bold`}>A</span>
@@ -45,52 +45,24 @@ export function Footer() {
             </div>
 
             {/* Contact column */}
-            <div>
-              <h4 className={`font-bold text-sm uppercase tracking-wider mb-4 ${isHC ? 'text-[#ffff00]' : 'text-foreground'}`}>Kontak</h4>
-              <div className="space-y-3 text-sm">
-                <a href="mailto:support@arahin.com"
-                  className={`flex items-center gap-2.5 transition-colors group ${isHC ? 'text-white' : 'text-muted-foreground hover:text-primary'}`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors
-                    ${isHC ? 'bg-black border border-[#ffff00]' : 'bg-muted group-hover:bg-primary/10'}`}>
-                    <Mail className={`h-3.5 w-3.5 ${isHC ? 'text-[#ffff00]' : ''}`} />
+            <div className="md:flex md:flex-col md:items-end"> 
+                <div> {/* Wrapper agar teks tetap rata kiri di dalam kolom yang rata kanan */}
+                  <h4 className={`font-bold text-sm uppercase tracking-wider mb-4 ${isHC ? 'text-[#ffff00]' : 'text-foreground'}`}>
+                    Kontak
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    <a href="mailto:support@arahin.com"
+                      className={`flex items-center gap-2.5 transition-colors group ${isHC ? 'text-white' : 'text-muted-foreground hover:text-primary'}`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors
+                        ${isHC ? 'bg-black border border-[#ffff00]' : 'bg-muted group-hover:bg-primary/10'}`}>
+                        <Mail className={`h-3.5 w-3.5 ${isHC ? 'text-[#ffff00]' : ''}`} />
+                      </div>
+                      arahin.support@gmail.com
+                    </a>
                   </div>
-                  support@arahin.com
-                </a>
-                <a href="tel:+1234567890"
-                  className={`flex items-center gap-2.5 transition-colors group ${isHC ? 'text-white' : 'text-muted-foreground hover:text-primary'}`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors
-                    ${isHC ? 'bg-black border border-[#ffff00]' : 'bg-muted group-hover:bg-primary/10'}`}>
-                    <Phone className={`h-3.5 w-3.5 ${isHC ? 'text-[#ffff00]' : ''}`} />
-                  </div>
-                  +1 (234) 567-890
-                </a>
+                </div>
               </div>
             </div>
-
-            {/* Social column */}
-            <div>
-              <h4 className={`font-bold text-sm uppercase tracking-wider mb-4 ${isHC ? 'text-[#ffff00]' : 'text-foreground'}`}>Ikuti Kami</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { icon: Facebook, label: 'Facebook', color: 'hover:bg-blue-50 hover:text-blue-600' },
-                  { icon: Twitter, label: 'Twitter', color: 'hover:bg-sky-50 hover:text-sky-500' },
-                  { icon: Instagram, label: 'Instagram', color: 'hover:bg-pink-50 hover:text-pink-600' },
-                  { icon: Linkedin, label: 'LinkedIn', color: 'hover:bg-blue-50 hover:text-blue-700' },
-                ].map(({ icon: Icon, label, color }) => (
-                  <a key={label} href="#"
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all
-                      ${isHC 
-                        ? 'border-[#ffff00] text-white bg-black hover:bg-[#ffff00] hover:text-black' 
-                        : `border-border text-muted-foreground ${color}`
-                      }`}
-                    aria-label={label}>
-                    <Icon className="h-3.5 w-3.5 flex-shrink-0" />
-                    {label}
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
 
           {/* Bottom bar */}
           <div className={`pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 ${isHC ? 'border-[#ffff00]' : 'border-border'}`}>

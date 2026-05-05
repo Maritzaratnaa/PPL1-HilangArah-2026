@@ -17,7 +17,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/login", {
+      const res = await fetch("http://localhost:3000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -27,14 +27,26 @@ export default function Login() {
         localStorage.setItem("token", json.token);
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("userName", json.user.full_name);
-        localStorage.setItem('userCategory', json.user.category);
-        navigate("/home");
-      } else {
+        localStorage.setItem("userEmail", json.user.email);
+
+        const userRole = json.user.role || json.user.category;
+        localStorage.setItem('userCategory', userRole);
+
+        if (userRole === "Admin") {
+          navigate("/admin/reports");
+        }
+        else {
+          navigate("/home");
+        }
+      }
+      else {
         alert(json.message);
       }
-    } catch (err) {
+    }
+    catch (err) {
       alert("Gagal menghubungi server.");
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   };
@@ -47,15 +59,15 @@ export default function Login() {
       <main className="flex-grow flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-lg border border-border p-8 high-contrast:border-4 high-contrast:p-6">
-            <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
+            <h1 className="text-3xl font-bold mb-2">Selamat Datang</h1>
             <p className="text-muted-foreground mb-8">
-              Sign in to your ARAHIN account
+              Masuk ke akun ARAHIN kamu
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-base font-semibold">
-                  Email Address
+                  Alamat Email
                 </Label>
                 <Input
                   id="email"
@@ -71,7 +83,7 @@ export default function Login() {
 
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-base font-semibold">
-                  Password
+                  Kata Sandi
                 </Label>
                 <div className="relative">
                   <Input
@@ -101,33 +113,24 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <Link
-                  to="#"
-                  className="text-base font-semibold text-primary hover:underline underline-offset-2 high-contrast:border high-contrast:border-primary high-contrast:px-2 high-contrast:py-1"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-
               <Button
                 type="submit"
                 size="lg"
                 disabled={loading}
                 className="w-full h-12 text-base font-semibold high-contrast:border-2 high-contrast:border-primary"
               >
-                {loading ? "Masuk..." : "Sign In"}
+                {loading ? "Masuk..." : "Masuk"}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-muted-foreground">
-                Don't have an account?{" "}
+                Belum punya akun?{" "}
                 <Link
                   to="/register"
                   className="text-primary font-semibold hover:underline underline-offset-2"
                 >
-                  Sign up here
+                  Daftar di sini
                 </Link>
               </p>
             </div>

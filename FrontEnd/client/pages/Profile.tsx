@@ -67,12 +67,15 @@ const allStatuses = [
   },
 ];
 
+// 1. UPDATE INTERFACE
 interface UserProfile {
   email: string;
   full_name: string;
   phone_number: string;
   category_status: string;
   font_size_pref: string;
+  is_subscriber: boolean;
+  sub_status: string | null;
 }
 
 export default function Profile() {
@@ -141,6 +144,40 @@ export default function Profile() {
         .toUpperCase()
     : "?";
 
+  // 2. FUNGSI RENDER BADGE STATUS
+  const renderSubscriptionBadge = () => {
+    if (profile?.is_subscriber) {
+      return (
+        <div className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800">
+          Subscriber Aktif
+        </div>
+      );
+    }
+
+    if (profile?.sub_status === "Pending") {
+      return (
+        <div className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800">
+          Menunggu Verifikasi
+        </div>
+      );
+    }
+
+    if (profile?.sub_status === "Expired") {
+      return (
+        <div className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800">
+          Langganan Berakhir
+        </div>
+      );
+    }
+
+    // Default jika status null atau tidak ada record
+    return (
+      <div className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/30 dark:text-slate-300 dark:border-slate-700">
+        Pengguna Gratis
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
@@ -169,19 +206,23 @@ export default function Profile() {
 
       <main className="flex-grow px-4 py-12">
         <div className="mx-auto max-w-2xl">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <Link to="/home">
+          <div className="flex items-center justify-between mb-8 gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              {" "}
+              {/* min-w-0 penting untuk flex child */}
+              <Link to="/home" className="shrink-0">
                 <Button variant="ghost" size="icon" className="h-11 w-11">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
-              <h1 className="text-2xl font-bold">Profil Saya</h1>
+              <h1 className="text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Profil Saya
+              </h1>
             </div>
-            <Link to="/profile/edit">
+            <Link to="/profile/edit" className="shrink-0">
               <Button
                 variant="outline"
-                className="gap-2 high-contrast:border-2 high-contrast:border-primary"
+                className="gap-2 high-contrast:border-2 high-contrast:border-primary whitespace-nowrap"
               >
                 <Pencil className="h-4 w-4" />
                 Edit Profil
@@ -239,21 +280,18 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-xl font-bold mb-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+                <div className="min-w-0">
+                  <h2 className="text-xl font-bold mb-1 truncate">
                     {profile?.full_name}
                   </h2>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground truncate">
                     {profile?.email}
                   </p>
                 </div>
-                <div
-                  className="px-3 py-1 rounded-full text-xs font-semibold
-                  bg-emerald-100 text-emerald-700 border border-emerald-200
-                  dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
-                >
-                  Subscriber Aktif
+
+                <div className="flex-shrink-0 self-start sm:self-center">
+                  {renderSubscriptionBadge()}
                 </div>
               </div>
             </div>
@@ -322,7 +360,6 @@ export default function Profile() {
             </p>
             <div className="flex flex-wrap gap-2">
               {allStatuses.map((s) => {
-                // Mengecek kecocokan berdasarkan value (opsional fallback ke label jika db menyimpan label)
                 const isActive =
                   profile?.category_status === s.value ||
                   profile?.category_status === s.label;

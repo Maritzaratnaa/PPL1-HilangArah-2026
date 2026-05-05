@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-// Pastikan getMySubscription di-import
-const { createSubscription, getMySubscription } = require('../controllers/subscriptionController');
-const authenticateToken = require('../middleware/authMiddleware');
+const { createSubscription, getMySubscription,cancelSubscription, activateSubscription, getPaymentToken } = require('../controllers/subscriptionController');
+const {verifyToken} = require('../middleware/authMiddleware');
 
-// Endpoint POST (untuk daftar/bikin langganan baru) -> Yang tadi dibikin
-router.post('/', authenticateToken, createSubscription);
+router.post('/',verifyToken, createSubscription);
 
-// Endpoint GET (untuk melihat status langganan saat ini & nama guide) -> BARU
-router.get('/my-subs', authenticateToken, getMySubscription);
+router.get('/my-subs',verifyToken, getMySubscription);
+router.delete('/my-subs',verifyToken, cancelSubscription);
+router.put('/activate',verifyToken, activateSubscription);
+router.post('/payment-token',verifyToken, getPaymentToken);
 
 module.exports = router;

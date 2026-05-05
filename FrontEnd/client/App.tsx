@@ -14,10 +14,22 @@ import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import RouteSearch from "./pages/RouteSearch";
 import RouteResults from "./pages/RouteResults";  
-import Subscription from "./pages/Subscription";
+import SubscriptionPage from "./pages/SubscriptionPage";
+import SubscriptionForm from "./pages/SubscriptionForm";
+import SubscriptionConfirmation from "./pages/SubscriptionConfirmation";
+import SubscriptionPayment from "./pages/SubscriptionPayment";
+import SubscriptionProfile from "./pages/SubscriptionProfile";
 import Reporting from "./pages/Reporting";
 import NotFound from "./pages/NotFound";
 import RouteMap from "./pages/RouteMap";
+import VerifyEmail from "./pages/VerifyEmail";
+import AdminGuides from "./pages/admin/Guides";
+import AdminSubscriptions from "./pages/admin/Subscriptions";
+import AdminReports from "./pages/admin/Reports";
+import AdminTransport from "./pages/admin/Data";
+import AdminUsers from "./pages/admin/Users";
+import Dashboard from "./pages/admin/Dashboard";
+import AdminManage from "./pages/admin/Admin";
 
 const queryClient = new QueryClient();
 
@@ -36,15 +48,26 @@ const App = () => (
           <Route path="/profile/edit" element={<ProfileEdit />} />
           <Route path="/route-search" element={<RouteSearch />} />
           <Route path="/route-results" element={<RouteResults />} />
-          <Route path="/subscription" element={<Subscription />} />
+          <Route path="/subscription" element={<SubscriptionPage />} />
+          <Route path="/subscription/Payment-Confirmation" element={<SubscriptionConfirmation />} />
+          <Route path="/subscription/Payment" element={<SubscriptionPayment />} />
+          <Route path="/subscription/Form" element={<SubscriptionForm />} />
+          <Route path="/subscription/Profile" element={<SubscriptionProfile />} />
           <Route path="/reporting" element={<Reporting />} />
           <Route path="/route-map" element={<RouteMap />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
+          <Route path="/verify-email" element={<VerifyEmail/>} />
+          <Route path="/admin/guides" element={<AdminGuides />} />
+          <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/data" element={<AdminTransport />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/Admin/Dashboard" element={<Dashboard/>} />
+          <Route path="/Admin/Manage" element={<AdminManage/>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(<App/>);

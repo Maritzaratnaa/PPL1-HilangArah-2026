@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,15 +22,17 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userCategory, setUserCategory] = useState<string>("");
+  const [loading, setLoading] = useState(false); // Dipindah ke atas agar lebih rapi
+  const navigate = useNavigate();
 
   const userCategories = [
-    { value: "disability", label: "Person with Disability" },
-    { value: "elderly", label: "Elderly (60+)" },
-    { value: "pregnant", label: "Pregnant Women" },
-    { value: "vulnerable-illness", label: "Vulnerable Illness" },
-    { value: "children", label: "Children" },
-    { value: "women", label: "Women" },
-    { value: "general", label: "General Traveler" },
+    { value: "disability", label: "Disabilitas" },
+    { value: "elderly", label: "Lansia (60+)" },
+    { value: "pregnant", label: "Wanita Hamil" },
+    { value: "vulnerable-illness", label: "Penyakit Rentan" },
+    { value: "children", label: "Anak-anak" },
+    { value: "women", label: "Wanita" },
+    { value: "general", label: "Umum" },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,22 +55,21 @@ export default function Register() {
         }),
       });
       const json = await res.json();
+      
       if (res.ok) {
-        alert("Registrasi berhasil! Silakan login.");
-        navigate("/login");
+        // --- PERBAIKAN DI SINI ---
+        alert("Registrasi berhasil! Silakan cek email Anda untuk kode OTP.");
+        // Arahkan ke halaman verifikasi dan bawa data emailnya
+        navigate("/verify-email", { state: { email: email } });
       } else {
         alert(json.message);
       }
-    } catch (err) {
-      //alert("Gagal menghubungi server.");
+    } catch (err: any) {
       alert("Error detail: " + err.message);
     } finally {
       setLoading(false);
     }
   };
-
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -76,16 +77,16 @@ export default function Register() {
       <main className="flex-grow flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-lg border border-border p-8 high-contrast:border-4 high-contrast:p-6">
-            <h1 className="text-3xl font-bold mb-2">Create Account</h1>
+            <h1 className="text-3xl font-bold mb-2">Buat Akun</h1>
             <p className="text-muted-foreground mb-8">
-              Join ARAHIN and start your inclusive travel journey
+              Bergabung dengan ARAHIN and mulai perjalanan Anda
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Full Name Field */}
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-base font-semibold">
-                  Full Name
+                  Nama Lengkap
                 </Label>
                 <Input
                   id="fullName"
@@ -102,7 +103,7 @@ export default function Register() {
               {/* Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-base font-semibold">
-                  Email Address
+                  Alamat Email
                 </Label>
                 <Input
                   id="email"
@@ -122,7 +123,7 @@ export default function Register() {
                   htmlFor="userCategory"
                   className="text-base font-semibold"
                 >
-                  I am traveling as a...
+                  Kategori
                 </Label>
                 <Select value={userCategory} onValueChange={setUserCategory}>
                   <SelectTrigger
@@ -141,14 +142,14 @@ export default function Register() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  This helps us customize accessibility features for you
+                  Ini membantu kami untuk menyesuaikan fitur dengan Anda
                 </p>
               </div>
 
               {/* Password Field */}
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-base font-semibold">
-                  Password
+                  Kata Sandi
                 </Label>
                 <div className="relative">
                   <Input
@@ -184,7 +185,7 @@ export default function Register() {
                   htmlFor="confirmPassword"
                   className="text-base font-semibold"
                 >
-                  Confirm Password
+                  Konfirmasi Kata Sandi
                 </Label>
                 <div className="relative">
                   <Input
@@ -227,7 +228,7 @@ export default function Register() {
                   htmlFor="terms"
                   className="text-sm text-muted-foreground cursor-pointer"
                 >
-                  I agree to the Terms of Service and Privacy Policy
+                  Saya setuju dengan Syarat dan Ketentuan Layanan serta Kebijakan Privasi.
                 </Label>
               </div>
 
@@ -238,19 +239,19 @@ export default function Register() {
                 disabled={loading}
                 className="w-full h-12 text-base font-semibold high-contrast:border-2 high-contrast:border-primary"
               >
-                {loading ? "Memproses..." : "Create Account"}
+                {loading ? "Memproses..." : "Buat Akun"}
               </Button>
             </form>
 
             {/* Login Link */}
             <div className="mt-6 text-center">
               <p className="text-muted-foreground">
-                Already have an account?{" "}
+                Sudah punya akun?{" "}
                 <Link
                   to="/login"
                   className="text-primary font-semibold hover:underline underline-offset-2"
                 >
-                  Sign in here
+                  Masuk di sini
                 </Link>
               </p>
             </div>

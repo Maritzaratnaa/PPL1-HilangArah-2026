@@ -2,10 +2,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const pool = require('../db'); 
-//test
-// ==============================
-// LOGIKA REGISTER
-// ==============================
+const sendEmail = require('../utils/sendEmail');
+
+// Register
 const register = async (req, res) => {
     const connection = await pool.getConnection();
     try {
@@ -30,10 +29,14 @@ const register = async (req, res) => {
         const user_id = crypto.randomUUID();
         const hashedPassword = await bcrypt.hash(password, 10);
         const role = 'Pengguna';
+        
+        // BIKIN KODE OTP 6 DIGIT
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
+        // UPDATE QUERY INSERT: Masukkan otp_code ke database
         await connection.query(
-            'INSERT INTO users (user_id, email, username, password, role) VALUES (?, ?, ?, ?, ?)',
-            [user_id, email, username, hashedPassword, role]
+            'INSERT INTO users (user_id, email, username, password, role, otp_code) VALUES (?, ?, ?, ?, ?, ?)',
+            [user_id, email, username, hashedPassword, role, otpCode]
         );
 
         const profile_id = crypto.randomUUID();
@@ -46,7 +49,15 @@ const register = async (req, res) => {
         );
 
         await connection.commit();
-        res.status(201).json({ message: "Registrasi berhasil!" });
+
+        // Kirim Email OTP
+        sendEmail(email, otpCode);
+
+        // Kirim email ke frontend
+        res.status(201).json({ 
+            message: "Registrasi berhasil! Silakan cek email Anda untuk kode OTP.",
+            email: email 
+        });
 
     } catch (error) {
         await connection.rollback();
@@ -57,9 +68,37 @@ const register = async (req, res) => {
     }
 };
 
-// ==============================
-// LOGIKA LOGIN
-// ==============================
+// Verifikasi Email
+const verifyEmail = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({ message: "Email dan OTP wajib diisi!" });
+        }
+
+        const [users] = await pool.query('SELECT otp_code FROM users WHERE email = ?', [email]);
+        
+        if (users.length === 0) {
+            return res.status(404).json({ message: "Pengguna tidak ditemukan." });
+        }
+
+        // Cek kecocokan OTP
+        if (users[0].otp_code !== otp) {
+            return res.status(400).json({ message: "Kode OTP salah atau tidak valid." });
+        }
+
+        await pool.query('UPDATE users SET is_verified = 1, otp_code = NULL WHERE email = ?', [email]);
+
+        res.status(200).json({ message: "Verifikasi email berhasil! Silakan login." });
+
+    } catch (error) {
+        console.error("Error saat verifikasi:", error);
+        res.status(500).json({ message: "Terjadi kesalahan internal pada server." });
+    }
+};
+
+// Login
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -82,10 +121,20 @@ const login = async (req, res) => {
 
         const user = users[0];
 
-        if (!user.is_Active) {
-            return res.status(403).json({ message: "Akun ini sudah dinonaktifkan. Silakan hubungi admin." });
+        // Cek verifikasi akun
+        if (user.is_verified === 0) {
+            return res.status(403).json({ 
+                message: "Email belum diverifikasi. Silakan cek email Anda untuk kode OTP atau daftar ulang.",
+                is_verified: false,
+                email: user.email
+            });
         }
 
+        if (user.is_Active === 0) { 
+            return res.status(403).json({ 
+                message: "Akun Anda telah disuspend karena melanggar ketentuan. Silakan hubungi admin ARAHIN." 
+            });
+        }
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Email atau password salah!" });
@@ -118,5 +167,6 @@ const login = async (req, res) => {
 
 module.exports = {
     register,
-    login
+    login,
+    verifyEmail
 };
