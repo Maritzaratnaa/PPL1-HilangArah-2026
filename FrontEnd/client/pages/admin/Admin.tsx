@@ -59,16 +59,19 @@ function Toast({ message, type, onClose }: { message: string; type: ToastType; o
   );
 }
 
+// 1. MODIFIKASI COMPONENT AddAdminModal
 function AddAdminModal({
   loading,
   onConfirm,
   onCancel,
 }: {
   loading: boolean;
-  onConfirm: (userId: string) => void;
+  onConfirm: (email: string, password: string) => void;
   onCancel: () => void;
 }) {
-  const [userId, setUserId] = useState("");
+  const [email, setEmail] = useState("");
+  // Set password default di sini, user masih bisa mengubahnya di form
+  const [password, setPassword] = useState("admin123");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -76,25 +79,41 @@ function AddAdminModal({
       <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold mb-2">Tambah Admin Baru</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Masukkan ID User pengguna yang ingin dijadikan Admin.
+          Masukkan Email dan Password untuk membuat Admin baru.
         </p>
-        <Input
-          placeholder="Contoh: 12 atau user-uuid"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          className="mb-6"
-        />
+        
+        <div className="flex flex-col gap-3 mb-6">
+          <div>
+            <label className="text-xs font-medium mb-1 block">Email</label>
+            <Input
+              type="email"
+              placeholder="Contoh: admin@domain.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium mb-1 block">Password</label>
+            <Input
+              type="text" // Bisa diganti 'password' jika ingin disembunyikan
+              placeholder="Password default"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-3">
           <Button variant="outline" className="flex-1 order-2 sm:order-1" onClick={onCancel} disabled={loading}>
             Batal
           </Button>
           <Button
             className="flex-1 order-1 sm:order-2"
-            onClick={() => onConfirm(userId)}
-            disabled={loading || !userId.trim()}
+            onClick={() => onConfirm(email, password)}
+            disabled={loading || !email.trim() || !password.trim()}
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
-            {loading ? "Memproses..." : "Jadikan Admin"}
+            {loading ? "Memproses..." : "Tambah Admin"}
           </Button>
         </div>
       </div>
@@ -195,19 +214,24 @@ export default function Admin() {
     fetchAdmins();
   }, [fetchAdmins]);
 
-  const handleAssignAdmin = async (target_user_id: string) => {
+  // 2. MODIFIKASI FUNGSI INTEGRASI
+  const handleAssignAdmin = async (email: string, password: string) => {
     setActionLoading("add");
     try {
+      // Endpoint disesuaikan mengirim email dan password
       const res = await fetch(`${API_BASE}/admin/manage/assign`, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ target_user_id }),
+        body: JSON.stringify({ email, password }),
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Gagal menjadikan admin.");
+      if (!res.ok) throw new Error(json.message || "Gagal menambahkan admin.");
 
-      showToast(`Berhasil! ${json.data.username} sekarang adalah Admin.`, "success");
+      // Menggunakan fallback email jika json.data.username tidak tersedia di response
+      const adminName = json.data?.username || email;
+      showToast(`Berhasil! ${adminName} sekarang adalah Admin.`, "success");
+      
       setShowAddModal(false);
       fetchAdmins(); 
     } catch (err: unknown) {
