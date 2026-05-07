@@ -1,9 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, User, BarChart3, Zap, Type, Minus, Plus } from "lucide-react";
+import { Search, User, BarChart3, Zap, Type, Minus, Plus, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./ThemeToggle";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Komponen baru untuk mengatur Font Size dengan Plus/Minus
 function FontSizeControl() {
@@ -89,6 +96,88 @@ function FontSizeControl() {
   );
 }
 
+function InstallAppButton() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallDialog, setShowInstallDialog] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true) {
+      setIsStandalone(true);
+    }
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsStandalone(true);
+      }
+      setDeferredPrompt(null);
+    } else {
+      setShowInstallDialog(true);
+    }
+  };
+
+  if (isStandalone) return null;
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-10 w-10 high-contrast:border-2 high-contrast:border-primary"
+        aria-label="Install App"
+        title="Install App"
+        onClick={handleInstallClick}
+      >
+        <Download className="h-5 w-5" />
+      </Button>
+
+      <Dialog open={showInstallDialog} onOpenChange={setShowInstallDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cara Install Aplikasi</DialogTitle>
+            <DialogDescription>
+              Browser sedang tidak memunculkan prompt otomatis (mungkin karena sudah pernah diinstall/ditutup). Anda bisa menginstalnya secara manual:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <Share className="h-5 w-5 text-primary" />
+              </div>
+              <p className="text-sm">
+                <strong>Di HP (iOS/Android):</strong> Ketuk ikon Bagikan (Share) atau menu titik tiga di browser Anda, lalu pilih <strong>"Tambah ke Layar Utama" (Add to Home Screen)</strong>.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <Download className="h-5 w-5 text-primary" />
+              </div>
+              <p className="text-sm">
+                <strong>Di Laptop/PC (Chrome/Edge):</strong> Klik ikon install (layar/panah bawah) di ujung kanan kolom URL (Address Bar), atau buka menu titik tiga di pojok kanan atas browser lalu pilih <strong>"Install / Tambahkan sebagai Aplikasi"</strong>.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export function Navbar() {
   const navigate = useNavigate();
 
@@ -158,6 +247,7 @@ export function Navbar() {
                 <Zap className="h-5 w-5" />
               </Button>
             </Link>
+            <InstallAppButton />
             <ThemeToggle />
             <FontSizeControl />
           </div>
