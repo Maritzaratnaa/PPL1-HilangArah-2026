@@ -11,6 +11,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // Dipindah ke atas agar lebih rapi
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,8 +52,6 @@ export default function Login() {
     }
   };
 
-  const [loading, setLoading] = useState(false);
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
@@ -65,6 +64,7 @@ export default function Login() {
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Input Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-base font-semibold">
                   Alamat Email
@@ -72,7 +72,7 @@ export default function Login() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="anda@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -81,15 +81,25 @@ export default function Login() {
                 />
               </div>
 
+              {/* Input Password & Lupa Password */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-base font-semibold">
-                  Kata Sandi
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-base font-semibold">
+                    Kata Sandi
+                  </Label>
+                  {/* TAUTAN LUPA PASSWORD DITAMBAHKAN DI SINI */}
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm font-medium text-primary hover:underline underline-offset-2"
+                  >
+                    Lupa password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
+                    placeholder="Masukkan password anda"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
