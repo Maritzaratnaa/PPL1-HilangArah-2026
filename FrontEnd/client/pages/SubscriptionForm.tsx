@@ -7,7 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -39,6 +41,9 @@ export default function SubscriptionForm() {
   const [emergencyContactName, setEmergencyContactName] = useState("");
   const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
   const [termsAgreed, setTermsAgreed] = useState(false);
+
+  const [guideGenderPref, setGuideGenderPref] = useState('');
+  const [guideAgePref, setGuideAgePref] = useState('');
 
   // STATE BARU: Untuk menampilkan efek loading saat tombol diklik
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -255,38 +260,140 @@ export default function SubscriptionForm() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="font-bold text-foreground text-[16px]">
-                          Domisili *
-                        </Label>
-                        <Input
-                          value={domicile}
-                          onChange={(e) => setDomicile(e.target.value)}
-                          placeholder="Contoh: Jakarta Pusat"
-                          className="h-12 border-input rounded-xl font-medium text-[16px]"
-                          disabled={isSubmitting}
-                        />
+                        <Label className="font-bold text-[15px]">Domisili (Kota/Kabupaten)</Label>
+                        <Select onValueChange={setDomicile} required>
+                          <SelectTrigger className="h-12 rounded-xl">
+                            <SelectValue placeholder="Pilih Domisili" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[400px]">
+                            {/* DKI JAKARTA */}
+                            <SelectGroup>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest">DKI JAKARTA</SelectLabel>
+                              <SelectItem value="Jakarta Pusat">Jakarta Pusat</SelectItem>
+                              <SelectItem value="Jakarta Selatan">Jakarta Selatan</SelectItem>
+                              <SelectItem value="Jakarta Barat">Jakarta Barat</SelectItem>
+                              <SelectItem value="Jakarta Utara">Jakarta Utara</SelectItem>
+                              <SelectItem value="Jakarta Timur">Jakarta Timur</SelectItem>
+                            </SelectGroup>
+                            
+                            {/* JAWA BARAT */}
+                            <SelectGroup>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">JAWA BARAT</SelectLabel>
+                              <SelectItem value="Bandung">Bandung</SelectItem>
+                              <SelectItem value="Bekasi">Bekasi</SelectItem>
+                              <SelectItem value="Depok">Depok</SelectItem>
+                              <SelectItem value="Bogor">Bogor</SelectItem>
+                              <SelectItem value="Cimahi">Cimahi</SelectItem>
+                              <SelectItem value="Tasikmalaya">Tasikmalaya</SelectItem>
+                              <SelectItem value="Cirebon">Cirebon</SelectItem>
+                              <SelectItem value="Sukabumi">Sukabumi</SelectItem>
+                              <SelectItem value="Sumedang">Sumedang</SelectItem>
+                              <SelectItem value="Garut">Garut</SelectItem>
+                            </SelectGroup>
+
+                            {/* BANTEN */}
+                            <SelectGroup>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">BANTEN</SelectLabel>
+                              <SelectItem value="Tangerang">Tangerang</SelectItem>
+                              <SelectItem value="Tangerang Selatan">Tangerang Selatan</SelectItem>
+                              <SelectItem value="Serang">Serang</SelectItem>
+                              <SelectItem value="Cilegon">Cilegon</SelectItem>
+                              <SelectItem value="Lebak">Lebak</SelectItem>
+                              <SelectItem value="Pandeglang">Pandeglang</SelectItem>
+                            </SelectGroup>
+
+                            {/* JAWA TENGAH */}
+                            <SelectGroup>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">JAWA TENGAH</SelectLabel>
+                              <SelectItem value="Semarang">Semarang</SelectItem>
+                              <SelectItem value="Surakarta">Surakarta (Solo)</SelectItem>
+                              <SelectItem value="Magelang">Magelang</SelectItem>
+                              <SelectItem value="Pekalongan">Pekalongan</SelectItem>
+                              <SelectItem value="Salatiga">Salatiga</SelectItem>
+                              <SelectItem value="Tegal">Tegal</SelectItem>
+                              <SelectItem value="Banyumas">Banyumas</SelectItem>
+                              <SelectItem value="Cilacap">Cilacap</SelectItem>
+                            </SelectGroup>
+
+                            {/* JAWA TIMUR */}
+                            <SelectGroup>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">JAWA TIMUR</SelectLabel>
+                              <SelectItem value="Surabaya">Surabaya</SelectItem>
+                              <SelectItem value="Malang">Malang</SelectItem>
+                              <SelectItem value="Sidoarjo">Sidoarjo</SelectItem>
+                              <SelectItem value="Gresik">Gresik</SelectItem>
+                              <SelectItem value="Batu">Batu</SelectItem>
+                              <SelectItem value="Kediri">Kediri</SelectItem>
+                              <SelectItem value="Madiun">Madiun</SelectItem>
+                              <SelectItem value="Mojokerto">Mojokerto</SelectItem>
+                              <SelectItem value="Pasuruan">Pasuruan</SelectItem>
+                              <SelectItem value="Probolinggo">Probolinggo</SelectItem>
+                              <SelectItem value="Blitar">Blitar</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </section>
 
                   <hr className="border-border" />
 
-                  <section>
+                  <section className="space-y-8"> {/* Ditambahkan space-y-8 agar tiap komponen di dalamnya punya jarak yang pas */}
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-2.5 bg-accent/10 rounded-xl text-primary">
                         <AlertCircle size={24} />
                       </div>
-                      <h2 className="text-[20px] font-bold text-foreground">
-                        Detail Kebutuhan
-                      </h2>
+                      <h2 className="text-[20px] font-bold text-foreground">Layanan & Kebutuhan</h2>
                     </div>
-                    <Textarea
-                      value={specificNeeds}
-                      onChange={(e) => setSpecificNeeds(e.target.value)}
-                      placeholder="Ceritakan bantuan khusus yang Anda perlukan..."
-                      className="min-h-[120px] border-input rounded-xl p-4 font-medium text-[16px]"
-                      disabled={isSubmitting}
-                    />
+
+                    {/* 1. Preferensi Pemandu */}
+                    <div>
+                      <p className="font-bold text-foreground text-[16px] mb-4">
+                        Preferensi Pemandu <span className="text-muted-foreground font-normal text-sm">(opsional)</span>
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="font-semibold text-foreground text-[15px]">Jenis Kelamin Pemandu</Label>
+                          <Select value={guideGenderPref} onValueChange={setGuideGenderPref} disabled={isSubmitting}>
+                            <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]">
+                              <SelectValue placeholder="Tidak ada preferensi" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Tidak ada preferensi</SelectItem>
+                              <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                              <SelectItem value="Perempuan">Perempuan</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="font-semibold text-foreground text-[15px]">Rentang Usia Pemandu</Label>
+                          <Select value={guideAgePref} onValueChange={setGuideAgePref} disabled={isSubmitting}>
+                            <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]">
+                              <SelectValue placeholder="Tidak ada preferensi" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Tidak ada preferensi</SelectItem>
+                              <SelectItem value="20-30">20 - 30 tahun</SelectItem>
+                              <SelectItem value="30-40">30 - 40 tahun</SelectItem>
+                              <SelectItem value="40-50">40 - 50 tahun</SelectItem>
+                              <SelectItem value="50+">50 tahun ke atas</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Detail Kebutuhan Khusus (Sekarang di bawah Preferensi) */}
+                    <div className="space-y-2"> {/* Diubah dari space-y-6 menjadi space-y-2 agar label dan textareanya tidak terlalu jauh renggangnya */}
+                      <Label htmlFor="needs" className="font-bold text-[15px]">Detail Kebutuhan Khusus</Label>
+                      <Textarea
+                        value={specificNeeds}
+                        onChange={(e) => setSpecificNeeds(e.target.value)}
+                        placeholder="Ceritakan bantuan khusus yang Anda perlukan..."
+                        className="min-h-[120px] border-input rounded-xl p-4 font-medium text-[16px]"
+                        disabled={isSubmitting}
+                      />
+                    </div>
                   </section>
 
                   <hr className="border-border" />
@@ -414,7 +521,7 @@ export default function SubscriptionForm() {
                   <div className="flex justify-between items-center text-muted-foreground font-medium text-[16px]">
                     <span>Durasi</span>
                     <span className="font-bold text-foreground">
-                      {location.state?.plan === 'daily' ? '1 Hari' : '1 Bulan'}
+                      {location.state?.plan === 'daily' ? '1 Hari' : location.state?.plan === 'weekly' ? '7 Hari' : '1 Bulan'}
                     </span>
                   </div>
                   <div className="pt-4 border-t border-dashed border-border flex justify-between items-center">
