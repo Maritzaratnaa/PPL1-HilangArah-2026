@@ -30,6 +30,7 @@ export default function SubscriptionForm() {
   const navigate = useNavigate();
 
   const location = useLocation();
+  console.log("Data State dari halaman sebelumnya:", location.state);
   const planLabel = location.state?.planLabel || 'Paket Bulanan';
   const planAmount = location.state?.amount || 299000;
 
@@ -48,6 +49,7 @@ export default function SubscriptionForm() {
   // STATE BARU: Untuk menampilkan efek loading saat tombol diklik
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // FUNGSI INTEGRASI API DIUPDATE
   // FUNGSI INTEGRASI API DIUPDATE
   const handleProceedToPayment = async () => {
     // 1. Validasi Frontend
@@ -80,6 +82,10 @@ export default function SubscriptionForm() {
     setIsSubmitting(true);
 
     try {
+      // TANGKAP NILAI PLAN DARI LOCATION STATE (default ke 'monthly' jika kosong)
+      let selectedPlan = location.state?.plan || 'Monthly'; 
+      selectedPlan = selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1).toLowerCase();
+
       // 3. Tembak API Backend
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const res = await fetch(`${apiUrl}/api/subscription`, {
@@ -89,12 +95,14 @@ export default function SubscriptionForm() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          // Pastikan nama key sesuai dengan yang ditangkap req.body di backend!
           phone_number: phone,
           emergency_contact_name: emergencyContactName,
           emergency_contact_phone: emergencyContactPhone,
           domicile: domicile,
           specific_needs: specificNeeds,
+          
+          // 👇 UBAH MENJADI 'duration' SESUAI PERMINTAAN BACKEND 👇
+          duration: selectedPlan, 
         }),
       });
 
@@ -107,15 +115,14 @@ export default function SubscriptionForm() {
         navigate("/subscription/Payment", {
           state: {
             subs_id: data.subs_id,
-            plan: location.state?.plan || 'monthly',
+            plan: selectedPlan,
             amount: planAmount,
             planLabel: planLabel,
           },
         });
       } else {
-        // 5. Jika gagal (misal: 400 karena sudah punya langganan aktif)
+        // ... (kode error handling tetap sama)
         alert(data.message);
-        // Opsi tambahan: Jika error-nya karena sudah punya, langsung lempar ke profil
         if (data.message.includes("sudah memiliki langganan")) {
           navigate("/subscription/Profile");
         }
