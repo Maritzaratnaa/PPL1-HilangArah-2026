@@ -102,15 +102,15 @@ export default function SubscriptionLanding() {
     ? { background: "#000000", borderTop: "2px solid #ffff00" }
     : { background: "#007C8A" };
 
-  const [selectedPlan, setSelectedPlan] = useState<'daily' | 'monthly'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
 
   const plans = {
     daily: {
       label: 'Paket Harian',
-      price: 'Rp 29.900',
+      price: 'Rp 19.900',
       period: '/hari',
       note: 'Berlaku 1 hari · bayar sesuai kebutuhan',
-      amount: 29900,
+      amount: 19900,
       features: [
         '1 Pemandu Pribadi Tersertifikasi',
         'Pendampingan perjalanan sepanjang hari',
@@ -120,10 +120,25 @@ export default function SubscriptionLanding() {
         'Akses fitur premium ARAHIN',
       ],
     },
+    weekly: {
+      label: 'Paket Mingguan',
+      price: 'Rp 89.000',
+      period: '/minggu',
+      note: 'Berlaku 7 hari · lebih hemat untuk perjalanan singkat',
+      amount: 89000,
+      features: [
+        '1 Pemandu Pribadi Tersertifikasi',
+        'Pendampingan perjalanan selama 7 hari',
+        'Perencanaan rute aksesibel',
+        'Kontak darurat terintegrasi',
+        'Dukungan prioritas 24/7',
+        'Akses fitur premium ARAHIN',
+      ],
+    },
     monthly: {
       label: 'Paket Bulanan',
       price: 'Rp 299.000',
-      period: '/bln',
+      period: '/bulan',
       note: 'Tagihan bulanan · batalkan kapan saja',
       amount: 299000,
       features: [
@@ -308,119 +323,147 @@ export default function SubscriptionLanding() {
       <section id="pricing" className="py-24 px-6 lg:px-10 relative overflow-hidden transition-colors" style={pricingHeroStyle}>
         {!isHC && <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />}
 
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-6">
+        <div className="max-w-5xl mx-auto">
+          {/* Header pricing section */}
+          <div className="text-center mb-14">
             <span className={`text-xs font-bold uppercase tracking-widest ${isHC ? "text-[#ffff00]" : "text-white/60"}`}>
               Investasi Terbaik
             </span>
-            <h2 className={`text-3xl font-bold leading-tight ${isHC ? "text-white" : "text-white"}`}>
+            <h2 className="text-3xl font-bold text-white mt-2 mb-3">
               Satu Langkah Menuju Perjalanan yang Lebih Mudah
             </h2>
-            <p className={`font-medium max-w-sm ${isHC ? "text-white" : "text-white/70"}`}>
+            <p className={`font-medium max-w-lg mx-auto ${isHC ? "text-white" : "text-white/70"}`}>
               Bergabung dengan ribuan pengguna yang sudah merasakan manfaat pemandu pribadi ARAHIN setiap harinya.
             </p>
-            <div className="space-y-3 mt-8">
-              {[
-                "Batalkan kapan saja, tanpa biaya",
-                "Pemandu cocok otomatis sesuai kebutuhan",
-                "Pembayaran aman & terenkripsi",
-                "Akses penuh fitur premium ARAHIN",
-              ].map((text, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    isHC ? "bg-black text-[#ffff00] border border-[#ffff00]" : "bg-white/15 text-white"
-                  }`}>
-                    <Check size={10} strokeWidth={3} />
-                  </div>
-                  <span className={`text-sm font-medium ${isHC ? "text-white" : "text-white/90"}`}>
-                    {text}
-                  </span>
-                </div>
-              ))}
-            </div>
           </div>
 
-          <Card className={`rounded-[20px] p-9 shadow-xl relative z-10 ${
-            isHC ? "bg-black border-2 border-[#ffff00]" : "bg-white dark:bg-gray-900 border-none"
-          }`}>
-            {/* Tab pilih paket */}
-            <div className={`flex rounded-xl p-1 mb-6 ${isHC ? "bg-black border border-[#ffff00]" : "bg-gray-100 dark:bg-gray-800"}`}>
-              {(['daily', 'monthly'] as const).map((plan) => (
-                <button
-                  key={plan}
-                  onClick={() => setSelectedPlan(plan)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-                    selectedPlan === plan
+          {/* 3 Pricing Cards — full width */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
+            {(Object.entries(plans) as [keyof typeof plans, typeof plans[keyof typeof plans]][]).map(([key, plan]) => {
+              const isActive = selectedPlan === key;
+              const isPopular = key === 'monthly';
+              return (
+                <div
+                  key={key}
+                  onClick={() => setSelectedPlan(key)}
+                  className={`relative rounded-2xl p-6 cursor-pointer transition-all duration-200 ${
+                    isActive
                       ? isHC
-                        ? "bg-[#ffff00] text-black"
-                        : "bg-white dark:bg-gray-700 text-[#007C8A] dark:text-[#26c6da] shadow-sm"
+                        ? 'bg-black border-4 border-[#ffff00] shadow-2xl'
+                        : 'bg-white dark:bg-gray-900 border-2 border-white shadow-2xl'
                       : isHC
-                      ? "text-[#ffff00]"
-                      : "text-gray-400 dark:text-gray-500"
+                      ? 'bg-black border-2 border-white/30 hover:border-[#ffff00]/60'
+                      : 'bg-white/10 border border-white/20 hover:bg-white/20'
                   }`}
                 >
-                  {plan === 'daily' ? '📅 Harian' : '🗓️ Bulanan'}
-                </button>
-              ))}
-            </div>
+                  {/* Popular badge */}
+                  {isPopular && (
+                    <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                      isHC ? 'bg-[#ffff00] text-black' : 'bg-white text-[#007C8A]'
+                    }`}>
+                      <Star size={10} fill="currentColor" /> Paling Populer
+                    </div>
+                  )}
 
-            {selectedPlan === 'monthly' && (
-              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-5 ${
-                isHC ? "bg-[#ffff00] text-black" : "bg-[#E6F4F6] dark:bg-gray-800 text-[#007C8A] dark:text-[#26c6da]"
-              }`}>
-                <Star size={12} fill="currentColor" /> Paling Populer
-              </div>
-            )}
-
-            <div className={`text-[13px] font-bold mb-2 uppercase tracking-wide ${isHC ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
-              {activePlan.label}
-            </div>
-            <div className={`text-4xl font-bold flex items-baseline flex-wrap gap-1 ${isHC ? "text-[#ffff00]" : "text-[#007C8A] dark:text-[#26c6da]"}`}>
-              <span>{activePlan.price}</span>
-              <span className={`text-base font-medium whitespace-nowrap ${isHC ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
-                {activePlan.period}
-              </span>
-            </div>
-            <div className={`text-[12px] font-medium mt-2 mb-6 ${isHC ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
-              {activePlan.note}
-            </div>
-
-            <hr className={`mb-6 ${isHC ? "border-[#ffff00]" : "border-gray-100 dark:border-gray-700"}`} />
-
-            <div className="space-y-3.5 mb-8">
-              {activePlan.features.map((feat, i) => (
-                <div key={i} className={`flex items-center gap-3 text-[14px] font-medium ${isHC ? "text-white" : "text-gray-900 dark:text-white"}`}>
-                  <div className={`w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0 ${
-                    isHC ? "bg-black text-[#ffff00] border border-[#ffff00]" : "bg-[#E6F4F6] dark:bg-gray-800 text-[#007C8A] dark:text-[#26c6da]"
+                  {/* Plan name */}
+                  <div className={`text-[11px] font-bold uppercase tracking-widest mb-3 ${
+                    isActive
+                      ? isHC ? 'text-[#ffff00]' : 'text-[#007C8A] dark:text-[#26c6da]'
+                      : isHC ? 'text-white/70' : 'text-white/60'
                   }`}>
-                    <Check size={10} strokeWidth={4} />
+                    {plan.label}
                   </div>
-                  {feat}
-                </div>
-              ))}
-            </div>
 
-            <button
-              onClick={() => {
-                if (hasSubs) {
-                  navigate("/subscription/Profile");
-                } else {
-                  navigate("/subscription/Form", { state: { plan: selectedPlan, amount: activePlan.amount, planLabel: activePlan.label } });
-                }
-              }}
-              disabled={isChecking}
-              className={`w-full py-4 rounded-xl font-bold transition-colors mb-4 text-[18px] disabled:opacity-70 ${
-                isHC
-                  ? "bg-[#ffff00] text-black border-2 border-[#ffff00] hover:bg-[#ffff00]/90"
-                  : "bg-[#007C8A] dark:bg-[#26c6da] text-white dark:text-gray-900 hover:bg-[#006874] dark:hover:bg-[#1fa0b0]"
-              }`}
-            >
-              {isChecking ? "Memuat..." : hasSubs ? "Lihat Status Anda →" : "Berlangganan Sekarang →"}
-            </button>
-            <p className={`text-center text-[11px] font-medium ${isHC ? "text-[#ffff00]" : "text-gray-400 dark:text-gray-500"}`}>
-              🔒 Pembayaran aman & terenkripsi · Batalkan kapan saja
-            </p>
-          </Card>
+                  {/* Price */}
+                  <div className={`flex items-baseline gap-1 mb-1 ${
+                    isActive
+                      ? isHC ? 'text-[#ffff00]' : 'text-[#007C8A] dark:text-[#26c6da]'
+                      : 'text-white'
+                  }`}>
+                    <span className="text-3xl font-bold">{plan.price}</span>
+                    <span className={`text-sm font-medium ${isActive && !isHC ? 'text-gray-400' : 'text-white/60'}`}>
+                      {plan.period}
+                    </span>
+                  </div>
+
+                  <div className={`text-[11px] font-medium mb-5 ${isActive && !isHC ? 'text-gray-400' : 'text-white/50'}`}>
+                    {plan.note}
+                  </div>
+
+                  <hr className={`mb-5 ${isHC ? 'border-white/20' : isActive ? 'border-gray-100 dark:border-gray-700' : 'border-white/15'}`} />
+
+                  {/* Features */}
+                  <div className="space-y-2.5 mb-6">
+                    {plan.features.map((feat, i) => (
+                      <div key={i} className={`flex items-start gap-2.5 text-[13px] font-medium ${
+                        isActive && !isHC ? 'text-gray-800 dark:text-white' : 'text-white/90'
+                      }`}>
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 flex-shrink-0 ${
+                          isHC
+                            ? 'bg-black text-[#ffff00] border border-[#ffff00]'
+                            : isActive
+                            ? 'bg-[#E6F4F6] dark:bg-gray-800 text-[#007C8A] dark:text-[#26c6da]'
+                            : 'bg-white/20 text-white'
+                        }`}>
+                          <Check size={8} strokeWidth={4} />
+                        </div>
+                        {feat}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* CTA Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (hasSubs) {
+                        navigate('/subscription/Profile');
+                      } else {
+                        navigate('/subscription/Form', {
+                          state: { plan: key, amount: plan.amount, planLabel: plan.label }
+                        });
+                      }
+                    }}
+                    disabled={isChecking}
+                    className={`w-full py-3 rounded-xl font-bold text-[15px] transition-all disabled:opacity-70 ${
+                      isActive
+                        ? isHC
+                          ? 'bg-[#ffff00] text-black hover:bg-[#ffff00]/90'
+                          : 'bg-[#007C8A] text-white hover:bg-[#006874]'
+                        : isHC
+                        ? 'bg-black text-[#ffff00] border-2 border-[#ffff00] hover:bg-[#ffff00] hover:text-black'
+                        : 'bg-white/20 text-white hover:bg-white/30 border border-white/30'
+                    }`}
+                  >
+                    {isChecking ? 'Memuat...' : hasSubs ? 'Lihat Status →' : 'Pilih Paket →'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Trust badges row */}
+          <div className="flex flex-wrap justify-center gap-6">
+            {[
+              "Batalkan kapan saja, tanpa biaya",
+              "Pemandu cocok otomatis sesuai kebutuhan",
+              "Mendukung berbagai metode pembayaran",
+            ].map((text, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  isHC ? "bg-black text-[#ffff00] border border-[#ffff00]" : "bg-white/20 text-white"
+                }`}>
+                  <Check size={8} strokeWidth={3} />
+                </div>
+                <span className={`text-sm font-medium ${isHC ? "text-white" : "text-white/80"}`}>
+                  {text}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className={`text-center text-[11px] font-medium mt-4 ${isHC ? "text-white/60" : "text-white/40"}`}>
+            🔒 Pembayaran aman & terenkripsi
+          </p>
         </div>
       </section>
 

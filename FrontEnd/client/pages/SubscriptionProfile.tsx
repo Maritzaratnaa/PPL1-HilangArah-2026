@@ -39,6 +39,17 @@ interface BackendSubsData {
 export default function SubscriptionProfile() {
   const navigate = useNavigate();
   const isHC = useIsHighContrast(); // Inisialisasi High Contrast Mode
+  const activePlanLabel = localStorage.getItem('activePlanLabel') || 'Paket Bulanan';
+  const activePlanPeriod = localStorage.getItem('activePlanPeriod') || '1 Bulan';
+
+  // Tentukan harga berdasarkan label
+  const getPlanPrice = (label: string) => {
+    if (label.includes('Harian')) return { price: 'Rp 19.900', period: '/hari', benefits: ['1 Pemandu Pribadi Tersertifikasi', 'Pendampingan perjalanan sepanjang hari', 'Perencanaan rute aksesibel', 'Kontak darurat terintegrasi'] };
+    if (label.includes('Mingguan')) return { price: 'Rp 89.000', period: '/minggu', benefits: ['1 Pemandu Pribadi Tersertifikasi', 'Pendampingan perjalanan selama 7 hari', 'Perencanaan rute aksesibel', 'Kontak darurat terintegrasi'] };
+    return { price: 'Rp 299.000', period: '/bulan', benefits: ['1 Pemandu Pribadi Tersertifikasi', 'Pendampingan perjalanan tak terbatas', 'Perencanaan rute aksesibel', 'Kontak darurat terintegrasi'] };
+  };
+
+  const planInfo = getPlanPrice(activePlanLabel);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   // State API
@@ -397,28 +408,24 @@ export default function SubscriptionProfile() {
             </h2>
 
             <div className={`mb-6 pb-6 border-b ${isHC ? "border-[#ffff00]" : "border-gray-200 dark:border-gray-700"}`}>
-              <p className={`font-bold mb-1 ${isHC ? "text-white" : "text-gray-900 dark:text-white"}`}>Paket Bulanan</p>
+              <p className={`font-bold mb-1 ${isHC ? "text-white" : "text-gray-900 dark:text-white"}`}>
+                {activePlanLabel}
+              </p>
               <div className="flex items-baseline gap-1 flex-wrap">
                 <p className={`text-2xl font-bold whitespace-nowrap ${isHC ? "text-[#ffff00]" : "text-primary dark:text-[#26c6da]"}`}>
-                  Rp 299.000
+                  {planInfo.price}
                 </p>
                 <span className={`text-sm font-bold whitespace-nowrap ${isHC ? "text-white" : "text-muted-foreground dark:text-gray-400"}`}>
-                  /bulan
+                  {planInfo.period}
                 </span>
               </div>
-
               <p className={`text-xs font-medium mt-1 uppercase ${isHC ? "text-white" : "text-muted-foreground dark:text-gray-500"}`}>
                 ID: {subscriptionData.subs_id.split("-")[0]}
               </p>
             </div>
 
             <div className="space-y-3">
-              {[
-                "1 Pemandu Pribadi Tersertifikasi",
-                "Pendampingan perjalanan tak terbatas",
-                "Perencanaan rute aksesibel",
-                "Kontak darurat terintegrasi",
-              ].map((benefit, idx) => (
+              {planInfo.benefits.map((benefit, idx) => (
                 <div key={idx} className="flex items-center gap-3">
                   <CheckCircle className={`w-5 h-5 flex-shrink-0 ${isHC ? "text-[#ffff00]" : "text-primary dark:text-[#26c6da]"}`} />
                   <span className={`font-medium ${isHC ? "text-white" : "text-gray-900 dark:text-white"}`}>{benefit}</span>
@@ -431,8 +438,8 @@ export default function SubscriptionProfile() {
               onClick={() => setShowCancelModal(true)}
               variant="outline"
               className={`w-full mt-8 h-12 font-bold rounded-lg flex items-center justify-center gap-2 ${
-                isHC 
-                  ? "bg-black text-[#ffff00] border-2 border-[#ffff00] hover:bg-[#ffff00] hover:text-black" 
+                isHC
+                  ? "bg-black text-[#ffff00] border-2 border-[#ffff00] hover:bg-[#ffff00] hover:text-black"
                   : "border-2 border-red-500 text-red-500 hover:bg-red-50 dark:border-red-600 dark:text-red-500 dark:hover:bg-red-950/50"
               }`}
             >
