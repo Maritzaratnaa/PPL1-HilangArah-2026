@@ -1,4 +1,5 @@
 const pool = require('../db');
+const bcrypt = require('bcrypt');
 
 const getProfile = async (req, res) => {
     try {
@@ -83,7 +84,43 @@ const updateProfile = async (req, res) => {
     }
 };
 
+const updatePassword = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const { oldPassword, newPassword } = req.body;
+
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ message: "Password lama dan baru wajib diisi." });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: "Password baru harus memiliki minimal 6 karakter." });
+        }
+
+        const [users] = await pool.query('SELECT password FROM users WHERE user_id = ?', [userId]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: "Pengguna tidak ditemukan." });
+        }
+        const user = users[0];
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: "Password lama salah!" });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+        await pool.query('UPDATE users SET password = ? WHERE user_id = ?', [hashedNewPassword, userId]);
+
+        res.status(200).json({ message: "Password berhasil diperbarui!" });
+    } catch (error) {
+        console.error("Error Update Password:", error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server saat memperbarui password." });
+    }
+};
+
 module.exports = {
     getProfile,
-    updateProfile
+    updateProfile,
+    updatePassword
 };
