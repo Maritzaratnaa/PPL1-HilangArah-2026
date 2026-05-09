@@ -9,7 +9,7 @@ const getAllSubscriptions = async (req, res) => {
 
         // Tangkap query dari URL, misal: ?status=Active&search=Bunga
         const { status, search } = req.query;
-        
+
         let query = `
             SELECT 
                 s.subs_id, s.status, s.start_date, s.end_date, s.domicile,
@@ -143,7 +143,7 @@ const updateSubscriptionStatus = async (req, res) => {
             const startDate = new Date();
             const endDate = new Date();
             endDate.setDate(endDate.getDate() + 30);
-            
+
             const startStr = startDate.toISOString().split('T')[0];
             const endStr = endDate.toISOString().split('T')[0];
 
