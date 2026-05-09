@@ -408,9 +408,9 @@ export default function ProfileEdit() {
               <div className="flex gap-4 pt-4 border-t border-border">
                 <Button 
                   onClick={handleSavePassword}
-                  className="w-full h-12"
+                  className="w-full h-12 "
                   disabled={isSavingPassword}
-                  variant="secondary"
+                  variant="default"
                 >
                   {isSavingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Ubah Password

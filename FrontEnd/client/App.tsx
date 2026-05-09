@@ -8,28 +8,30 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Login from "./pages/Auth/Login";
+import Register from "./pages/Auth/Register";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import RouteSearch from "./pages/RouteSearch";
 import RouteResults from "./pages/RouteResults";  
-import SubscriptionPage from "./pages/SubscriptionPage";
-import SubscriptionForm from "./pages/SubscriptionForm";
-import SubscriptionConfirmation from "./pages/SubscriptionConfirmation";
-import SubscriptionPayment from "./pages/SubscriptionPayment";
-import SubscriptionProfile from "./pages/SubscriptionProfile";
+import SubscriptionPage from "./pages/Subscription/SubscriptionPage";
+import SubscriptionForm from "./pages/Subscription/SubscriptionForm";
+import SubscriptionConfirmation from "./pages/Subscription/SubscriptionConfirmation";
+import SubscriptionPayment from "./pages/Subscription/SubscriptionPayment";
+import SubscriptionProfile from "./pages/Subscription/SubscriptionProfile";
 import Reporting from "./pages/Reporting";
 import NotFound from "./pages/NotFound";
 import RouteMap from "./pages/RouteMap";
-import VerifyEmail from "./pages/VerifyEmail";
-import AdminGuides from "./pages/admin/Guides";
-import AdminSubscriptions from "./pages/admin/Subscriptions";
-import AdminReports from "./pages/admin/Reports";
-import AdminTransport from "./pages/admin/Data";
-import AdminUsers from "./pages/admin/Users";
-import Dashboard from "./pages/admin/Dashboard";
-import AdminManage from "./pages/admin/Admin";
+import VerifyEmail from "./pages/Auth/VerifyEmail";
+import AdminGuides from "./pages/Admin/Guides";
+import AdminSubscriptions from "./pages/Admin/Subscriptions";
+import AdminReports from "./pages/Admin/Reports";
+import AdminTransport from "./pages/Admin/Data";
+import AdminUsers from "./pages/Admin/Users";
+import Dashboard from "./pages/Admin/Dashboard";
+import AdminManage from "./pages/Admin/Admin";
+import ResetPassword from "./pages/Auth/ResetPassword";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +66,8 @@ const App = () => (
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/Admin/Dashboard" element={<Dashboard/>} />
           <Route path="/Admin/Manage" element={<AdminManage/>} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
