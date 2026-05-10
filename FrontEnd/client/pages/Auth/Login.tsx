@@ -87,13 +87,6 @@ export default function Login() {
                   <Label htmlFor="password" className="text-base font-semibold">
                     Kata Sandi
                   </Label>
-                  {/* TAUTAN LUPA PASSWORD DITAMBAHKAN DI SINI */}
-                  <Link
-                    to="/forgot-password"
-                    className="text-sm font-medium text-primary hover:underline underline-offset-2"
-                  >
-                    Lupa password?
-                  </Link>
                 </div>
                 <div className="relative">
                   <Input
@@ -120,6 +113,14 @@ export default function Login() {
                       <Eye className="h-5 w-5" />
                     )}
                   </button>
+                </div>
+                <div className="flex justify-end mt-2">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm font-medium text-primary hover:underline underline-offset-2"
+                  >
+                    Lupa password?
+                  </Link>
                 </div>
               </div>
 
