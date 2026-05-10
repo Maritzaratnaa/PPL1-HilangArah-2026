@@ -43,7 +43,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/register", {
+      const res = await fetch("http://localhost:3000/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -131,7 +131,7 @@ export default function Register() {
                     className="h-12 text-base high-contrast:border-2 high-contrast:border-primary"
                     aria-required="true"
                   >
-                    <SelectValue placeholder="Select your category" />
+                    <SelectValue placeholder="Pilih kategori Anda" />
                   </SelectTrigger>
                   <SelectContent>
                     {userCategories.map((category) => (
@@ -155,7 +155,7 @@ export default function Register() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Create a strong password"
+                    placeholder="Buat kata sandi yang kuat"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -191,7 +191,7 @@ export default function Register() {
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm your password"
+                    placeholder="Konfirmasi kata sandi Anda"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
