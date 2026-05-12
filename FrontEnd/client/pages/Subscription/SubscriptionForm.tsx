@@ -28,9 +28,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 export default function SubscriptionForm() {
   const navigate = useNavigate();
-
   const location = useLocation();
-  console.log("Data State dari halaman sebelumnya:", location.state);
+  
   const planLabel = location.state?.planLabel || 'Paket Bulanan';
   const planAmount = location.state?.amount || 299000;
 
@@ -45,22 +44,31 @@ export default function SubscriptionForm() {
 
   const [guideGenderPref, setGuideGenderPref] = useState('');
   const [guideAgePref, setGuideAgePref] = useState('');
-
-  // STATE BARU: Untuk menampilkan efek loading saat tombol diklik
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // FUNGSI INTEGRASI API DIUPDATE
-  // FUNGSI INTEGRASI API DIUPDATE
+  // --- HANDLER VALIDASI REAL-TIME ---
+  
+  // Hanya memperbolehkan huruf, spasi, titik, dan tanda kutip tunggal
+  const handleNameChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (/^[a-zA-Z\s'.-]*$/.test(val)) {
+      setter(val);
+    }
+  };
+
+  // Hanya memperbolehkan angka, dan otomatis menghapus '0' di awal karena sudah ada +62
+  const handlePhoneChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, ''); // Hapus semua karakter selain angka
+    if (val.startsWith('0')) {
+      val = val.substring(1); // Hilangkan angka 0 di depan
+    }
+    setter(val);
+  };
+
+  // --- FUNGSI INTEGRASI API & VALIDASI SUBMIT ---
   const handleProceedToPayment = async () => {
-    // 1. Validasi Frontend
-    if (
-      !fullName ||
-      !phone ||
-      !gender ||
-      !domicile ||
-      !emergencyContactName ||
-      !emergencyContactPhone
-    ) {
+    // 1. Validasi Kosong
+    if (!fullName || !phone || !gender || !domicile || !emergencyContactName || !emergencyContactPhone) {
       alert("Mohon isi semua field yang wajib (*)");
       return;
     }
@@ -69,12 +77,31 @@ export default function SubscriptionForm() {
       return;
     }
 
-    // 2. Ambil Token JWT
+    // 2. Validasi Logika (Tidak boleh sama & Format)
+    if (fullName.trim().toLowerCase() === emergencyContactName.trim().toLowerCase()) {
+      alert("Nama Lengkap Anda dan Nama Kontak Darurat tidak boleh sama!");
+      return;
+    }
+
+    if (phone === emergencyContactPhone) {
+      alert("Nomor Telepon Anda dan Nomor Telepon Darurat tidak boleh sama!");
+      return;
+    }
+
+    if (phone.length < 8 || phone.length > 15) {
+      alert("Format Nomor Telepon Anda tidak valid (harus 8-15 digit angka).");
+      return;
+    }
+
+    if (emergencyContactPhone.length < 8 || emergencyContactPhone.length > 15) {
+      alert("Format Nomor Telepon Darurat tidak valid (harus 8-15 digit angka).");
+      return;
+    }
+
+    // 3. Ambil Token JWT
     const token = localStorage.getItem("token");
     if (!token) {
-      alert(
-        "Sesi Anda telah habis atau Anda belum login. Silakan login kembali.",
-      );
+      alert("Sesi Anda telah habis atau Anda belum login. Silakan login kembali.");
       navigate("/login");
       return;
     }
@@ -82,11 +109,13 @@ export default function SubscriptionForm() {
     setIsSubmitting(true);
 
     try {
-      // TANGKAP NILAI PLAN DARI LOCATION STATE (default ke 'monthly' jika kosong)
       let selectedPlan = location.state?.plan || 'Monthly'; 
       selectedPlan = selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1).toLowerCase();
 
-      // 3. Tembak API Backend
+      // Gabungkan +62 kembali sebelum dikirim ke backend
+      const formattedPhone = `+62${phone}`;
+      const formattedEmergencyPhone = `+62${emergencyContactPhone}`;
+
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const res = await fetch(`${apiUrl}/api/subscription`, {
         method: "POST",
@@ -95,13 +124,11 @@ export default function SubscriptionForm() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          phone_number: phone,
+          phone_number: formattedPhone,
           emergency_contact_name: emergencyContactName,
-          emergency_contact_phone: emergencyContactPhone,
+          emergency_contact_phone: formattedEmergencyPhone,
           domicile: domicile,
           specific_needs: specificNeeds,
-          
-          // 👇 UBAH MENJADI 'duration' SESUAI PERMINTAAN BACKEND 👇
           duration: selectedPlan, 
         }),
       });
@@ -111,7 +138,7 @@ export default function SubscriptionForm() {
       if (res.ok) {
         localStorage.setItem('activePlanLabel', planLabel);
         localStorage.setItem('activePlanPeriod', location.state?.plan === 'daily' ? '1 Hari' : '1 Bulan');
-        // 4. Jika sukses (201), lempar subs_id ke halaman Payment
+        
         navigate("/subscription/Payment", {
           state: {
             subs_id: data.subs_id,
@@ -121,7 +148,6 @@ export default function SubscriptionForm() {
           },
         });
       } else {
-        // ... (kode error handling tetap sama)
         alert(data.message);
         if (data.message.includes("sudah memiliki langganan")) {
           navigate("/subscription/Profile");
@@ -144,49 +170,23 @@ export default function SubscriptionForm() {
           {/* STEPPER */}
           <div className="mb-12">
             <div className="flex items-center justify-between relative">
-              {/* Garis penghubung */}
               <div className="absolute top-5 left-0 right-0 h-px bg-border z-0 mx-10 sm:mx-16" />
 
               {[
-                {
-                  num: 1,
-                  label: "Isi Data",
-                  icon: "📋",
-                  active: true,
-                  completed: false,
-                },
-                {
-                  num: 2,
-                  label: "Pembayaran",
-                  icon: "💳",
-                  active: false,
-                  completed: false,
-                },
-                {
-                  num: 3,
-                  label: "Konfirmasi",
-                  icon: "✅",
-                  active: false,
-                  completed: false,
-                },
+                { num: 1, label: "Isi Data", icon: "📋", active: true, completed: false },
+                { num: 2, label: "Pembayaran", icon: "💳", active: false, completed: false },
+                { num: 3, label: "Konfirmasi", icon: "✅", active: false, completed: false },
               ].map((step) => (
-                <div
-                  key={step.num}
-                  className="relative z-10 flex flex-col items-center gap-2"
-                >
-                  <div
-                    className={`flex items-center justify-center h-10 w-10 rounded-full border-2 flex-shrink-0 transition-all duration-300 ${
-                      step.active
-                        ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20"
-                        : "bg-card border-border text-muted-foreground"
-                    }`}
-                  >
+                <div key={step.num} className="relative z-10 flex flex-col items-center gap-2">
+                  <div className={`flex items-center justify-center h-10 w-10 rounded-full border-2 flex-shrink-0 transition-all duration-300 ${
+                    step.active
+                      ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20"
+                      : "bg-card border-border text-muted-foreground"
+                  }`}>
                     <span className="font-bold text-sm">{step.num}</span>
                   </div>
                   <div className="text-center">
-                    <p
-                      className={`text-[10px] sm:text-xs font-bold leading-tight ${step.active ? "text-primary" : "text-muted-foreground"}`}
-                    >
+                    <p className={`text-[10px] sm:text-xs font-bold leading-tight ${step.active ? "text-primary" : "text-muted-foreground"}`}>
                       {step.icon} {step.label}
                     </p>
                   </div>
@@ -200,8 +200,7 @@ export default function SubscriptionForm() {
               Lengkapi Profil Anda
             </h1>
             <p className="text-muted-foreground text-[16px] font-medium">
-              Informasi ini membantu kami mencocokkan Anda dengan pemandu yang
-              paling kompeten.
+              Informasi ini membantu kami mencocokkan Anda dengan pemandu yang paling kompeten.
             </p>
           </div>
 
@@ -225,7 +224,7 @@ export default function SubscriptionForm() {
                         </Label>
                         <Input
                           value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
+                          onChange={handleNameChange(setFullName)}
                           placeholder="Contoh: Budi Santoso"
                           className="h-12 border-input rounded-xl font-medium text-[16px]"
                           disabled={isSubmitting}
@@ -241,7 +240,7 @@ export default function SubscriptionForm() {
                           </span>
                           <Input
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            onChange={handlePhoneChange(setPhone)}
                             placeholder="812xxxxxx"
                             className="h-12 pl-16 border-input rounded-xl font-medium text-[16px]"
                             disabled={isSubmitting}
@@ -252,11 +251,7 @@ export default function SubscriptionForm() {
                         <Label className="font-bold text-foreground text-[16px]">
                           Jenis Kelamin *
                         </Label>
-                        <Select
-                          value={gender}
-                          onValueChange={setGender}
-                          disabled={isSubmitting}
-                        >
+                        <Select value={gender} onValueChange={setGender} disabled={isSubmitting}>
                           <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]">
                             <SelectValue placeholder="Pilih jenis kelamin" />
                           </SelectTrigger>
@@ -267,13 +262,12 @@ export default function SubscriptionForm() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="font-bold text-[15px]">Domisili (Kota/Kabupaten)</Label>
-                        <Select onValueChange={setDomicile} required>
-                          <SelectTrigger className="h-12 rounded-xl">
+                        <Label className="font-bold text-[15px]">Domisili (Kota/Kabupaten) *</Label>
+                        <Select onValueChange={setDomicile} disabled={isSubmitting}>
+                          <SelectTrigger className="h-12 rounded-xl border-input font-medium text-[16px]">
                             <SelectValue placeholder="Pilih Domisili" />
                           </SelectTrigger>
                           <SelectContent className="max-h-[400px]">
-                            {/* DKI JAKARTA */}
                             <SelectGroup>
                               <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest">DKI JAKARTA</SelectLabel>
                               <SelectItem value="Jakarta Pusat">Jakarta Pusat</SelectItem>
@@ -283,7 +277,6 @@ export default function SubscriptionForm() {
                               <SelectItem value="Jakarta Timur">Jakarta Timur</SelectItem>
                             </SelectGroup>
                             
-                            {/* JAWA BARAT */}
                             <SelectGroup>
                               <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">JAWA BARAT</SelectLabel>
                               <SelectItem value="Bandung">Bandung</SelectItem>
@@ -298,7 +291,6 @@ export default function SubscriptionForm() {
                               <SelectItem value="Garut">Garut</SelectItem>
                             </SelectGroup>
 
-                            {/* BANTEN */}
                             <SelectGroup>
                               <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">BANTEN</SelectLabel>
                               <SelectItem value="Tangerang">Tangerang</SelectItem>
@@ -309,7 +301,6 @@ export default function SubscriptionForm() {
                               <SelectItem value="Pandeglang">Pandeglang</SelectItem>
                             </SelectGroup>
 
-                            {/* JAWA TENGAH */}
                             <SelectGroup>
                               <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">JAWA TENGAH</SelectLabel>
                               <SelectItem value="Semarang">Semarang</SelectItem>
@@ -322,7 +313,6 @@ export default function SubscriptionForm() {
                               <SelectItem value="Cilacap">Cilacap</SelectItem>
                             </SelectGroup>
 
-                            {/* JAWA TIMUR */}
                             <SelectGroup>
                               <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">JAWA TIMUR</SelectLabel>
                               <SelectItem value="Surabaya">Surabaya</SelectItem>
@@ -345,7 +335,7 @@ export default function SubscriptionForm() {
 
                   <hr className="border-border" />
 
-                  <section className="space-y-8"> {/* Ditambahkan space-y-8 agar tiap komponen di dalamnya punya jarak yang pas */}
+                  <section className="space-y-8">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-2.5 bg-accent/10 rounded-xl text-primary">
                         <AlertCircle size={24} />
@@ -353,7 +343,6 @@ export default function SubscriptionForm() {
                       <h2 className="text-[20px] font-bold text-foreground">Layanan & Kebutuhan</h2>
                     </div>
 
-                    {/* 1. Preferensi Pemandu */}
                     <div>
                       <p className="font-bold text-foreground text-[16px] mb-4">
                         Preferensi Pemandu <span className="text-muted-foreground font-normal text-sm">(opsional)</span>
@@ -390,9 +379,8 @@ export default function SubscriptionForm() {
                       </div>
                     </div>
 
-                    {/* 2. Detail Kebutuhan Khusus (Sekarang di bawah Preferensi) */}
-                    <div className="space-y-2"> {/* Diubah dari space-y-6 menjadi space-y-2 agar label dan textareanya tidak terlalu jauh renggangnya */}
-                      <Label htmlFor="needs" className="font-bold text-[15px]">Detail Kebutuhan Khusus</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="needs" className="font-bold text-[15px]">Detail Kebutuhan Khusus <span className="text-muted-foreground font-normal text-sm">(opsional)</span></Label>
                       <Textarea
                         value={specificNeeds}
                         onChange={(e) => setSpecificNeeds(e.target.value)}
@@ -421,10 +409,8 @@ export default function SubscriptionForm() {
                         </Label>
                         <Input
                           value={emergencyContactName}
-                          onChange={(e) =>
-                            setEmergencyContactName(e.target.value)
-                          }
-                          placeholder="Nama keluarga"
+                          onChange={handleNameChange(setEmergencyContactName)}
+                          placeholder="Nama keluarga atau wali"
                           className="h-12 border-input rounded-xl font-medium text-[16px]"
                           disabled={isSubmitting}
                         />
@@ -439,9 +425,7 @@ export default function SubscriptionForm() {
                           </span>
                           <Input
                             value={emergencyContactPhone}
-                            onChange={(e) =>
-                              setEmergencyContactPhone(e.target.value)
-                            }
+                            onChange={handlePhoneChange(setEmergencyContactPhone)}
                             placeholder="812xxxxxx"
                             className="h-12 pl-16 border-input rounded-xl font-medium text-[16px]"
                             disabled={isSubmitting}
@@ -462,7 +446,7 @@ export default function SubscriptionForm() {
                       />
                       <Label
                         htmlFor="terms"
-                        className="font-medium text-muted-foreground text-[16px] cursor-pointer"
+                        className="font-medium text-muted-foreground text-[16px] cursor-pointer leading-relaxed"
                       >
                         Saya menyetujui{" "}
                         <span className="text-primary font-bold underline underline-offset-4">
@@ -476,7 +460,6 @@ export default function SubscriptionForm() {
                       </Label>
                     </div>
 
-                    {/* TOMBOL KONFIRMASI DIUPDATE */}
                     <Button
                       onClick={handleProceedToPayment}
                       disabled={isSubmitting}
@@ -490,8 +473,6 @@ export default function SubscriptionForm() {
                           </span>
                         </div>
                       ) : (
-                        // Gunakan justify-center dan flex-row agar teks dan panah selalu sejajar
-                        // Tambahkan whitespace-normal agar teks bisa turun baris per kata
                         <div className="flex items-center justify-center gap-2 leading-snug">
                           <span className="text-center whitespace-normal break-words">
                             Konfirmasi & Lanjut ke Pembayaran
