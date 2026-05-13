@@ -227,7 +227,7 @@ export function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8 flex-wrap">
-              <Link to="/route-search">
+              <Link to="/login">
                 <Button size="lg"
                   className="h-12 px-7 font-semibold text-base shadow-lg shadow-primary/25
                     hover:shadow-primary/40 hover:-translate-y-0.5 transition-all

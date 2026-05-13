@@ -3,49 +3,98 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { Check, ShoppingCart, Loader2 } from "lucide-react";
+import { Check, ShoppingCart, Loader2, RefreshCcw } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function SubscriptionPayment() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Tangkap subs_id dari state
   const subsId = location.state?.subs_id;
 
-  const [isProcessing, setIsProcessing] = useState(false); // State untuk efek loading
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // 👇 STATE BARU: Menyimpan token Midtrans agar pop-up bisa dibuka lagi
+  const [snapToken, setSnapToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Jika tidak ada subsId (user iseng ngetik URL manual), tendang balik ke form
     if (!subsId) {
       alert("Sesi pembayaran tidak valid atau sudah kadaluarsa.");
       navigate("/subscription/Form");
     }
   }, [subsId, navigate]);
 
-  // --- FUNGSI PEMBAYARAN MIDTRANS ---
+  // --- FUNGSI UNTUK MENAMPILKAN POP-UP MIDTRANS ---
+  // (Dipisah agar bisa dipanggil berkali-kali tanpa error)
+  const showMidtransPopup = (currentToken: string, jwtToken: string) => {
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+    (window as any).snap.pay(currentToken, {
+      onSuccess: async function (result: any) {
+        console.log("✅ Pembayaran Sukses!", result);
+        try {
+          await fetch(`${apiUrl}/api/subscription/activate`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify({ subs_id: subsId }),
+          });
+        } catch (err) {
+          console.error("Gagal update database:", err);
+        }
+
+        // Pindah halaman jika benar-benar sukses
+        navigate("/subscription/Payment-Confirmation", {
+          state: { subs_id: subsId },
+        });
+      },
+      onPending: function (result: any) {
+        console.log("⏳ Pembayaran Tertunda:", result);
+        alert("Jangan lupa selesaikan pembayaran Anda. Anda bisa menekan tombol 'Lanjutkan' lagi jika ingin mengecek status.");
+        setIsProcessing(false);
+      },
+      onError: function (result: any) {
+        console.log("❌ Pembayaran Error:", result);
+        alert("Pembayaran gagal diproses!");
+        setIsProcessing(false);
+      },
+      onClose: function () {
+        console.log("⚠️ Popup ditutup oleh user.");
+        // Beritahu user bahwa mereka masih bisa melanjutkannya
+        alert("Anda menutup halaman Midtrans. Klik 'Lanjutkan / Cek Pembayaran' untuk membuka kembali atau mengecek statusnya.");
+        setIsProcessing(false);
+      },
+    });
+  };
+
+  // --- FUNGSI KLIK TOMBOL BAYAR ---
   const handlePaymentConfirm = async () => {
     setIsProcessing(true);
-    const token = localStorage.getItem("token");
+    const jwtToken = localStorage.getItem("token");
 
-    // 🛑 DEBUG 1: Cek apakah Token JWT (Login) berhasil diambil
-    console.log("🔑 [DEBUG 1] Token JWT User:", token);
-
-    if (!token) {
+    if (!jwtToken) {
       alert("Sesi Anda telah habis. Silakan login kembali.");
       navigate("/login");
+      return;
+    }
+
+    // 👇 LOGIKA BARU: Jika token sudah ada, langsung buka pop-up lagi!
+    if (snapToken) {
+      console.log("💳 Membuka ulang tagihan yang tertunda...");
+      showMidtransPopup(snapToken, jwtToken);
       return;
     }
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-      // Tembak API backend untuk meminta Token Transaksi Midtrans
       const res = await fetch(`${apiUrl}/api/subscription/payment-token`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${jwtToken}`,
         },
         body: JSON.stringify({
           subs_id: subsId,
@@ -55,52 +104,12 @@ export default function SubscriptionPayment() {
 
       const data = await res.json();
 
-      // 🛑 DEBUG 2: Cek apa balasan dari Backend
-      console.log("📦 [DEBUG 2] Balasan dari Backend:", data);
-
       if (res.ok && data.token) {
-        // 🛑 DEBUG 3: Cek Token Snap Midtrans
-        console.log("💳 [DEBUG 3] Token Midtrans Berhasil Didapat:", data.token);
-
-        // Panggil popup Midtrans Snap
-        (window as any).snap.pay(data.token, {
-          onSuccess: async function (result: any) {
-            // 🛑 DEBUG 4: Cek hasil sukses dari Midtrans
-            console.log("✅ [DEBUG 4] Pembayaran Sukses! Data dari Midtrans:", result);
-
-            try {
-              await fetch(`${apiUrl}/api/subscription/activate`, {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ subs_id: subsId }),
-              });
-            } catch (err) {
-              console.error("Gagal update database:", err);
-            }
-
-            navigate("/subscription/Payment-Confirmation", {
-              state: { subs_id: subsId },
-            });
-          },
-          onPending: function (result: any) {
-            console.log("⏳ [DEBUG] Pembayaran Tertunda:", result);
-            alert("Menunggu pembayaran Anda diselesaikan!");
-            navigate("/subscription/Profile");
-          },
-          onError: function (result: any) {
-            console.log("❌ [DEBUG] Pembayaran Error:", result);
-            alert("Pembayaran gagal diproses!");
-            setIsProcessing(false);
-          },
-          onClose: function () {
-            console.log("⚠️ [DEBUG] Popup ditutup oleh user.");
-            alert("Anda menutup popup tanpa menyelesaikan pembayaran.");
-            setIsProcessing(false);
-          },
-        });
+        // Simpan token ke State agar tidak hilang
+        setSnapToken(data.token);
+        
+        // Buka Pop-up pertama kali
+        showMidtransPopup(data.token, jwtToken);
       } else {
         alert(data.message || "Gagal mendapatkan token pembayaran.");
         setIsProcessing(false);
@@ -112,7 +121,6 @@ export default function SubscriptionPayment() {
     }
   };
 
-  // Jika subsId tidak ada (sedang proses redirect), render kosong agar tidak error
   if (!subsId) return null;
 
   const plan = location.state?.plan || 'monthly';
@@ -128,36 +136,14 @@ export default function SubscriptionPayment() {
           {/* STEPPER */}
           <div className="mb-12">
             <div className="flex items-center justify-between relative max-w-3xl mx-auto">
-              {/* Garis penghubung */}
               <div className="absolute top-5 left-0 right-0 h-px bg-border z-0 mx-10 sm:mx-16" />
 
               {[
-                {
-                  num: 1,
-                  label: "Isi Data",
-                  icon: "📋",
-                  active: false,
-                  completed: true,
-                },
-                {
-                  num: 2,
-                  label: "Pembayaran",
-                  icon: "💳",
-                  active: true,
-                  completed: false,
-                },
-                {
-                  num: 3,
-                  label: "Konfirmasi",
-                  icon: "✅",
-                  active: false,
-                  completed: false,
-                },
+                { num: 1, label: "Isi Data", icon: "📋", active: false, completed: true },
+                { num: 2, label: "Pembayaran", icon: "💳", active: true, completed: false },
+                { num: 3, label: "Konfirmasi", icon: "✅", active: false, completed: false },
               ].map((step) => (
-                <div
-                  key={step.num}
-                  className="relative z-10 flex flex-col items-center gap-2"
-                >
+                <div key={step.num} className="relative z-10 flex flex-col items-center gap-2">
                   <div
                     className={`flex items-center justify-center h-10 w-10 rounded-full border-2 flex-shrink-0 ${
                       step.active
@@ -174,9 +160,7 @@ export default function SubscriptionPayment() {
                     )}
                   </div>
                   <div className="text-center">
-                    <p
-                      className={`text-[10px] sm:text-xs font-bold leading-tight ${step.active ? "text-primary" : "text-muted-foreground"}`}
-                    >
+                    <p className={`text-[10px] sm:text-xs font-bold leading-tight ${step.active ? "text-primary" : "text-muted-foreground"}`}>
                       {step.icon} {step.label}
                     </p>
                   </div>
@@ -185,7 +169,6 @@ export default function SubscriptionPayment() {
             </div>
           </div>
 
-          {/* Main Content Layout - Centered Order Summary */}
           <div className="max-w-lg mx-auto">
             <Card className="bg-card border-border rounded-[var(--radius)] p-6 shadow-sm">
               <h3 className="text-[18px] font-bold mb-6 flex items-center gap-2 text-foreground">
@@ -193,7 +176,6 @@ export default function SubscriptionPayment() {
                 Rincian Pembayaran
               </h3>
 
-              {/* ID Referensi */}
               <div className="bg-muted/30 rounded-lg p-4 mb-6 border border-border text-center">
                 <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">ID Langganan</p>
                 <p className="text-[14px] font-mono font-bold text-primary truncate">
@@ -201,12 +183,10 @@ export default function SubscriptionPayment() {
                 </p>
               </div>
 
-              {/* Nama Paket */}
               <div className="bg-primary/5 rounded-lg p-3 mb-6 border border-primary/20 text-center">
                 <p className="text-sm font-bold text-primary">{planLabel}</p>
               </div>
 
-              {/* Price Breakdown */}
               <div className="space-y-3 mb-6 pb-6 border-b border-border">
                 <div className="flex justify-between text-[16px]">
                   <span className="text-muted-foreground font-medium">{planLabel}</span>
@@ -214,13 +194,12 @@ export default function SubscriptionPayment() {
                 </div>
               </div>
 
-              {/* Total */}
               <div className="flex justify-between items-center mb-8">
                 <span className="font-bold text-foreground text-[16px]">Total</span>
                 <span className="text-[24px] font-bold text-primary">Rp {planAmount.toLocaleString('id-ID')}</span>
               </div>
 
-              {/* Payment Button */}
+              {/* Payment Button Dinamis */}
               <Button
                 onClick={handlePaymentConfirm}
                 disabled={isProcessing}
@@ -229,7 +208,12 @@ export default function SubscriptionPayment() {
                 {isProcessing ? (
                   <div className="flex items-center justify-center flex-wrap gap-2">
                     <Loader2 className="h-5 w-5 animate-spin shrink-0" />
-                    <span className="text-center">Memproses Pembayaran...</span>
+                    <span className="text-center">Memproses...</span>
+                  </div>
+                ) : snapToken ? (
+                  <div className="flex items-center justify-center flex-wrap gap-2 leading-tight">
+                    <RefreshCcw className="h-5 w-5 shrink-0" />
+                    <span className="text-center">Lanjutkan / Cek Pembayaran</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center flex-wrap gap-2 leading-tight">
@@ -239,7 +223,6 @@ export default function SubscriptionPayment() {
                 )}
               </Button>
 
-              {/* Security Badges */}
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-center gap-2 text-[14px] font-medium text-muted-foreground">
                   <span className="text-lg">🔒</span>

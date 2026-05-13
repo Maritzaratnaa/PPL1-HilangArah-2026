@@ -4,11 +4,11 @@ import { Card } from '@/components/ui/card';
 import { ChevronDown, Check, Star, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useIsHighContrast } from "@/hooks/useTheme"; // Import hook high contrast
+import { useIsHighContrast } from "@/hooks/useTheme";
 
 export default function SubscriptionLanding() {
   const navigate = useNavigate();
-  const isHC = useIsHighContrast(); // Ambil state high contrast
+  const isHC = useIsHighContrast(); 
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
 
   // --- STATE UNTUK PENGECEKAN API ---
@@ -93,7 +93,7 @@ export default function SubscriptionLanding() {
     { question: "Apakah pemandu tersedia di semua kota?", answer: "Saat ini layanan pemandu tersedia di Jakarta dan sekitarnya. Kami terus memperluas jangkauan ke kota-kota lain secara bertahap." },
   ];
 
-  // --- STYLING KHUSUS HIGH CONTRAST (Sesuai Home.tsx) ---
+  // --- STYLING KHUSUS HIGH CONTRAST ---
   const heroStyle = isHC
     ? { background: "#000000" }
     : { background: "linear-gradient(to bottom right, #005260, #007C8A, #009DAD)" };
@@ -185,14 +185,13 @@ export default function SubscriptionLanding() {
             </p>
             
             <div className="flex flex-wrap gap-3">
+              {/* TOMBOL 1 DIUPDATE: Ke Profil jika sudah langganan, ke Paket (scroll) jika belum */}
               <button 
                 onClick={() => {
                   if (hasSubs) {
                     navigate("/subscription/Profile");
                   } else {
-                    navigate("/subscription/Form", {
-                      state: { plan: selectedPlan, amount: activePlan.amount, planLabel: activePlan.label }
-                    });
+                    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
                   }
                 }}
                 disabled={isChecking}
@@ -205,8 +204,9 @@ export default function SubscriptionLanding() {
                 {isChecking ? "Mengecek..." : hasSubs ? "Lihat Status Langganan" : "Mulai Berlangganan"} <ArrowRight size={18} />
               </button>
               
+              {/* TOMBOL 2 DIUPDATE: Scroll ke Mengapa Berlangganan (benefits) */}
               <button 
-                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth' })}
                 className={`px-6 py-3.5 rounded-xl font-bold transition-colors ${
                   isHC 
                     ? "bg-black text-[#ffff00] border-2 border-[#ffff00]" 
@@ -274,14 +274,14 @@ export default function SubscriptionLanding() {
         </div>
       </section>
 
-      {/* Wave Section Divider - Di mode HC dihitamkan agar blend in */}
+      {/* Wave Section Divider */}
       <div
         className={`h-16 -mt-0.5 transition-colors ${isHC ? "bg-black" : "bg-[#F8FAFB] dark:bg-gray-900"}`}
         style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}
       />
 
-      {/* BENEFITS SECTION */}
-      <section className={`py-20 px-6 lg:px-10 transition-colors ${isHC ? "bg-black" : "bg-[#F8FAFB] dark:bg-gray-900"}`}>
+      {/* BENEFITS SECTION (MENGAPA BERLANGGANAN) - Ditambahkan ID="benefits" */}
+      <section id="benefits" className={`py-20 px-6 lg:px-10 transition-colors ${isHC ? "bg-black" : "bg-[#F8FAFB] dark:bg-gray-900"}`}>
         <div className="max-w-5xl mx-auto">
           <div className="mb-12">
             <span className={`text-[11px] font-bold uppercase tracking-widest block mb-2 ${isHC ? "text-[#ffff00]" : "text-[#007C8A] dark:text-[#26c6da]"}`}>
@@ -319,7 +319,7 @@ export default function SubscriptionLanding() {
         </div>
       </section>
 
-      {/* PRICING SECTION */}
+      {/* PRICING SECTION (PILIHAN PAKET) */}
       <section id="pricing" className="py-24 px-6 lg:px-10 relative overflow-hidden transition-colors" style={pricingHeroStyle}>
         {!isHC && <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />}
 
@@ -337,7 +337,7 @@ export default function SubscriptionLanding() {
             </p>
           </div>
 
-          {/* 3 Pricing Cards — full width */}
+          {/* 3 Pricing Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
             {(Object.entries(plans) as [keyof typeof plans, typeof plans[keyof typeof plans]][]).map(([key, plan]) => {
               const isActive = selectedPlan === key;
@@ -398,7 +398,7 @@ export default function SubscriptionLanding() {
                       <div key={i} className={`flex items-start gap-2.5 text-[13px] font-medium ${
                         isActive && !isHC ? 'text-gray-800 dark:text-white' : 'text-white/90'
                       }`}>
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 flex-shrink-0 ${
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                           isHC
                             ? 'bg-black text-[#ffff00] border border-[#ffff00]'
                             : isActive
