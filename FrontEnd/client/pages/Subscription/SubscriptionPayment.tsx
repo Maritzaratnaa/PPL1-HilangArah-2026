@@ -10,12 +10,23 @@ export default function SubscriptionPayment() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const subsId = location.state?.subs_id;
+  // 👇 1. CEK MEMORI LOKAL BROWSER (Untuk mengatasi user yang pindah halaman)
+  const savedPaymentStr = localStorage.getItem("pendingPayment");
+  const savedPayment = savedPaymentStr ? JSON.parse(savedPaymentStr) : null;
+
+  // Prioritaskan data dari location.state (jika baru datang dari Form), 
+  // atau pakai data dari localStorage (jika user balik lagi setelah pindah halaman)
+  const subsId = location.state?.subs_id || savedPayment?.subsId;
+  const plan = location.state?.plan || savedPayment?.plan || 'monthly';
+  const planAmount = location.state?.amount || savedPayment?.amount || 299000;
+  const planLabel = location.state?.planLabel || savedPayment?.planLabel || 'Paket Bulanan';
 
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // 👇 STATE BARU: Menyimpan token Midtrans agar pop-up bisa dibuka lagi
-  const [snapToken, setSnapToken] = useState<string | null>(null);
+  // Jika subsId cocok dengan yang di memori, langsung isi tokennya agar tombol jadi "Lanjutkan"
+  const [snapToken, setSnapToken] = useState<string | null>(
+    (savedPayment && savedPayment.subsId === subsId) ? savedPayment.snapToken : null
+  );
 
   useEffect(() => {
     if (!subsId) {
@@ -25,13 +36,16 @@ export default function SubscriptionPayment() {
   }, [subsId, navigate]);
 
   // --- FUNGSI UNTUK MENAMPILKAN POP-UP MIDTRANS ---
-  // (Dipisah agar bisa dipanggil berkali-kali tanpa error)
   const showMidtransPopup = (currentToken: string, jwtToken: string) => {
     const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
     (window as any).snap.pay(currentToken, {
       onSuccess: async function (result: any) {
         console.log("✅ Pembayaran Sukses!", result);
+        
+        // 👇 Hapus memori tagihan karena sudah lunas!
+        localStorage.removeItem("pendingPayment");
+
         try {
           await fetch(`${apiUrl}/api/subscription/activate`, {
             method: "PUT",
@@ -45,14 +59,13 @@ export default function SubscriptionPayment() {
           console.error("Gagal update database:", err);
         }
 
-        // Pindah halaman jika benar-benar sukses
         navigate("/subscription/Payment-Confirmation", {
           state: { subs_id: subsId },
         });
       },
       onPending: function (result: any) {
         console.log("⏳ Pembayaran Tertunda:", result);
-        alert("Jangan lupa selesaikan pembayaran Anda. Anda bisa menekan tombol 'Lanjutkan' lagi jika ingin mengecek status.");
+        alert("Jangan lupa selesaikan pembayaran Anda. Anda bisa menekan tombol 'Lanjutkan' kapan saja.");
         setIsProcessing(false);
       },
       onError: function (result: any) {
@@ -62,8 +75,7 @@ export default function SubscriptionPayment() {
       },
       onClose: function () {
         console.log("⚠️ Popup ditutup oleh user.");
-        // Beritahu user bahwa mereka masih bisa melanjutkannya
-        alert("Anda menutup halaman Midtrans. Klik 'Lanjutkan / Cek Pembayaran' untuk membuka kembali atau mengecek statusnya.");
+        alert("Anda menutup halaman Midtrans. Klik 'Lanjutkan / Cek Pembayaran' untuk membuka kembali.");
         setIsProcessing(false);
       },
     });
@@ -80,7 +92,7 @@ export default function SubscriptionPayment() {
       return;
     }
 
-    // 👇 LOGIKA BARU: Jika token sudah ada, langsung buka pop-up lagi!
+    // Jika token snap sudah ada di state/memori, langsung buka pop-up!
     if (snapToken) {
       console.log("💳 Membuka ulang tagihan yang tertunda...");
       showMidtransPopup(snapToken, jwtToken);
@@ -105,10 +117,16 @@ export default function SubscriptionPayment() {
       const data = await res.json();
 
       if (res.ok && data.token) {
-        // Simpan token ke State agar tidak hilang
+        // 👇 SIMPAN KE LOCAL STORAGE AGAR TIDAK HILANG SAAT PINDAH HALAMAN 👇
+        localStorage.setItem("pendingPayment", JSON.stringify({
+          subsId: subsId,
+          plan: plan,
+          amount: planAmount,
+          planLabel: planLabel,
+          snapToken: data.token
+        }));
+
         setSnapToken(data.token);
-        
-        // Buka Pop-up pertama kali
         showMidtransPopup(data.token, jwtToken);
       } else {
         alert(data.message || "Gagal mendapatkan token pembayaran.");
@@ -122,10 +140,6 @@ export default function SubscriptionPayment() {
   };
 
   if (!subsId) return null;
-
-  const plan = location.state?.plan || 'monthly';
-  const planAmount = location.state?.amount || 299000;
-  const planLabel = location.state?.planLabel || 'Paket Bulanan';
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground font-['Atkinson_Hyperlegible',_sans-serif]">

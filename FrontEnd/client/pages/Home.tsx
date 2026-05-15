@@ -21,6 +21,9 @@ export default function Home() {
   const [subsDays, setSubsDays] = useState(0);
   const [subsStatus, setSubsStatus] = useState("");
   const [subsEndDate, setSubsEndDate] = useState("");
+  
+  // 👇 STATE CEK TAGIHAN TERTUNDA DARI MIDTRANS 👇
+  const [hasPendingPayment, setHasPendingPayment] = useState(false);
 
   // --- STATE UNTUK RINGKASAN LAPORAN ---
   const [totalReports, setTotalReports] = useState(0);
@@ -32,6 +35,12 @@ export default function Home() {
     const category = localStorage.getItem("userCategory") || "";
     setUserName(name.split(" ")[0]);
     setUserCategory(category);
+
+    // Cek apakah ada pembayaran tertunda di memori
+    const pendingData = localStorage.getItem("pendingPayment");
+    if (pendingData) {
+      setHasPendingPayment(true);
+    }
 
     const now = new Date();
     setCurrentDate(
@@ -56,25 +65,23 @@ export default function Home() {
         const json = await res.json();
 
         if (res.ok && json.data) {
-          // 1. Hitung yang benar-benar masih "berjalan" (Pending & Processed)
           const activeCount = json.data.filter(
             (r: any) => r.status === "Pending" || r.status === "Processed",
           ).length;
 
-          // 2. Hitung spesifik yang sedang diproses untuk teks di bawahnya
           const processedCount = json.data.filter(
             (r: any) => r.status === "Processed",
           ).length;
 
-          setTotalReports(activeCount); // Ini jadi angka utama (misal: 3)
-          setProcessedReports(processedCount); // Ini jadi sub-teks (misal: 1 sedang diproses)
+          setTotalReports(activeCount); 
+          setProcessedReports(processedCount); 
         }
       } catch (error) {
         console.error("Gagal mengambil data laporan:", error);
       }
     };
 
-    fetchReports(); // Panggil fungsinya di sini
+    fetchReports(); 
 
     // 3. Cek status subscription ke Backend
     const fetchSubs = async () => {
@@ -93,7 +100,6 @@ export default function Home() {
           setHasSubs(true);
           setSubsStatus(json.data.status);
 
-          // Hitung sisa hari jika ada end_date
           if (json.data.end_date) {
             const end = new Date(json.data.end_date).getTime();
             const today = new Date().getTime();
@@ -123,7 +129,7 @@ export default function Home() {
     );
   };
 
-  // Pindahkan quickActions ke dalam komponen agar bisa membaca state 'hasSubs'
+  // 👇 QUICK ACTIONS DIUPDATE LOGIKANYA 👇
   const quickActions = [
     {
       icon: <AlertCircle className="h-6 w-6" />,
@@ -136,8 +142,10 @@ export default function Home() {
     {
       icon: <Star className="h-6 w-6" />,
       label: "Langganan",
-      // Teks dinamis berdasarkan status
-      sub: hasSubs
+      // Teks dinamis berdasarkan urutan: Pending Payment -> Pending Backend -> Active -> Belum langganan
+      sub: hasPendingPayment
+        ? "Lanjutkan pembayaran"
+        : hasSubs
         ? subsStatus === "Pending"
           ? "Sedang Diproses"
           : `${subsDays} hari tersisa`
@@ -145,7 +153,11 @@ export default function Home() {
       bg: "bg-blue-50 dark:bg-blue-950/30",
       color: "text-blue-600",
       // Rute Dinamis
-      href: hasSubs ? "/subscription/Profile" : "/subscription",
+      href: hasPendingPayment
+        ? "/subscription/Payment"
+        : hasSubs
+        ? "/subscription/Profile"
+        : "/subscription",
     },
   ];
 
@@ -302,9 +314,42 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Subscription card di Hero Section */}
+            {/* 👇 KARTU LANGGANAN DI HERO DIUPDATE LOGIKANYA 👇 */}
             <div className="rounded-xl p-5 mb-0 self-end" style={subCardStyle}>
-              {hasSubs ? (
+              {hasPendingPayment ? (
+                <>
+                  <div
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold mb-3"
+                    style={{
+                      background: "rgba(251, 191, 36, 0.2)",
+                      color: "#fbbf24",
+                      border: "1px solid rgba(251, 191, 36, 0.4)",
+                    }}
+                  >
+                    ⏳ Menunggu Pembayaran
+                  </div>
+                  <div
+                    className="text-white font-bold text-sm mb-1"
+                    style={{ color: isHC ? "#ffff00" : "#ffffff" }}
+                  >
+                    Selesaikan Transaksi
+                  </div>
+                  <div
+                    className={`text-xs mb-4 ${isHC ? "text-[#ffff00]" : "text-white/55"}`}
+                  >
+                    Anda memiliki tagihan langganan yang belum dibayar.
+                  </div>
+
+                  <Link to="/subscription/Payment">
+                    <button
+                      className="w-full rounded-lg py-2 text-xs font-bold transition-all hover:opacity-90"
+                      style={subButtonStyle}
+                    >
+                      Lanjut Bayar →
+                    </button>
+                  </Link>
+                </>
+              ) : hasSubs ? (
                 <>
                   <div
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold mb-3"
@@ -414,10 +459,8 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               {
-                // Ganti angka statis "3" menjadi totalReports
                 val: totalReports.toString(),
                 label: "Laporan Aktif",
-                // Ganti teks statis dengan processedReports
                 sub: `${processedReports} sedang diproses`,
                 progress: null,
               },
