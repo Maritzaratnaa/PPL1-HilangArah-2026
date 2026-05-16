@@ -227,6 +227,7 @@ export default function SubscriptionForm() {
                           onChange={handleNameChange(setFullName)}
                           placeholder="Contoh: Budi Santoso"
                           className="h-12 border-input rounded-xl font-medium text-[16px]"
+                          style={{ fontSize: '16px' }}
                           disabled={isSubmitting}
                         />
                       </div>
@@ -235,14 +236,15 @@ export default function SubscriptionForm() {
                           Nomor Telepon *
                         </Label>
                         <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold border-r pr-3 text-[16px]">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold border-r pr-3" style={{ fontSize: '16px' }}>
                             +62
                           </span>
                           <Input
                             value={phone}
                             onChange={handlePhoneChange(setPhone)}
                             placeholder="812xxxxxx"
-                            className="h-12 pl-16 border-input rounded-xl font-medium text-[16px]"
+                            className="h-12 border-input rounded-xl font-medium text-[16px]"
+                            style={{ fontSize: '16px', paddingLeft: '64px' }}
                             disabled={isSubmitting}
                           />
                         </div>
@@ -412,6 +414,7 @@ export default function SubscriptionForm() {
                           onChange={handleNameChange(setEmergencyContactName)}
                           placeholder="Nama keluarga atau wali"
                           className="h-12 border-input rounded-xl font-medium text-[16px]"
+                          style={{ fontSize: '16px' }}
                           disabled={isSubmitting}
                         />
                       </div>
@@ -420,14 +423,15 @@ export default function SubscriptionForm() {
                           Nomor Telepon Darurat *
                         </Label>
                         <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold border-r pr-3 text-[16px]">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold border-r pr-3" style={{ fontSize: '16px' }}>
                             +62
                           </span>
                           <Input
                             value={emergencyContactPhone}
                             onChange={handlePhoneChange(setEmergencyContactPhone)}
                             placeholder="812xxxxxx"
-                            className="h-12 pl-16 border-input rounded-xl font-medium text-[16px]"
+                            className="h-12 border-input rounded-xl font-medium text-[16px]"
+                            style={{ fontSize: '16px', paddingLeft: '64px' }}
                             disabled={isSubmitting}
                           />
                         </div>
