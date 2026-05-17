@@ -6,24 +6,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false); // Dipindah ke atas agar lebih rapi
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
+      // Perbaikan URL localhost menjadi dinamis
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const json = await res.json();
+      
       if (res.ok) {
         localStorage.setItem("token", json.token);
         localStorage.setItem("isLoggedIn", "true");
@@ -33,6 +42,8 @@ export default function Login() {
         const userRole = json.user.role || json.user.category;
         localStorage.setItem('userCategory', userRole);
 
+        toast.success("Login berhasil!", customToastStyle);
+
         if (userRole === "Admin") {
           navigate("/admin/reports");
         }
@@ -41,11 +52,11 @@ export default function Login() {
         }
       }
       else {
-        alert(json.message);
+        toast.error(json.message || "Email atau password salah.", customToastStyle);
       }
     }
     catch (err) {
-      alert("Gagal menghubungi server.");
+      toast.error("Gagal menghubungi server. Silakan coba lagi nanti.", customToastStyle);
     }
     finally {
       setLoading(false);
