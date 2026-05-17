@@ -246,17 +246,31 @@ const updateRoute = async (req, res) => {
 };
 
 const deleteRoute = async (req, res) => {
+    let connection;
     try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
         const { id } = req.params;
-        const [result] = await pool.query(`DELETE FROM routes WHERE route_id = ?`, [id]);
+
+        // Delete from route_stops first to prevent foreign key constraint error
+        await connection.query(`DELETE FROM route_stops WHERE route_id = ?`, [id]);
+        
+        // Delete the route
+        const [result] = await connection.query(`DELETE FROM routes WHERE route_id = ?`, [id]);
 
         if (result.affectedRows === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: "Data rute tidak ditemukan." });
         }
+
+        await connection.commit();
         res.status(200).json({ message: "Data rute berhasil dihapus!" });
     } catch (error) {
+        if (connection) await connection.rollback();
         console.error("Error Delete Route: ", error);
         res.status(500).json({ message: "Gagal menghapus data rute." });
+    } finally {
+        if (connection) connection.release();
     }
 };
 
