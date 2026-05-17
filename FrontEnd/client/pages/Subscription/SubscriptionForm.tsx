@@ -25,6 +25,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function SubscriptionForm() {
   const navigate = useNavigate();
@@ -45,6 +46,11 @@ export default function SubscriptionForm() {
   const [guideGenderPref, setGuideGenderPref] = useState('');
   const [guideAgePref, setGuideAgePref] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+  };
 
   // --- HANDLER VALIDASI REAL-TIME ---
   
@@ -69,39 +75,39 @@ export default function SubscriptionForm() {
   const handleProceedToPayment = async () => {
     // 1. Validasi Kosong
     if (!fullName || !phone || !gender || !domicile || !emergencyContactName || !emergencyContactPhone) {
-      alert("Mohon isi semua field yang wajib (*)");
+      toast.error("Mohon isi semua field yang wajib (*)", customToastStyle);
       return;
     }
     if (!termsAgreed) {
-      alert("Anda harus menyetujui syarat dan ketentuan");
+      toast.error("Anda harus menyetujui syarat dan ketentuan", customToastStyle);
       return;
     }
 
     // 2. Validasi Logika (Tidak boleh sama & Format)
     if (fullName.trim().toLowerCase() === emergencyContactName.trim().toLowerCase()) {
-      alert("Nama Lengkap Anda dan Nama Kontak Darurat tidak boleh sama!");
+      toast.error("Nama Lengkap Anda dan Nama Kontak Darurat tidak boleh sama!", customToastStyle);
       return;
     }
 
     if (phone === emergencyContactPhone) {
-      alert("Nomor Telepon Anda dan Nomor Telepon Darurat tidak boleh sama!");
+      toast.error("Nomor Telepon Anda dan Nomor Telepon Darurat tidak boleh sama!", customToastStyle);
       return;
     }
 
     if (phone.length < 8 || phone.length > 15) {
-      alert("Format Nomor Telepon Anda tidak valid (harus 8-15 digit angka).");
+      toast.error("Format Nomor Telepon Anda tidak valid (harus 8-15 digit angka).", customToastStyle);
       return;
     }
 
     if (emergencyContactPhone.length < 8 || emergencyContactPhone.length > 15) {
-      alert("Format Nomor Telepon Darurat tidak valid (harus 8-15 digit angka).");
+      toast.error("Format Nomor Telepon Darurat tidak valid (harus 8-15 digit angka).", customToastStyle);
       return;
     }
 
     // 3. Ambil Token JWT
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Sesi Anda telah habis atau Anda belum login. Silakan login kembali.");
+      toast.error("Sesi Anda telah habis atau Anda belum login. Silakan login kembali.", customToastStyle);
       navigate("/login");
       return;
     }
@@ -139,6 +145,8 @@ export default function SubscriptionForm() {
         localStorage.setItem('activePlanLabel', planLabel);
         localStorage.setItem('activePlanPeriod', location.state?.plan === 'daily' ? '1 Hari' : '1 Bulan');
         
+        toast.success("Data berhasil disimpan! Mengarahkan ke pembayaran...", customToastStyle);
+        
         navigate("/subscription/Payment", {
           state: {
             subs_id: data.subs_id,
@@ -148,14 +156,14 @@ export default function SubscriptionForm() {
           },
         });
       } else {
-        alert(data.message);
-        if (data.message.includes("sudah memiliki langganan")) {
+        toast.error(data.message || "Gagal memproses langganan.", customToastStyle);
+        if (data.message && data.message.includes("sudah memiliki langganan")) {
           navigate("/subscription/Profile");
         }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Terjadi kesalahan pada server. Silakan coba lagi nanti.");
+      toast.error("Terjadi kesalahan pada server. Silakan coba lagi nanti.", customToastStyle);
     } finally {
       setIsSubmitting(false);
     }

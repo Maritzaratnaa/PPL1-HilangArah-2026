@@ -5,12 +5,12 @@ import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { Check, ShoppingCart, Loader2, RefreshCcw } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 export default function SubscriptionPayment() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 👇 1. CEK MEMORI LOKAL BROWSER (Untuk mengatasi user yang pindah halaman)
   const savedPaymentStr = localStorage.getItem("pendingPayment");
   const savedPayment = savedPaymentStr ? JSON.parse(savedPaymentStr) : null;
 
@@ -28,9 +28,14 @@ export default function SubscriptionPayment() {
     (savedPayment && savedPayment.subsId === subsId) ? savedPayment.snapToken : null
   );
 
+  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+  };
+
   useEffect(() => {
     if (!subsId) {
-      alert("Sesi pembayaran tidak valid atau sudah kadaluarsa.");
+      toast.error("Sesi pembayaran tidak valid atau sudah kadaluarsa.", customToastStyle);
       navigate("/subscription/Form");
     }
   }, [subsId, navigate]);
@@ -42,6 +47,7 @@ export default function SubscriptionPayment() {
     (window as any).snap.pay(currentToken, {
       onSuccess: async function (result: any) {
         console.log("✅ Pembayaran Sukses!", result);
+        toast.success("Pembayaran berhasil!", customToastStyle);
         
         // 👇 Hapus memori tagihan karena sudah lunas!
         localStorage.removeItem("pendingPayment");
@@ -65,17 +71,17 @@ export default function SubscriptionPayment() {
       },
       onPending: function (result: any) {
         console.log("⏳ Pembayaran Tertunda:", result);
-        alert("Jangan lupa selesaikan pembayaran Anda. Anda bisa menekan tombol 'Lanjutkan' kapan saja.");
+        toast.info("Jangan lupa selesaikan pembayaran Anda. Anda bisa menekan tombol 'Lanjutkan' kapan saja.", customToastStyle);
         setIsProcessing(false);
       },
       onError: function (result: any) {
         console.log("❌ Pembayaran Error:", result);
-        alert("Pembayaran gagal diproses!");
+        toast.error("Pembayaran gagal diproses!", customToastStyle);
         setIsProcessing(false);
       },
       onClose: function () {
         console.log("⚠️ Popup ditutup oleh user.");
-        alert("Anda menutup halaman Midtrans. Klik 'Lanjutkan / Cek Pembayaran' untuk membuka kembali.");
+        toast.warning("Anda menutup halaman Midtrans. Klik 'Lanjutkan / Cek Pembayaran' untuk membuka kembali.", customToastStyle);
         setIsProcessing(false);
       },
     });
@@ -87,7 +93,7 @@ export default function SubscriptionPayment() {
     const jwtToken = localStorage.getItem("token");
 
     if (!jwtToken) {
-      alert("Sesi Anda telah habis. Silakan login kembali.");
+      toast.error("Sesi Anda telah habis. Silakan login kembali.", customToastStyle);
       navigate("/login");
       return;
     }
@@ -129,12 +135,12 @@ export default function SubscriptionPayment() {
         setSnapToken(data.token);
         showMidtransPopup(data.token, jwtToken);
       } else {
-        alert(data.message || "Gagal mendapatkan token pembayaran.");
+        toast.error(data.message || "Gagal mendapatkan token pembayaran.", customToastStyle);
         setIsProcessing(false);
       }
     } catch (error) {
       console.error("Payment error:", error);
-      alert("Terjadi kesalahan jaringan saat memproses pembayaran.");
+      toast.error("Terjadi kesalahan jaringan saat memproses pembayaran.", customToastStyle);
       setIsProcessing(false);
     }
   };
