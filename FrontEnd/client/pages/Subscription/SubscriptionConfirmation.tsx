@@ -36,39 +36,37 @@ export default function SubscriptionConfirmation() {
       <main className="flex-grow px-6 py-10 lg:px-10">
         <div className="mx-auto max-w-6xl">
           
-          {/* STEPPER - Full Width (Langkah 1 & 2 Selesai, Langkah 3 Aktif) */}
-          <div className="mb-16 relative">
-            <div className="absolute top-6 left-0 w-full h-[1px] bg-border z-0" />
-            
-            <div className="relative z-10 flex justify-between items-start">
+          {/* STEPPER - Responsif (Format sama dengan Form & Payment) */}
+          <div className="mb-12">
+            <div className="flex items-center justify-between relative max-w-3xl mx-auto">
+              <div className="absolute top-5 left-0 right-0 h-px bg-border z-0 mx-10 sm:mx-16" />
+
               {[
-                { num: 1, label: 'Isi Data', icon: '📋', active: false, completed: true },
-                { num: 2, label: 'Pembayaran', icon: '💳', active: false, completed: true },
-                { num: 3, label: 'Konfirmasi', icon: '✅', active: true, completed: false },
-              ].map((step, idx) => (
-                <div 
-                  key={step.num} 
-                  className={`flex items-center gap-4 bg-background px-4 ${
-                    idx === 0 ? 'pl-0' : idx === 2 ? 'pr-0' : ''
-                  }`}
-                >
+                { num: 1, label: "Isi Data", icon: "📋", active: false, completed: true },
+                { num: 2, label: "Pembayaran", icon: "💳", active: false, completed: true },
+                { num: 3, label: "Konfirmasi", icon: "✅", active: true, completed: false },
+              ].map((step) => (
+                <div key={step.num} className="relative z-10 flex flex-col items-center gap-2">
                   <div
-                    className={`flex items-center justify-center h-12 w-12 rounded-full border-2 transition-all duration-300 flex-shrink-0 ${
+                    className={`flex items-center justify-center h-10 w-10 rounded-full border-2 flex-shrink-0 transition-all duration-300 ${
                       step.active
-                        ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20'
+                        ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20"
                         : step.completed
-                        ? 'bg-green-600 border-green-600 text-white'
-                        : 'bg-card border-border text-muted-foreground'
+                          ? "bg-green-600 border-green-600 text-white"
+                          : "bg-card border-border text-muted-foreground"
                     }`}
                   >
-                    {step.completed ? <Check className="h-6 w-6" strokeWidth={3} /> : <span className="font-bold text-[18px]">{step.num}</span>}
+                    {step.completed ? (
+                      <Check className="h-4 w-4" strokeWidth={3} />
+                    ) : (
+                      <span className="font-bold text-sm">{step.num}</span>
+                    )}
                   </div>
-
-                  <div className="flex flex-col">
-                    <p className={`text-[12px] uppercase font-bold tracking-wider ${step.active || step.completed ? 'text-primary' : 'text-muted-foreground'}`}>
-                      Langkah {step.num}
-                    </p>
-                    <p className={`text-[16px] font-bold leading-tight ${step.active || step.completed ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  <div className="text-center mt-1">
+                    {/* Tambahan whitespace-nowrap agar teks tidak turun ke bawah di HP */}
+                    <p className={`text-[10px] sm:text-xs font-bold leading-tight whitespace-nowrap ${
+                      step.active || step.completed ? "text-primary" : "text-muted-foreground"
+                    }`}>
                       {step.icon} {step.label}
                     </p>
                   </div>
@@ -151,7 +149,6 @@ export default function SubscriptionConfirmation() {
                   </Button>
                   <Button 
                     variant="outline" 
-                    // Rute diperbaiki agar sesuai dengan rute aplikasi (SubscriptionProfile)
                     onClick={() => navigate('/subscription/Profile')}
                     className="flex-1 border-border text-foreground hover:bg-muted/50 h-14 rounded-2xl font-bold text-[18px]"
                   >
@@ -161,8 +158,8 @@ export default function SubscriptionConfirmation() {
               </div>
             </Card>
 
-            <p className="mt-8 text-[14px] text-muted-foreground font-medium flex items-center justify-center gap-2">
-              <PartyPopper size={16} className="text-primary" />
+            <p className="mt-8 text-[14px] text-muted-foreground font-medium flex items-center justify-center gap-2 text-center">
+              <PartyPopper size={16} className="text-primary shrink-0" />
               Satu langkah lebih dekat menuju perjalanan yang inklusif bersama ARAHIN.
             </p>
           </div>
