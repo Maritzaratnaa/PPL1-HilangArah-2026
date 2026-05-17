@@ -254,80 +254,76 @@ export default function SubscriptionForm() {
                           Jenis Kelamin *
                         </Label>
                         <Select value={gender} onValueChange={setGender} disabled={isSubmitting}>
-                          <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]">
+                          <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]" style={{ fontSize: '16px' }}>
                             <SelectValue placeholder="Pilih jenis kelamin" />
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="laki-laki">Laki-laki</SelectItem>
-                            <SelectItem value="perempuan">Perempuan</SelectItem>
+                          <SelectContent style={{ fontSize: '16px' }}>
+                            <SelectItem value="laki-laki" className="text-[16px] font-medium">Laki-laki</SelectItem>
+                            <SelectItem value="perempuan" className="text-[16px] font-medium">Perempuan</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
                         <Label className="font-bold text-[15px]">Domisili (Kota/Kabupaten) *</Label>
                         <Select onValueChange={setDomicile} disabled={isSubmitting}>
-                          <SelectTrigger className="h-12 rounded-xl border-input font-medium text-[16px]">
+                          <SelectTrigger className="h-12 rounded-xl border-input font-medium text-[16px]" style={{ fontSize: '16px' }}>
                             <SelectValue placeholder="Pilih Domisili" />
                           </SelectTrigger>
-                          <SelectContent className="max-h-[400px]">
+                          <SelectContent className="max-h-[400px]" style={{ fontSize: '16px' }}>
                             <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest">DKI JAKARTA</SelectLabel>
-                              <SelectItem value="Jakarta Pusat">Jakarta Pusat</SelectItem>
-                              <SelectItem value="Jakarta Selatan">Jakarta Selatan</SelectItem>
-                              <SelectItem value="Jakarta Barat">Jakarta Barat</SelectItem>
-                              <SelectItem value="Jakarta Utara">Jakarta Utara</SelectItem>
-                              <SelectItem value="Jakarta Timur">Jakarta Timur</SelectItem>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest">DKI JAKARTA</SelectLabel>
+                              <SelectItem value="Jakarta Pusat" className="text-[16px] font-medium">Jakarta Pusat</SelectItem>
+                              <SelectItem value="Jakarta Selatan" className="text-[16px] font-medium">Jakarta Selatan</SelectItem>
+                              <SelectItem value="Jakarta Barat" className="text-[16px] font-medium">Jakarta Barat</SelectItem>
+                              <SelectItem value="Jakarta Utara" className="text-[16px] font-medium">Jakarta Utara</SelectItem>
+                              <SelectItem value="Jakarta Timur" className="text-[16px] font-medium">Jakarta Timur</SelectItem>
                             </SelectGroup>
-                            
                             <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">JAWA BARAT</SelectLabel>
-                              <SelectItem value="Bandung">Bandung</SelectItem>
-                              <SelectItem value="Bekasi">Bekasi</SelectItem>
-                              <SelectItem value="Depok">Depok</SelectItem>
-                              <SelectItem value="Bogor">Bogor</SelectItem>
-                              <SelectItem value="Cimahi">Cimahi</SelectItem>
-                              <SelectItem value="Tasikmalaya">Tasikmalaya</SelectItem>
-                              <SelectItem value="Cirebon">Cirebon</SelectItem>
-                              <SelectItem value="Sukabumi">Sukabumi</SelectItem>
-                              <SelectItem value="Sumedang">Sumedang</SelectItem>
-                              <SelectItem value="Garut">Garut</SelectItem>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest border-t">JAWA BARAT</SelectLabel>
+                              <SelectItem value="Bandung" className="text-[16px] font-medium">Bandung</SelectItem>
+                              <SelectItem value="Bekasi" className="text-[16px] font-medium">Bekasi</SelectItem>
+                              <SelectItem value="Depok" className="text-[16px] font-medium">Depok</SelectItem>
+                              <SelectItem value="Bogor" className="text-[16px] font-medium">Bogor</SelectItem>
+                              <SelectItem value="Cimahi" className="text-[16px] font-medium">Cimahi</SelectItem>
+                              <SelectItem value="Tasikmalaya" className="text-[16px] font-medium">Tasikmalaya</SelectItem>
+                              <SelectItem value="Cirebon" className="text-[16px] font-medium">Cirebon</SelectItem>
+                              <SelectItem value="Sukabumi" className="text-[16px] font-medium">Sukabumi</SelectItem>
+                              <SelectItem value="Sumedang" className="text-[16px] font-medium">Sumedang</SelectItem>
+                              <SelectItem value="Garut" className="text-[16px] font-medium">Garut</SelectItem>
                             </SelectGroup>
-
                             <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">BANTEN</SelectLabel>
-                              <SelectItem value="Tangerang">Tangerang</SelectItem>
-                              <SelectItem value="Tangerang Selatan">Tangerang Selatan</SelectItem>
-                              <SelectItem value="Serang">Serang</SelectItem>
-                              <SelectItem value="Cilegon">Cilegon</SelectItem>
-                              <SelectItem value="Lebak">Lebak</SelectItem>
-                              <SelectItem value="Pandeglang">Pandeglang</SelectItem>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest border-t">BANTEN</SelectLabel>
+                              <SelectItem value="Tangerang" className="text-[16px] font-medium">Tangerang</SelectItem>
+                              <SelectItem value="Tangerang Selatan" className="text-[16px] font-medium">Tangerang Selatan</SelectItem>
+                              <SelectItem value="Serang" className="text-[16px] font-medium">Serang</SelectItem>
+                              <SelectItem value="Cilegon" className="text-[16px] font-medium">Cilegon</SelectItem>
+                              <SelectItem value="Lebak" className="text-[16px] font-medium">Lebak</SelectItem>
+                              <SelectItem value="Pandeglang" className="text-[16px] font-medium">Pandeglang</SelectItem>
                             </SelectGroup>
-
                             <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">JAWA TENGAH</SelectLabel>
-                              <SelectItem value="Semarang">Semarang</SelectItem>
-                              <SelectItem value="Surakarta">Surakarta (Solo)</SelectItem>
-                              <SelectItem value="Magelang">Magelang</SelectItem>
-                              <SelectItem value="Pekalongan">Pekalongan</SelectItem>
-                              <SelectItem value="Salatiga">Salatiga</SelectItem>
-                              <SelectItem value="Tegal">Tegal</SelectItem>
-                              <SelectItem value="Banyumas">Banyumas</SelectItem>
-                              <SelectItem value="Cilacap">Cilacap</SelectItem>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest border-t">JAWA TENGAH</SelectLabel>
+                              <SelectItem value="Semarang" className="text-[16px] font-medium">Semarang</SelectItem>
+                              <SelectItem value="Surakarta" className="text-[16px] font-medium">Surakarta (Solo)</SelectItem>
+                              <SelectItem value="Magelang" className="text-[16px] font-medium">Magelang</SelectItem>
+                              <SelectItem value="Pekalongan" className="text-[16px] font-medium">Pekalongan</SelectItem>
+                              <SelectItem value="Salatiga" className="text-[16px] font-medium">Salatiga</SelectItem>
+                              <SelectItem value="Tegal" className="text-[16px] font-medium">Tegal</SelectItem>
+                              <SelectItem value="Banyumas" className="text-[16px] font-medium">Banyumas</SelectItem>
+                              <SelectItem value="Cilacap" className="text-[16px] font-medium">Cilacap</SelectItem>
                             </SelectGroup>
-
                             <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-xs tracking-widest border-t">JAWA TIMUR</SelectLabel>
-                              <SelectItem value="Surabaya">Surabaya</SelectItem>
-                              <SelectItem value="Malang">Malang</SelectItem>
-                              <SelectItem value="Sidoarjo">Sidoarjo</SelectItem>
-                              <SelectItem value="Gresik">Gresik</SelectItem>
-                              <SelectItem value="Batu">Batu</SelectItem>
-                              <SelectItem value="Kediri">Kediri</SelectItem>
-                              <SelectItem value="Madiun">Madiun</SelectItem>
-                              <SelectItem value="Mojokerto">Mojokerto</SelectItem>
-                              <SelectItem value="Pasuruan">Pasuruan</SelectItem>
-                              <SelectItem value="Probolinggo">Probolinggo</SelectItem>
-                              <SelectItem value="Blitar">Blitar</SelectItem>
+                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest border-t">JAWA TIMUR</SelectLabel>
+                              <SelectItem value="Surabaya" className="text-[16px] font-medium">Surabaya</SelectItem>
+                              <SelectItem value="Malang" className="text-[16px] font-medium">Malang</SelectItem>
+                              <SelectItem value="Sidoarjo" className="text-[16px] font-medium">Sidoarjo</SelectItem>
+                              <SelectItem value="Gresik" className="text-[16px] font-medium">Gresik</SelectItem>
+                              <SelectItem value="Batu" className="text-[16px] font-medium">Batu</SelectItem>
+                              <SelectItem value="Kediri" className="text-[16px] font-medium">Kediri</SelectItem>
+                              <SelectItem value="Madiun" className="text-[16px] font-medium">Madiun</SelectItem>
+                              <SelectItem value="Mojokerto" className="text-[16px] font-medium">Mojokerto</SelectItem>
+                              <SelectItem value="Pasuruan" className="text-[16px] font-medium">Pasuruan</SelectItem>
+                              <SelectItem value="Probolinggo" className="text-[16px] font-medium">Probolinggo</SelectItem>
+                              <SelectItem value="Blitar" className="text-[16px] font-medium">Blitar</SelectItem>
                             </SelectGroup>
                           </SelectContent>
                         </Select>
@@ -353,28 +349,28 @@ export default function SubscriptionForm() {
                         <div className="space-y-2">
                           <Label className="font-semibold text-foreground text-[15px]">Jenis Kelamin Pemandu</Label>
                           <Select value={guideGenderPref} onValueChange={setGuideGenderPref} disabled={isSubmitting}>
-                            <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]">
+                            <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]" style={{ fontSize: '16px' }}>
                               <SelectValue placeholder="Tidak ada preferensi" />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Tidak ada preferensi</SelectItem>
-                              <SelectItem value="Laki-laki">Laki-laki</SelectItem>
-                              <SelectItem value="Perempuan">Perempuan</SelectItem>
+                            <SelectContent style={{ fontSize: '16px' }}>
+                              <SelectItem value="none" className="text-[16px] font-medium">Tidak ada preferensi</SelectItem>
+                              <SelectItem value="Laki-laki" className="text-[16px] font-medium">Laki-laki</SelectItem>
+                              <SelectItem value="Perempuan" className="text-[16px] font-medium">Perempuan</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
                           <Label className="font-semibold text-foreground text-[15px]">Rentang Usia Pemandu</Label>
                           <Select value={guideAgePref} onValueChange={setGuideAgePref} disabled={isSubmitting}>
-                            <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]">
+                            <SelectTrigger className="h-12 border-input rounded-xl font-medium text-[16px]" style={{ fontSize: '16px' }}>
                               <SelectValue placeholder="Tidak ada preferensi" />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Tidak ada preferensi</SelectItem>
-                              <SelectItem value="20-30">20 - 30 tahun</SelectItem>
-                              <SelectItem value="30-40">30 - 40 tahun</SelectItem>
-                              <SelectItem value="40-50">40 - 50 tahun</SelectItem>
-                              <SelectItem value="50+">50 tahun ke atas</SelectItem>
+                            <SelectContent style={{ fontSize: '16px' }}>
+                              <SelectItem value="none" className="text-[16px] font-medium">Tidak ada preferensi</SelectItem>
+                              <SelectItem value="20-30" className="text-[16px] font-medium">20 - 30 tahun</SelectItem>
+                              <SelectItem value="30-40" className="text-[16px] font-medium">30 - 40 tahun</SelectItem>
+                              <SelectItem value="40-50" className="text-[16px] font-medium">40 - 50 tahun</SelectItem>
+                              <SelectItem value="50+" className="text-[16px] font-medium">50 tahun ke atas</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
