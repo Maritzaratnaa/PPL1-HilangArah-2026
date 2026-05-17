@@ -1,5 +1,25 @@
 const pool = require('../db');
-const { v4: uuidv4 } = require('uuid');
+
+// Helper untuk generate ID berurutan (contoh: TR-001, STP-001)
+const generateCustomId = async (connectionOrPool, table, idColumn, prefix) => {
+    const query = `SELECT ${idColumn} FROM ${table} WHERE ${idColumn} LIKE ? ORDER BY ${idColumn} DESC LIMIT 1`;
+    const [rows] = await connectionOrPool.query(query, [`${prefix}%`]);
+    
+    if (rows.length === 0) {
+        return `${prefix}001`;
+    }
+    
+    const lastId = rows[0][idColumn].trim();
+    const numStr = lastId.substring(prefix.length);
+    const num = parseInt(numStr, 10);
+    
+    if (isNaN(num)) {
+        return `${prefix}001`;
+    }
+    
+    const paddedNum = (num + 1).toString().padStart(3, '0');
+    return `${prefix}${paddedNum}`;
+};
 
 // Get Data Transport
 const getAllTransports = async (req, res) => {
@@ -35,7 +55,8 @@ const getAllTransports = async (req, res) => {
 const createTransport = async (req, res) => {
     try {
         const { name, type, is_low_entry, has_wheelchair_slot, has_priority_seat, has_women_area, is_active } = req.body;
-        const trans_id = uuidv4();
+        const trans_id = await generateCustomId(pool, 'trans', 'trans_id', 'TR-');
+        
         const query = `
             INSERT INTO trans (trans_id, name, type, is_low_entry, has_wheelchair_slot, has_priority_seat, has_women_area, is_active) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -136,7 +157,7 @@ const createRoute = async (req, res) => {
         connection = await pool.getConnection();
         await connection.beginTransaction();
         const { route_name, origin_stop_id, destination_stop_id, trans_id, is_active, route_stops } = req.body;
-        const route_id = uuidv4();
+        const route_id = await generateCustomId(connection, 'routes', 'route_id', 'RT-');
 
         if (!route_name || !origin_stop_id || !destination_stop_id || !trans_id) {
             return res.status(400).json({ message: "Nama Rute, Asal, Tujuan, dan Transportasi wajib diisi!" });
@@ -146,16 +167,20 @@ const createRoute = async (req, res) => {
             INSERT INTO routes (route_id, route_name, origin_stop_id, destination_stop_id, is_active, trans_id) 
             VALUES (?, ?, ?, ?, ?, ?)`;
 
+        // Pad trans_id with spaces up to 36 chars to bypass the foreign key VARCHAR vs CHAR schema mismatch
+        const paddedTransId = trans_id.padEnd(36, ' ');
+
         await connection.query(query, [
-            route_id, route_name, origin_stop_id, destination_stop_id,
+            route_id, route_name, origin_stop_id.trim(), destination_stop_id.trim(),
             is_active !== undefined ? is_active : 1,
-            trans_id
+            paddedTransId
         ]);
 
         if (route_stops && Array.isArray(route_stops) && route_stops.length > 0) {
             const rsQuery = `INSERT INTO route_stops (route_stop_id, route_id, stop_id, stop_order, est_time_minutes) VALUES ?`;
             const rsValues = route_stops.map((rs, index) => [
-                uuidv4(), route_id, rs.stop_id, rs.stop_order || (index + 1), rs.est_time_minutes || null
+                null, 
+                route_id, rs.stop_id.trim(), rs.stop_order || (index + 1), rs.est_time_minutes || null
             ]);
             await connection.query(rsQuery, [rsValues]);
         }
@@ -186,8 +211,10 @@ const updateRoute = async (req, res) => {
             SET route_name = ?, origin_stop_id = ?, destination_stop_id = ?, trans_id = ?, is_active = ?
             WHERE route_id = ?`;
 
+        const paddedTransId = trans_id.padEnd(36, ' ');
+
         const [result] = await connection.query(query, [
-            route_name, origin_stop_id, destination_stop_id, trans_id, is_active, id
+            route_name, origin_stop_id.trim(), destination_stop_id.trim(), paddedTransId, is_active, id
         ]);
 
         if (result.affectedRows === 0) {
@@ -200,7 +227,8 @@ const updateRoute = async (req, res) => {
         if (route_stops && Array.isArray(route_stops) && route_stops.length > 0) {
             const rsQuery = `INSERT INTO route_stops (route_stop_id, route_id, stop_id, stop_order, est_time_minutes) VALUES ?`;
             const rsValues = route_stops.map((rs, index) => [
-                uuidv4(), id, rs.stop_id, rs.stop_order || (index + 1), rs.est_time_minutes || null
+                null, 
+                id, rs.stop_id.trim(), rs.stop_order || (index + 1), rs.est_time_minutes || null
             ]);
             await connection.query(rsQuery, [rsValues]);
         }
@@ -275,18 +303,17 @@ const getAllStops = async (req, res) => {
 // Create Data Halte
 const createStop = async (req, res) => {
     try {
-        const { name, address, latitude, longitude, has_ramp, has_elevator, is_active, hub_id } = req.body;
-        const stop_id = uuidv4();
+        const { name, address, latitude, longitude, has_ramp, has_elevator, is_active } = req.body;
+        const stop_id = await generateCustomId(pool, 'stops', 'stop_id', 'STP-');
 
         const query = `
-            INSERT INTO stops (stop_id, name, address, latitude, longitude, has_ramp, has_elevator, is_active, hub_id) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            INSERT INTO stops (stop_id, name, address, latitude, longitude, has_ramp, has_elevator, is_active) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
         await pool.query(query, [
             stop_id, name, address || null, latitude || null, longitude || null,
             has_ramp || 0, has_elevator || 0,
-            is_active !== undefined ? is_active : 1,
-            hub_id || null
+            is_active !== undefined ? is_active : 1
         ]);
 
         res.status(201).json({ message: "Data halte berhasil ditambahkan!" });
@@ -301,16 +328,16 @@ const createStop = async (req, res) => {
 const updateStop = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, address, latitude, longitude, has_ramp, has_elevator, is_active, hub_id } = req.body;
+        const { name, address, latitude, longitude, has_ramp, has_elevator, is_active } = req.body;
 
         const query = `
             UPDATE stops 
-            SET name = ?, address = ?, latitude = ?, longitude = ?, has_ramp = ?, has_elevator = ?, is_active = ?, hub_id = ?
+            SET name = ?, address = ?, latitude = ?, longitude = ?, has_ramp = ?, has_elevator = ?, is_active = ?
             WHERE stop_id = ?`;
 
         const [result] = await pool.query(query, [
             name, address || null, latitude || null, longitude || null,
-            has_ramp, has_elevator, is_active, hub_id || null,
+            has_ramp, has_elevator, is_active,
             id
         ]);
 
@@ -391,7 +418,6 @@ const getAllRouteStops = async (req, res) => {
 const createRouteStop = async (req, res) => {
     try {
         const { route_id, stop_id, stop_order, est_time_minutes } = req.body;
-        const route_stop_id = uuidv4();
 
         if (!route_id || !stop_id || stop_order === undefined) {
             return res.status(400).json({ message: "Route, Stop, dan Stop Order wajib diisi!" });
@@ -399,10 +425,10 @@ const createRouteStop = async (req, res) => {
 
         const query = `
             INSERT INTO route_stops (route_stop_id, route_id, stop_id, stop_order, est_time_minutes) 
-            VALUES (?, ?, ?, ?, ?)`;
+            VALUES (NULL, ?, ?, ?, ?)`;
 
         await pool.query(query, [
-            route_stop_id, route_id, stop_id, stop_order, est_time_minutes || null
+            route_id, stop_id.trim(), stop_order, est_time_minutes || null
         ]);
 
         res.status(201).json({ message: "Data rute stop berhasil ditambahkan!" });

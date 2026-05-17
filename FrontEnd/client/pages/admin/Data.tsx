@@ -29,7 +29,6 @@ type Stop = {
   has_ramp: boolean;
   has_elevator: boolean;
   is_active: boolean;
-  hub_id: string;
 };
 
 type RouteStop = {
@@ -61,7 +60,7 @@ const emptyStop: Stop = {
   stop_id: '', name: '', address: '',
   latitude: 0, longitude: 0,
   has_ramp: false, has_elevator: false,
-  is_active: true, hub_id: ''
+  is_active: true
 };
 
 const emptyRoute: Route = {
@@ -627,7 +626,6 @@ export default function AdminData() {
           address: s.address || '',
           latitude: parseFloat(s.latitude) || 0,
           longitude: parseFloat(s.longitude) || 0,
-          hub_id: s.hub_id || '',
           has_ramp: s.has_ramp === 1,
           has_elevator: s.has_elevator === 1,
           is_active: s.is_active === 1,
@@ -657,7 +655,6 @@ export default function AdminData() {
           address: s.address || '',
           latitude: s.latitude,
           longitude: s.longitude,
-          hub_id: s.hub_id || '',
           has_ramp: s.has_ramp ? 1 : 0,
           has_elevator: s.has_elevator ? 1 : 0,
           is_active: s.is_active ? 1 : 0
