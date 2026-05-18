@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const pool = require('../db'); 
 const sendEmail = require('../utils/sendEmail');
+const sendResetEmail = require('../utils/sendResetEmail');
 
 // Register
 const register = async (req, res) => {
@@ -50,8 +51,12 @@ const register = async (req, res) => {
 
         await connection.commit();
 
-        // Kirim Email OTP
-        sendEmail(email, otpCode);
+        // Kirim Email OTP (Gagal karena SMTP diblokir ISP lokal)
+        sendEmail(email, otpCode).catch(console.error);
+
+        console.log("\n=========================================");
+        console.log(`[DEV TEST] Kode OTP untuk ${email}: ${otpCode}`);
+        console.log("=========================================\n");
 
         // Kirim email ke frontend
         res.status(201).json({ 
@@ -165,8 +170,82 @@ const login = async (req, res) => {
     }
 };
 
+// Forgot Password
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: "Email wajib diisi!" });
+        }
+
+        const [users] = await pool.query('SELECT user_id, email FROM users WHERE email = ?', [email]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: "Email tidak terdaftar." });
+        }
+
+        const user = users[0];
+        
+        // Buat token reset password yang berlaku 15 menit
+        const resetToken = jwt.sign(
+            { user_id: user.user_id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        // Kirim email (tanpa await agar tidak memblokir response jika SMTP lambat/error)
+        sendResetEmail(user.email, resetToken).catch(console.error);
+
+        console.log("\n=========================================");
+        console.log(`[DEV TEST] Link Reset Password untuk ${user.email}:`);
+        console.log(`http://localhost:8080/reset-password?token=${resetToken}`);
+        console.log("=========================================\n");
+
+        res.status(200).json({ message: "Tautan reset password telah dikirim ke email Anda." });
+
+    } catch (error) {
+        console.error("Error saat forgot password:", error);
+        res.status(500).json({ message: "Terjadi kesalahan internal pada server." });
+    }
+};
+
+// Reset Password
+const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        if (!token || !newPassword) {
+            return res.status(400).json({ message: "Token dan password baru wajib diisi!" });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: "Password harus memiliki minimal 6 karakter!" });
+        }
+
+        // Verifikasi token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            return res.status(400).json({ message: "Token tidak valid atau telah kedaluwarsa." });
+        }
+
+        const email = decoded.email;
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password di database
+        await pool.query('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
+
+        res.status(200).json({ message: "Password berhasil diubah!" });
+
+    } catch (error) {
+        console.error("Error saat reset password:", error);
+        res.status(500).json({ message: "Terjadi kesalahan internal pada server." });
+    }
+};
+
 module.exports = {
     register,
     login,
-    verifyEmail
+    verifyEmail,
+    forgotPassword,
+    resetPassword
 };

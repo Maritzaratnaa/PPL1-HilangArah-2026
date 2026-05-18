@@ -149,7 +149,7 @@ export default function Profile() {
     if (profile?.is_subscriber) {
       return (
         <div className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800">
-          Subscriber Aktif
+          Langganan Aktif
         </div>
       );
     }

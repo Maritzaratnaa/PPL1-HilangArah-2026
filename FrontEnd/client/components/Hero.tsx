@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -225,8 +226,8 @@ export function Hero() {
               hambatan — untuk penyandang disabilitas, lansia, perempuan, dan situasi rentan.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8">
-              <Link to="/route-search">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8 flex-wrap">
+              <Link to="/login">
                 <Button size="lg"
                   className="h-12 px-7 font-semibold text-base shadow-lg shadow-primary/25
                     hover:shadow-primary/40 hover:-translate-y-0.5 transition-all

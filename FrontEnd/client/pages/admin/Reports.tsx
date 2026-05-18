@@ -1,16 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
-  Search, 
-  Trash2, 
-  X, 
-  ChevronDown, 
-  Check,
-  Loader2 
+  Search, Trash2, X, ChevronDown, Check, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { Pagination } from '@/components/Admin/Pagination';
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 export interface Report {
   report_id: string;
@@ -34,21 +30,80 @@ const categoryConfig: Record<string, string> = {
   Pemandu: 'bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300',
 };
 
-const getStatusInfo = (status: string) => {
-  return statusConfig[status] || { label: status || 'Unknown', color: 'bg-slate-100 text-slate-700' };
+const getStatusInfo = (status: string) =>
+  statusConfig[status] || { label: status || 'Unknown', color: 'bg-slate-100 text-slate-700' };
+
+const getCategoryColor = (category: string) =>
+  categoryConfig[category] || 'bg-slate-100 text-slate-700';
+
+// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+const customToastStyle = {
+  className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
 
-const getCategoryColor = (category: string) => {
-  return categoryConfig[category] || 'bg-slate-100 text-slate-700';
-};
+// ── DROPDOWN STATUS INLINE DI TABEL ──
+function StatusDropdown({ report, onStatusChange }: {
+  report: Report;
+  onStatusChange: (id: string, status: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const statusInfo = getStatusInfo(report.status);
 
-function DropdownFilter({
-  label,
-  options,
-  selectedValue,
-  onSelect,
-  displayMap
-}: {
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={updating}
+        className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-semibold transition-opacity ${statusInfo.color} ${updating ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80 cursor-pointer'}`}>
+        {updating
+          ? <Loader2 className="h-3 w-3 animate-spin" />
+          : <span>{statusInfo.label}</span>
+        }
+        {!updating && <ChevronDown className={`h-2.5 w-2.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 w-36 bg-card border border-border rounded-xl shadow-lg z-50 py-1 overflow-hidden">
+            {['Pending', 'Processed', 'Resolved'].map((s) => (
+              <button
+                key={s}
+                onClick={async () => {
+                  setIsOpen(false);
+                  setUpdating(true);
+                  await onStatusChange(report.report_id, s);
+                  setUpdating(false);
+                }}
+                className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors ${
+                  report.status === s
+                    ? 'bg-muted/80 font-semibold text-foreground'
+                    : 'hover:bg-muted/50 text-muted-foreground'
+                }`}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusConfig[s].color}`}>
+                  {statusConfig[s].label}
+                </span>
+                {report.status === s && <Check className="h-3 w-3 text-primary" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DropdownFilter({ label, options, selectedValue, onSelect, displayMap }: {
   label: string;
   options: string[];
   selectedValue: string;
@@ -56,42 +111,27 @@ function DropdownFilter({
   displayMap?: Record<string, any>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-
   return (
     <div className="relative flex-1 sm:flex-initial">
-      <Button
-        variant="outline"
-        className="h-11 w-full flex items-center justify-between gap-2 px-4 bg-card"
-        onClick={() => setIsOpen(!isOpen)}
-      >
+      <Button variant="outline" className="h-11 w-full flex items-center justify-between gap-2 px-4 bg-card"
+        onClick={() => setIsOpen(!isOpen)}>
         <div className="flex items-center gap-2 overflow-hidden">
           <span className="text-muted-foreground font-normal whitespace-nowrap">{label}:</span>
           <span className="font-semibold text-foreground truncate">
-            {selectedValue === 'All' 
-              ? 'Semua' 
-              : (displayMap && displayMap[selectedValue] ? displayMap[selectedValue].label : selectedValue)}
+            {selectedValue === 'All' ? 'Semua' : (displayMap && displayMap[selectedValue] ? displayMap[selectedValue].label : selectedValue)}
           </span>
         </div>
         <ChevronDown className={`h-4 w-4 opacity-50 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </Button>
-
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-lg z-50 py-1.5 overflow-hidden animate-in fade-in slide-in-from-top-2">
+          <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-lg z-50 py-1.5 overflow-hidden">
             {options.map((opt) => (
-              <button
-                key={opt}
-                onClick={() => {
-                  onSelect(opt);
-                  setIsOpen(false);
-                }}
+              <button key={opt} onClick={() => { onSelect(opt); setIsOpen(false); }}
                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
-                  selectedValue === opt 
-                    ? 'bg-muted/80 font-semibold text-foreground' 
-                    : 'hover:bg-muted/50 text-muted-foreground'
-                }`}
-              >
+                  selectedValue === opt ? 'bg-muted/80 font-semibold text-foreground' : 'hover:bg-muted/50 text-muted-foreground'
+                }`}>
                 <span>{opt === 'All' ? 'Semua' : (displayMap && displayMap[opt] ? displayMap[opt].label : opt)}</span>
                 {selectedValue === opt && <Check className="h-4 w-4 text-primary" />}
               </button>
@@ -109,29 +149,22 @@ function DetailModal({ report, onClose, onStatusChange }: {
   onStatusChange: (id: string, status: string) => void;
 }) {
   const statusInfo = getStatusInfo(report.status);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-5">
+      <div className="relative bg-card rounded-2xl border border-border w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto flex flex-col">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 sticky top-0 bg-card z-10 border-b border-border rounded-t-2xl">
           <h3 className="text-lg font-bold">Detail Laporan</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
-
-        <div className="space-y-4 mb-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-semibold ${statusInfo.color}`}>
-              {statusInfo.label}
-            </span>
-            <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-semibold ${getCategoryColor(report.category)}`}>
-              {report.category || 'Lainnya'}
-            </span>
+        <div className="px-6 pb-6">
+          <div className="flex flex-wrap items-center gap-2 mt-4 mb-4">
+            <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-semibold ${statusInfo.color}`}>{statusInfo.label}</span>
+            <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-semibold ${getCategoryColor(report.category)}`}>{report.category || 'Lainnya'}</span>
           </div>
-
-          <div className="rounded-xl border border-border p-4 space-y-3">
+          <div className="rounded-xl border border-border p-4 space-y-3 mb-4">
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Informasi Laporan</div>
             {[
               { label: 'ID Laporan', value: report.report_id },
@@ -147,33 +180,12 @@ function DetailModal({ report, onClose, onStatusChange }: {
               </div>
             ))}
           </div>
-
-          <div className="rounded-xl border border-border p-4">
+          <div className="rounded-xl border border-border p-4 mb-4">
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Deskripsi Laporan</div>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{report.description || '-'}</p>
           </div>
+          <Button variant="outline" className="w-full" onClick={onClose}>Tutup</Button>
         </div>
-
-        <div className="mb-6">
-          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Tandai Sebagai</div>
-          <div className="grid grid-cols-3 gap-2">
-            {['Pending', 'Processed', 'Resolved'].map((s) => (
-              <Button
-                key={s}
-                size="sm"
-                variant={report.status === s ? 'default' : 'outline'}
-                className="text-[10px] sm:text-xs h-9"
-                onClick={() => {
-                  onStatusChange(report.report_id, s);
-                  onClose();
-                }}>
-                {statusConfig[s].label}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        <Button variant="outline" className="w-full" onClick={onClose}>Tutup</Button>
       </div>
     </div>
   );
@@ -210,106 +222,102 @@ export default function AdminReports() {
   const [detailTarget, setDetailTarget] = useState<Report | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Report | null>(null);
 
+  // --- API SETTINGS ---
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+  // ── INTEGRASI SAMA PERSIS DENGAN KODE ASLI ──
   useEffect(() => {
     const fetchReports = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/admin/reports/all', {
+        const response = await fetch(`${apiUrl}/api/admin/reports/all`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await response.json();
         if (response.ok) setReports(result.data || []);
       } catch (error) {
         console.error("Gagal mengambil data laporan: ", error);
+        toast.error("Gagal mengambil data laporan.", customToastStyle);
       } finally {
         setLoading(false);
       }
     };
     fetchReports();
-  }, []);
+  }, [apiUrl]);
 
   const handleStatusChange = async (reportId: string, status: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/admin/reports/status', {
+      const response = await fetch(`${apiUrl}/api/admin/reports/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ report_id: reportId, status: status }) 
+        body: JSON.stringify({ report_id: reportId, status: status })
       });
-
       if (response.ok) {
         setReports(prev => prev.map(r => r.report_id === reportId ? { ...r, status } : r));
+        toast.success("Status laporan berhasil diperbarui.", customToastStyle);
       } else {
-        alert("Gagal mengubah status di server");
+        toast.error("Gagal mengubah status di server.", customToastStyle);
       }
     } catch (error) {
       console.error("Error update status:", error);
+      toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 
   const handleDelete = async (reportId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/admin/reports/${reportId}`, {
+      const response = await fetch(`${apiUrl}/api/admin/reports/${reportId}`, {
         method: 'DELETE',
-        headers: {'Authorization': `Bearer ${token}`}
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-
-      if(response.ok) {
+      if (response.ok) {
         setReports(prev => prev.filter(r => r.report_id !== reportId));
         setDeleteTarget(null);
+        toast.success("Laporan berhasil dihapus.", customToastStyle);
       } else {
-        alert("Gagal menghapus laporan di server.");
+        toast.error("Gagal menghapus laporan di server.", customToastStyle);
       }
     } catch (error) {
       console.error("Error delete report: ", error);
+      toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
+  // ── END INTEGRASI ──
 
   const filtered = reports.filter(r => {
     const reporterName = r.reporter_name || '';
     const reportId = r.report_id || '';
     const description = r.description || '';
-    
     const matchSearch =
       reporterName.toLowerCase().includes(search.toLowerCase()) ||
       reportId.toLowerCase().includes(search.toLowerCase()) ||
       description.toLowerCase().includes(search.toLowerCase());
-      
     const matchStatus = filterStatus === 'All' || r.status === filterStatus;
     const matchCategory = filterCategory === 'All' || r.category === filterCategory;
-    
     return matchSearch && matchStatus && matchCategory;
   });
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-
   useEffect(() => { setCurrentPage(1); }, [search, filterStatus, filterCategory]);
-
-  const paginatedReports = filtered.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const paginatedReports = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen flex bg-background">
       <AdminSidebar />
-
       <main className="flex-1 overflow-x-hidden">
         <div className="p-4 sm:p-8">
-
-          {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-1">Manajemen Laporan</h1>
             <p className="text-muted-foreground text-sm">Kelola laporan dari pengguna ARAHIN</p>
           </div>
 
-          {/* Stats - Grid Adaptif */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             {[
               { label: 'Total Laporan', val: reports.length, color: 'text-primary' },
@@ -323,37 +331,20 @@ export default function AdminReports() {
             ))}
           </div>
 
-          {/* Search + Dropdown Filters - Responsif Stack */}
           <div className="flex flex-col gap-3 mb-6">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cari laporan..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 h-11 w-full"
-              />
+              <Input placeholder="Cari laporan..." value={search}
+                onChange={(e) => setSearch(e.target.value)} className="pl-10 h-11 w-full" />
             </div>
-
             <div className="flex flex-col sm:flex-row gap-3">
-              <DropdownFilter
-                label="Status"
-                options={['All', 'Pending', 'Processed', 'Resolved']}
-                selectedValue={filterStatus}
-                onSelect={setFilterStatus}
-                displayMap={statusConfig}
-              />
-              
-              <DropdownFilter
-                label="Kategori"
-                options={['All', 'Fasilitas', 'Pemandu']}
-                selectedValue={filterCategory}
-                onSelect={setFilterCategory}
-              />
+              <DropdownFilter label="Status" options={['All', 'Pending', 'Processed', 'Resolved']}
+                selectedValue={filterStatus} onSelect={setFilterStatus} displayMap={statusConfig} />
+              <DropdownFilter label="Kategori" options={['All', 'Fasilitas', 'Pemandu']}
+                selectedValue={filterCategory} onSelect={setFilterCategory} />
             </div>
           </div>
 
-          {/* Table Container dengan Horizontal Scroll */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
             <div className="overflow-x-auto w-full scrollbar-thin">
               <table className="w-full min-w-[1100px]">
@@ -368,21 +359,15 @@ export default function AdminReports() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {loading ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
-                      </td>
-                    </tr>
+                    <tr><td colSpan={7} className="px-6 py-12 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
+                    </td></tr>
                   ) : paginatedReports.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground text-sm">
-                        Tidak ada laporan yang ditemukan.
-                      </td>
-                    </tr>
+                    <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground text-sm">
+                      Tidak ada laporan yang ditemukan.
+                    </td></tr>
                   ) : paginatedReports.map((report) => {
                     const initials = (report.reporter_name || 'NN').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-                    const statusInfo = getStatusInfo(report.status);
-
                     return (
                       <tr key={report.report_id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -402,25 +387,18 @@ export default function AdminReports() {
                         <td className="px-6 py-4">
                           <p className="text-sm text-muted-foreground truncate max-w-[200px]">{report.description}</p>
                         </td>
+
+                        {/* STATUS DROPDOWN INLINE — mengganti badge statis */}
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${statusInfo.color}`}>
-                            {statusInfo.label}
-                          </span>
+                          <StatusDropdown report={report} onStatusChange={handleStatusChange} />
                         </td>
+
                         <td className="px-6 py-4 text-[10px] text-muted-foreground whitespace-nowrap">{report.created_at}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-[10px] px-3"
-                              onClick={() => setDetailTarget(report)}>
-                              Detail
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 px-2 text-rose-600 border-rose-200 hover:bg-rose-50"
+                            <Button size="sm" variant="outline" className="h-8 text-[10px] px-3"
+                              onClick={() => setDetailTarget(report)}>Detail</Button>
+                            <Button size="sm" variant="outline" className="h-8 px-2 text-rose-600 border-rose-200 hover:bg-rose-50"
                               onClick={() => setDeleteTarget(report)}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -435,29 +413,17 @@ export default function AdminReports() {
           </div>
 
           <div className="mt-6">
-            <Pagination 
-              currentPage={currentPage} 
-              totalItems={filtered.length} 
-              itemsPerPage={ITEMS_PER_PAGE} 
-              onPageChange={setCurrentPage} 
-            />
+            <Pagination currentPage={currentPage} totalItems={filtered.length}
+              itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />
           </div>
         </div>
       </main>
 
       {detailTarget && (
-        <DetailModal
-          report={detailTarget}
-          onClose={() => setDetailTarget(null)}
-          onStatusChange={handleStatusChange}
-        />
+        <DetailModal report={detailTarget} onClose={() => setDetailTarget(null)} onStatusChange={handleStatusChange} />
       )}
       {deleteTarget && (
-        <DeleteModal
-          report={deleteTarget}
-          onConfirm={() => handleDelete(deleteTarget.report_id)}
-          onCancel={() => setDeleteTarget(null)}
-        />
+        <DeleteModal report={deleteTarget} onConfirm={() => handleDelete(deleteTarget.report_id)} onCancel={() => setDeleteTarget(null)} />
       )}
     </div>
   );

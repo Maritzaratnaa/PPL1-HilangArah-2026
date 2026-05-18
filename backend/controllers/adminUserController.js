@@ -97,14 +97,20 @@ const toggleUserStatus = async (req, res) => {
 // ==========================================
 // 3. DELETE USER
 // ==========================================
+// ==========================================
+// 3. DELETE USER
+// ==========================================
 const deleteUser = async (req, res) => {
     try {
         const { user_id } = req.params;
 
-        // Hapus profilnya dulu (untuk mencegah error Foreign Key)
+        // 1. Hapus riwayat langganan (subs) terlebih dahulu
+        await pool.query(`DELETE FROM subs WHERE user_id = ?`, [user_id]);
+
+        // 2. Hapus profilnya
         await pool.query(`DELETE FROM profiles WHERE user_id = ?`, [user_id]);
-        
-        // Hapus akunnya dari tabel users
+    
+        // 3. Terakhir, hapus akunnya dari tabel users
         const [result] = await pool.query(`DELETE FROM users WHERE user_id = ? AND role = 'Pengguna'`, [user_id]);
 
         if (result.affectedRows === 0) {
