@@ -265,7 +265,7 @@ export default function Home() {
                     className="px-3 py-1 rounded-full text-xs font-semibold"
                     style={subBadgeStyle}
                   >
-                    ⭐ Subscriber Aktif
+                    ⭐ Langganan Aktif
                   </span>
                 )}
               </div>
@@ -469,7 +469,7 @@ export default function Home() {
                   hasSubs && subsStatus === "Active"
                     ? subsDays.toString()
                     : "-",
-                label: "Hari Subscription",
+                label: "Sisa Masa Aktif",
                 sub:
                   hasSubs && subsEndDate
                     ? `Berlaku hingga ${subsEndDate}`

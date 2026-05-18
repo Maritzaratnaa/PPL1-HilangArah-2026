@@ -67,7 +67,7 @@ export function Footer() {
           {/* Bottom bar */}
           <div className={`pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 ${isHC ? 'border-[#ffff00]' : 'border-border'}`}>
             <p className={`text-xs ${isHC ? 'text-white' : 'text-muted-foreground'}`}>
-              &copy; 2026 ARAHIN. All rights reserved.
+              &copy; 2026 ARAHIN. Hak Cipta Dilindungi.
             </p>
             <div className={`flex gap-4 text-xs ${isHC ? 'text-[#ffff00]' : 'text-muted-foreground'}`}>
               <a href="#" className="hover:underline transition-colors">Privasi</a>
