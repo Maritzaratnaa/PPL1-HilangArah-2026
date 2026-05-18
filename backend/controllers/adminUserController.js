@@ -109,8 +109,10 @@ const deleteUser = async (req, res) => {
 
         // 2. Hapus profilnya
         await pool.query(`DELETE FROM profiles WHERE user_id = ?`, [user_id]);
-    
-        // 3. Terakhir, hapus akunnya dari tabel users
+
+        await pool.query(`DELETE FROM reports WHERE user_id = ?`, [user_id]);
+        
+        // Hapus akunnya dari tabel users
         const [result] = await pool.query(`DELETE FROM users WHERE user_id = ? AND role = 'Pengguna'`, [user_id]);
 
         if (result.affectedRows === 0) {
