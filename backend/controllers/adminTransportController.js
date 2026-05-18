@@ -105,17 +105,18 @@ const updateTransport = async (req, res) => {
 
 // Get Data Rute
 const getAllRoutes = async (req, res) => {
+    console.log(`[DEBUG] getAllRoutes: Request received!`);
     try {
         const query =
             `SELECT 
-                r.route_id, 
+                TRIM(r.route_id) AS route_id, 
                 r.route_name, 
                 r.is_active,
-                r.origin_stop_id, 
+                TRIM(r.origin_stop_id) AS origin_stop_id, 
                 o.name AS origin_stop_name,
-                r.destination_stop_id, 
+                TRIM(r.destination_stop_id) AS destination_stop_id, 
                 d.name AS destination_stop_name,
-                r.trans_id, 
+                TRIM(r.trans_id) AS trans_id, 
                 t.name AS transport_name, 
                 t.type AS transport_type
             FROM routes r
@@ -127,7 +128,7 @@ const getAllRoutes = async (req, res) => {
         const [routes] = await pool.query(query);
 
         const rsQuery = `
-            SELECT route_stop_id, route_id, stop_id, stop_order, est_time_minutes
+            SELECT route_stop_id, TRIM(route_id) AS route_id, TRIM(stop_id) AS stop_id, stop_order, est_time_minutes
             FROM route_stops
             ORDER BY stop_order ASC
         `;
@@ -143,6 +144,7 @@ const getAllRoutes = async (req, res) => {
             total_routes: routes.length,
             data: routesWithStops
         });
+        console.log(`[DEBUG] getAllRoutes: Fetched ${routes.length} routes, sent JSON.`);
     }
     catch (error) {
         console.error("Error Get Routes: ", error);
@@ -403,9 +405,10 @@ const getAllRouteStops = async (req, res) => {
         const query = `
             SELECT 
                 rs.route_stop_id, 
-                rs.route_id, 
+                TRIM(rs.route_id) AS route_id, 
                 r.route_name,
-                rs.stop_id, 
+                TRIM(r.trans_id) AS trans_id,
+                TRIM(rs.stop_id) AS stop_id, 
                 s.name AS stop_name,
                 rs.stop_order, 
                 rs.est_time_minutes
