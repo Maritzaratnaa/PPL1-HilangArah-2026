@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { Pagination } from '@/components/Admin/Pagination';
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 interface Guide {
   employee_id: string;
@@ -26,6 +27,11 @@ const emptyForm: Guide = {
   age: 0,
   detail: "",
   is_available: true,
+};
+
+// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+const customToastStyle = {
+  className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
 
 function GuideModal({ guide, onSave, onClose }: {
@@ -103,7 +109,7 @@ function GuideModal({ guide, onSave, onClose }: {
           <Button variant="outline" className="flex-1 min-w-[100px]" onClick={onClose}>Batal</Button>
           <Button className="flex-1 min-w-[100px]" onClick={() => {
             if (!form.full_name || !form.phone_number || !form.domicile || !form.gender) {
-              alert("Nama, telepon, domisili, dan jenis kelamin wajib diisi!");
+              toast.error("Nama, telepon, domisili, dan jenis kelamin wajib diisi!", customToastStyle);
               return;
             }
             onSave(form);
@@ -187,7 +193,7 @@ export default function AdminGuides() {
   const [filterAvailability, setFilterAvailability] = useState("All");
   const [filterGender, setFilterGender] = useState("All");
 
-  const API_URL = "http://localhost:3000/api/admin/guides";
+  const API_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/guides` : "http://localhost:3000/api/admin/guides";
   const token = localStorage.getItem("token");
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -244,14 +250,14 @@ export default function AdminGuides() {
       });
       const json = await res.json();
       if (res.ok) {
-        alert(json.message);
+        toast.success(json.message || "Data pemandu berhasil disimpan.", customToastStyle);
         fetchGuides();
         setModalGuide(null);
       } else {
-        alert(json.message);
+        toast.error(json.message || "Gagal menyimpan data.", customToastStyle);
       }
     } catch {
-      alert("Terjadi kesalahan jaringan.");
+      toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 
@@ -263,13 +269,14 @@ export default function AdminGuides() {
       });
       const json = await res.json();
       if (res.ok) {
+        toast.success("Pemandu berhasil dihapus.", customToastStyle);
         fetchGuides();
         setDeleteTarget(null);
       } else {
-        alert(json.message);
+        toast.error(json.message || "Gagal menghapus pemandu.", customToastStyle);
       }
     } catch {
-      alert("Gagal menghapus data.");
+      toast.error("Gagal menghapus data. Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 
@@ -282,13 +289,14 @@ export default function AdminGuides() {
         body: JSON.stringify({ is_available: newStatus }),
       });
       if (res.ok) {
+        toast.success(`Status berhasil diubah menjadi ${newStatus ? 'Tersedia' : 'Tidak Tersedia'}.`, customToastStyle);
         fetchGuides();
       } else {
         const json = await res.json();
-        alert(json.message);
+        toast.error(json.message || "Gagal mengubah status.", customToastStyle);
       }
     } catch {
-      alert("Gagal mengubah status.");
+      toast.error("Gagal mengubah status. Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 

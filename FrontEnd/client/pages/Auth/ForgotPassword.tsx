@@ -6,19 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      // Ganti URL ini dengan endpoint backend Anda
-      const res = await fetch("http://localhost:3000/api/auth/forgot-password", {
+      // Perbaikan URL localhost menjadi dinamis
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiUrl}/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -27,12 +33,13 @@ export default function ForgotPassword() {
       const json = await res.json();
       
       if (res.ok) {
-        setIsSubmitted(true); // Ubah tampilan menjadi pesan sukses
+        setIsSubmitted(true);
+        toast.success("Tautan reset password berhasil dikirim!", customToastStyle);
       } else {
-        alert(json.message || "Terjadi kesalahan.");
+        toast.error(json.message || "Terjadi kesalahan saat mengirim email.", customToastStyle);
       }
     } catch (err) {
-      alert("Gagal menghubungi server.");
+      toast.error("Gagal menghubungi server. Silakan coba lagi nanti.", customToastStyle);
     } finally {
       setLoading(false);
     }

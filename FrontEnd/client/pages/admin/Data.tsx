@@ -8,6 +8,7 @@ import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { preview } from 'vite';
 import { Pagination } from '@/components/Admin/Pagination';
 import { th } from 'zod/v4/locales';
+import { toast } from 'sonner';
 
 type Trans = {
   trans_id: string;
@@ -398,10 +399,15 @@ export default function AdminData() {
   const [routeModal, setRouteModal] = useState<Partial<Route> | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ name: string; onConfirm: () => void } | null>(null);
 
+  // --- KUSTOMISASI GAYA TOAST ---
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+  };
+
   // --- API SETTINGS ---
-  const API_URL_ROUTES = "http://localhost:3000/api/admin/transportations/routes";
-  const API_URL_TRANS = "http://localhost:3000/api/admin/transportations/trans";
-  const API_URL_STOPS = "http://localhost:3000/api/admin/transportations/stops";
+  const API_URL_ROUTES = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/transportations/routes` : "http://localhost:3000/api/admin/transportations/routes";
+  const API_URL_TRANS = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/transportations/trans` : "http://localhost:3000/api/admin/transportations/trans";
+  const API_URL_STOPS = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/transportations/stops` : "http://localhost:3000/api/admin/transportations/stops";
   const token = localStorage.getItem("token");
 
   // ==========================================
@@ -466,14 +472,14 @@ export default function AdminData() {
 
       const json = await res.json();
       if (res.ok) {
-        alert(json.message);
+        toast.success(json.message || "Rute berhasil disimpan.", customToastStyle);
         fetchRoutes(); // Refresh data dari DB
         setRouteModal(null); // Tutup modal
       } else {
-        alert(json.message);
+        toast.error(json.message || "Gagal menyimpan rute.", customToastStyle);
       }
     } catch (error) {
-      alert("Terjadi kesalahan jaringan.");
+      toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 
@@ -485,14 +491,15 @@ export default function AdminData() {
       });
 
       if (res.ok) {
+        toast.success("Rute berhasil dihapus.", customToastStyle);
         fetchRoutes(); // Refresh data
         setDeleteModal(null);
       } else {
         const json = await res.json();
-        alert(json.message);
+        toast.error(json.message || "Gagal menghapus rute.", customToastStyle);
       }
     } catch (error) {
-      alert("Gagal menghapus rute.");
+      toast.error("Gagal menghapus rute. Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 
@@ -577,16 +584,16 @@ export default function AdminData() {
 
       const json = await res.json();
       if (res.ok) {
-        alert(json.message || "Data transportasi berhasil disimpan.");
+        toast.success(json.message || "Data transportasi berhasil disimpan.", customToastStyle);
         fetchTrans();
         setTransModal(null);
       }
       else {
-        alert(json.message);
+        toast.error(json.message || "Gagal menyimpan transportasi.", customToastStyle);
       }
     }
     catch (error) {
-      alert("Terjadi kesalahan jaringan.");
+      toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 
@@ -598,16 +605,17 @@ export default function AdminData() {
       });
 
       if (res.ok) {
+        toast.success("Data transportasi berhasil dihapus.", customToastStyle);
         fetchTrans();
         setDeleteModal(null);
       }
       else {
         const json = await res.json();
-        alert(json.message);
+        toast.error(json.message || "Gagal menghapus transportasi.", customToastStyle);
       }
     }
     catch (error) {
-      alert("Gagal menghapus transportasi.");
+      toast.error("Gagal menghapus transportasi. Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 
@@ -663,16 +671,16 @@ export default function AdminData() {
 
       const json = await res.json();
       if (res.ok) {
-        alert(json.message || "Data halte berhasil disimpan.");
+        toast.success(json.message || "Data halte berhasil disimpan.", customToastStyle);
         fetchStops();
         setStopModal(null);
       }
       else {
-        alert(json.message);
+        toast.error(json.message || "Gagal menyimpan halte.", customToastStyle);
       }
     }
     catch (error) {
-      alert("Terjadi kesalahan jaringan.");
+      toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 
@@ -684,16 +692,17 @@ export default function AdminData() {
       });
 
       if (res.ok) {
+        toast.success("Data halte berhasil dihapus.", customToastStyle);
         fetchStops();
         setDeleteModal(null);
       }
       else {
         const json = await res.json();
-        alert(json.message);
+        toast.error(json.message || "Gagal menghapus halte.", customToastStyle);
       }
     }
     catch (error) {
-      alert("Gagal menghapus halte.");
+      toast.error("Gagal menghapus halte. Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 

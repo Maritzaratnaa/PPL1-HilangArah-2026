@@ -6,12 +6,12 @@ import {
   UserX,
   Loader2,
   AlertCircle,
-  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
 import { Pagination } from '@/components/Admin/Pagination';
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 interface User {
   user_id: string;
@@ -64,39 +64,10 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
-type ToastType = "success" | "error";
-
-function Toast({
-  message,
-  type,
-  onClose,
-}: {
-  message: string;
-  type: ToastType;
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3500);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div
-      className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg border text-sm font-medium transition-all duration-300 ${
-        type === "success"
-          ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-200"
-          : "bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-200"
-      }`}
-    >
-      {type === "success" ? (
-        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-      ) : (
-        <AlertCircle className="h-4 w-4 flex-shrink-0" />
-      )}
-      {message}
-    </div>
-  );
-}
+// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+const customToastStyle = {
+  className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+};
 
 function DeleteModal({
   user,
@@ -202,13 +173,8 @@ export default function AdminUsers() {
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [detailTarget, setDetailTarget] = useState<User | null>(null);
 
-  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-
-  const showToast = (message: string, type: ToastType) => {
-    setToast({ message, type });
-  };
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedSearch(search), 400);
@@ -237,7 +203,7 @@ export default function AdminUsers() {
       setUsers(json.data.list);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan.";
-      showToast(message, "error");
+      toast.error(message, customToastStyle);
     } finally {
       setLoading(false);
     }
@@ -271,15 +237,15 @@ export default function AdminUsers() {
         )
       );
 
-      showToast(
+      toast.success(
         newStatus
           ? `Akun ${user.full_name || user.username} berhasil diaktifkan.`
           : `Akun ${user.full_name || user.username} berhasil disuspend.`,
-        "success"
+        customToastStyle
       );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan.";
-      showToast(message, "error");
+      toast.error(message, customToastStyle);
     } finally {
       setActionLoading(null);
     }
@@ -302,11 +268,11 @@ export default function AdminUsers() {
       setUsers((prev) => prev.filter((u) => u.user_id !== deleteTarget.user_id));
       setStatsTotal((prev) => prev - 1);
 
-      showToast(`Akun ${deleteTarget.full_name || deleteTarget.username} berhasil dihapus.`, "success");
+      toast.success(`Akun ${deleteTarget.full_name || deleteTarget.username} berhasil dihapus.`, customToastStyle);
       setDeleteTarget(null);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan.";
-      showToast(message, "error");
+      toast.error(message, customToastStyle);
     } finally {
       setActionLoading(null);
     }
@@ -566,14 +532,6 @@ export default function AdminUsers() {
         <DetailModal
           user={detailTarget}
           onClose={() => setDetailTarget(null)}
-        />
-      )}
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
         />
       )}
     </div>
