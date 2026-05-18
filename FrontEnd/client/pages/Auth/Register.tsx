@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner"; 
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +36,7 @@ export default function Register() {
     { value: "general", label: "Umum" },
   ];
 
-  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+  
   const customToastStyle = {
     className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
   };

@@ -5,7 +5,6 @@ import {
   ShieldCheck,
   Loader2,
   AlertCircle,
-  CheckCircle2,
   PlusCircle,
   UserCog
 } from "lucide-react";
@@ -14,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
 import { useNavigate } from "react-router-dom";
 import { Pagination } from '@/components/Admin/Pagination';
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 interface Admin {
   user_id: string | number;
@@ -33,31 +33,10 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
-type ToastType = "success" | "error";
-
-function Toast({ message, type, onClose }: { message: string; type: ToastType; onClose: () => void }) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3500);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div
-      className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg border text-sm font-medium transition-all duration-300 ${
-        type === "success"
-          ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-200"
-          : "bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-200"
-      }`}
-    >
-      {type === "success" ? (
-        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-      ) : (
-        <AlertCircle className="h-4 w-4 flex-shrink-0" />
-      )}
-      <span className="break-words">{message}</span>
-    </div>
-  );
-}
+// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+const customToastStyle = {
+  className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+};
 
 // 1. MODIFIKASI COMPONENT AddAdminModal
 function AddAdminModal({
@@ -171,11 +150,6 @@ export default function Admin() {
 
   const [removeTarget, setRemoveTarget] = useState<Admin | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-
-  const showToast = (message: string, type: ToastType) => {
-    setToast({ message, type });
-  };
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedSearch(search), 400);
@@ -204,7 +178,7 @@ export default function Admin() {
       setAdmins(json.data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan saat load data.";
-      showToast(message, "error");
+      toast.error(message, customToastStyle);
     } finally {
       setLoading(false);
     }
@@ -230,13 +204,13 @@ export default function Admin() {
 
       // Menggunakan fallback email jika json.data.username tidak tersedia di response
       const adminName = json.data?.username || email;
-      showToast(`Berhasil! ${adminName} sekarang adalah Admin.`, "success");
+      toast.success(`Berhasil! ${adminName} sekarang adalah Admin.`, customToastStyle);
       
       setShowAddModal(false);
       fetchAdmins(); 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan server.";
-      showToast(message, "error");
+      toast.error(message, customToastStyle);
     } finally {
       setActionLoading(null);
     }
@@ -262,10 +236,10 @@ export default function Admin() {
         prev.map((a) => (a.user_id === admin.user_id ? { ...a, is_active: newStatus === "1" ? 1 : 0 } : a))
       );
 
-      showToast(`Status admin ${admin.username} berhasil diubah.`, "success");
+      toast.success(`Status admin ${admin.username} berhasil diubah.`, customToastStyle);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan.";
-      showToast(message, "error");
+      toast.error(message, customToastStyle);
     } finally {
       setActionLoading(null);
     }
@@ -288,11 +262,11 @@ export default function Admin() {
       setAdmins((prev) => prev.filter((a) => a.user_id !== removeTarget.user_id));
       setStatsTotal((prev) => prev - 1);
 
-      showToast(`Akses admin ${removeTarget.username} berhasil dicabut.`, "success");
+      toast.success(`Akses admin ${removeTarget.username} berhasil dicabut.`, customToastStyle);
       setRemoveTarget(null);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan.";
-      showToast(message, "error");
+      toast.error(message, customToastStyle);
     } finally {
       setActionLoading(null);
     }
@@ -490,8 +464,6 @@ export default function Admin() {
           }}
         />
       )}
-
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

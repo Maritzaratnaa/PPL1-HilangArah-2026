@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -19,23 +20,29 @@ export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
+  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!token) {
-      alert("Token reset password tidak ditemukan atau tidak valid.");
+      toast.error("Token reset password tidak ditemukan atau tidak valid.", customToastStyle);
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Password dan Konfirmasi Password tidak cocok.");
+      toast.error("Password dan Konfirmasi Password tidak cocok.", customToastStyle);
       return;
     }
 
     setLoading(true);
     try {
-      // Ganti URL ini dengan endpoint backend Anda
-      const res = await fetch("http://localhost:3000/api/auth/reset-password", {
+      // Perbaikan URL localhost menjadi dinamis
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiUrl}/api/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, newPassword: password }),
@@ -44,13 +51,13 @@ export default function ResetPassword() {
       const json = await res.json();
       
       if (res.ok) {
-        alert("Password berhasil diubah! Silakan login dengan password baru.");
+        toast.success("Password berhasil diubah! Silakan login dengan password baru.", customToastStyle);
         navigate("/login");
       } else {
-        alert(json.message || "Gagal mengubah password.");
+        toast.error(json.message || "Gagal mengubah password.", customToastStyle);
       }
     } catch (err) {
-      alert("Gagal menghubungi server.");
+      toast.error("Gagal menghubungi server. Silakan coba lagi nanti.", customToastStyle);
     } finally {
       setLoading(false);
     }
