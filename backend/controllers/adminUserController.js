@@ -97,6 +97,9 @@ const toggleUserStatus = async (req, res) => {
 // ==========================================
 // 3. DELETE USER
 // ==========================================
+// ==========================================
+// 3. DELETE USER
+// ==========================================
 const deleteUser = async (req, res) => {
     try {
         const { user_id } = req.params;
@@ -108,8 +111,8 @@ const deleteUser = async (req, res) => {
         await pool.query(`DELETE FROM profiles WHERE user_id = ?`, [user_id]);
 
         await pool.query(`DELETE FROM reports WHERE user_id = ?`, [user_id]);
-    
-        // 3. Terakhir, hapus akunnya dari tabel users
+        
+        // Hapus akunnya dari tabel users
         const [result] = await pool.query(`DELETE FROM users WHERE user_id = ? AND role = 'Pengguna'`, [user_id]);
 
         if (result.affectedRows === 0) {
