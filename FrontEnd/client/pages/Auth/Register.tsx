@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { toast } from "sonner"; 
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +23,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userCategory, setUserCategory] = useState<string>("");
-  const [loading, setLoading] = useState(false); // Dipindah ke atas agar lebih rapi
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const userCategories = [
@@ -35,15 +36,31 @@ export default function Register() {
     { value: "general", label: "Umum" },
   ];
 
+  
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validasi Password
     if (password !== confirmPassword) {
-      alert("Password dan konfirmasi password tidak sama!");
+      toast.error("Password dan konfirmasi password tidak sama!", customToastStyle);
       return;
     }
+
+    // Validasi Kategori
+    if (!userCategory) {
+      toast.error("Mohon pilih kategori Anda.", customToastStyle);
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/register", {
+      // Perbaikan URL localhost menjadi dinamis
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -57,15 +74,14 @@ export default function Register() {
       const json = await res.json();
       
       if (res.ok) {
-        // --- PERBAIKAN DI SINI ---
-        alert("Registrasi berhasil! Silakan cek email Anda untuk kode OTP.");
+        toast.success("Registrasi berhasil! Silakan cek email Anda untuk kode OTP.", customToastStyle);
         // Arahkan ke halaman verifikasi dan bawa data emailnya
         navigate("/verify-email", { state: { email: email } });
       } else {
-        alert(json.message);
+        toast.error(json.message || "Gagal melakukan pendaftaran.", customToastStyle);
       }
     } catch (err: any) {
-      alert("Error detail: " + err.message);
+      toast.error("Terjadi kesalahan jaringan. Silakan coba lagi.", customToastStyle);
     } finally {
       setLoading(false);
     }

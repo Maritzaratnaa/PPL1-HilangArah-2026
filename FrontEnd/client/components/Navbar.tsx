@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, User, BarChart3, Zap, Type, Minus, Plus, Download, Share } from "lucide-react";
+import { Search, User, BarChart3, Zap, Type, Minus, Plus, Download, Share, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./ThemeToggle";
@@ -180,10 +180,11 @@ function InstallAppButton() {
 
 export function Navbar() {
   const navigate = useNavigate();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem("isLoggedIn");
+    const token = localStorage.getItem("token"); // Diganti jadi "token" sesuai standar
     if (token) {
       navigate("/home");
     } else {
@@ -192,11 +193,51 @@ export function Navbar() {
   };
 
   const handleProfileClick = () => {
-    const token = localStorage.getItem("isLoggedIn");
+    const token = localStorage.getItem("token"); // Diganti jadi "token"
     if (!token) {
       navigate("/login");
     } else {
       navigate("/profile");
+    }
+  };
+
+  // 👇 FUNGSI BARU UNTUK ROUTING SUBSCRIPTION 👇
+  const handleSubscriptionClick = async () => {
+    const token = localStorage.getItem("token");
+    
+    // 1. Cek apakah sudah login
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    // 2. Cek apakah ada tagihan yang tertunda (pending payment) di memori lokal
+    const pendingPayment = localStorage.getItem("pendingPayment");
+    if (pendingPayment) {
+      navigate("/subscription/Payment");
+      return;
+    }
+
+    // 3. Jika sudah login & tidak ada tagihan, cek status langganan ke API
+    setIsNavigating(true); // Nyalakan loading (opsional)
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiUrl}/api/subscription/my-subs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Jika response OK berarti dia punya data langganan (Active / Pending)
+      if (res.ok) {
+        navigate("/subscription/Profile");
+      } else {
+        // Jika 404 (tidak ketemu), berarti belum langganan sama sekali
+        navigate("/subscription");
+      }
+    } catch (error) {
+      console.error("Gagal mengecek status langganan:", error);
+      navigate("/subscription"); // Fallback ke landing page jika error
+    } finally {
+      setIsNavigating(false);
     }
   };
 
@@ -237,16 +278,18 @@ export function Navbar() {
                 <BarChart3 className="h-5 w-5" />
               </Button>
             </Link>
-            <Link to="/subscription">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 high-contrast:border-2 high-contrast:border-primary"
-                aria-label="Subscription"
-              >
-                <Zap className="h-5 w-5" />
-              </Button>
-            </Link>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 high-contrast:border-2 high-contrast:border-primary"
+              aria-label="Subscription"
+              onClick={handleSubscriptionClick}
+              disabled={isNavigating} // Matikan tombol sementara saat fetch API
+            >
+              {isNavigating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
+            </Button>
+
             <InstallAppButton />
             <ThemeToggle />
             <FontSizeControl />

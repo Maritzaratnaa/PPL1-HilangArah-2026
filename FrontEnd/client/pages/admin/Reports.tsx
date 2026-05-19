@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { Pagination } from '@/components/Admin/Pagination';
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 export interface Report {
   report_id: string;
@@ -34,6 +35,11 @@ const getStatusInfo = (status: string) =>
 
 const getCategoryColor = (category: string) =>
   categoryConfig[category] || 'bg-slate-100 text-slate-700';
+
+// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+const customToastStyle = {
+  className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+};
 
 // ── DROPDOWN STATUS INLINE DI TABEL ──
 function StatusDropdown({ report, onStatusChange }: {
@@ -216,30 +222,34 @@ export default function AdminReports() {
   const [detailTarget, setDetailTarget] = useState<Report | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Report | null>(null);
 
+  // --- API SETTINGS ---
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
   // ── INTEGRASI SAMA PERSIS DENGAN KODE ASLI ──
   useEffect(() => {
     const fetchReports = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/admin/reports/all', {
+        const response = await fetch(`${apiUrl}/api/admin/reports/all`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await response.json();
         if (response.ok) setReports(result.data || []);
       } catch (error) {
         console.error("Gagal mengambil data laporan: ", error);
+        toast.error("Gagal mengambil data laporan.", customToastStyle);
       } finally {
         setLoading(false);
       }
     };
     fetchReports();
-  }, []);
+  }, [apiUrl]);
 
   const handleStatusChange = async (reportId: string, status: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/admin/reports/status', {
+      const response = await fetch(`${apiUrl}/api/admin/reports/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -249,29 +259,33 @@ export default function AdminReports() {
       });
       if (response.ok) {
         setReports(prev => prev.map(r => r.report_id === reportId ? { ...r, status } : r));
+        toast.success("Status laporan berhasil diperbarui.", customToastStyle);
       } else {
-        alert("Gagal mengubah status di server");
+        toast.error("Gagal mengubah status di server.", customToastStyle);
       }
     } catch (error) {
       console.error("Error update status:", error);
+      toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
 
   const handleDelete = async (reportId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/admin/reports/${reportId}`, {
+      const response = await fetch(`${apiUrl}/api/admin/reports/${reportId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         setReports(prev => prev.filter(r => r.report_id !== reportId));
         setDeleteTarget(null);
+        toast.success("Laporan berhasil dihapus.", customToastStyle);
       } else {
-        alert("Gagal menghapus laporan di server.");
+        toast.error("Gagal menghapus laporan di server.", customToastStyle);
       }
     } catch (error) {
       console.error("Error delete report: ", error);
+      toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
   // ── END INTEGRASI ──

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
 import { Pagination } from '@/components/Admin/Pagination';
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -31,6 +32,38 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   Cancelled: { label: "Dibatalkan", color: "bg-gray-100 text-gray-700 dark:bg-gray-950/30 dark:text-gray-300" },
 };
 
+// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+const customToastStyle = {
+  className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+};
+
+// --- MODAL KONFIRMASI HAPUS BARU ---
+function DeleteModal({ sub, onConfirm, onCancel, deleting }: {
+  sub: Sub;
+  onConfirm: () => Promise<void>;
+  onCancel: () => void;
+  deleting: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={!deleting ? onCancel : undefined} />
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm shadow-xl">
+        <h3 className="text-lg font-bold mb-2">Hapus Subscription</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          Apakah kamu yakin ingin menghapus subscription atas nama <strong>{sub.customer_name}</strong>? Tindakan ini tidak dapat dibatalkan.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button variant="outline" className="flex-1 order-2 sm:order-1" onClick={onCancel} disabled={deleting}>Batal</Button>
+          <Button className="flex-1 bg-rose-600 hover:bg-rose-700 text-white order-1 sm:order-2" onClick={onConfirm} disabled={deleting}>
+            {deleting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            {deleting ? "Menghapus..." : "Hapus"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DetailModal({ sub, onClose, onStatusChange, onDelete, onSuccess }: {
   sub: Sub;
   onClose: () => void;
@@ -41,7 +74,11 @@ function DetailModal({ sub, onClose, onStatusChange, onDelete, onSuccess }: {
   const [detail, setDetail] = useState<Sub | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  
+  // State untuk modal hapus
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  
   const [assignEmployeeId, setAssignEmployeeId] = useState('');
   const [assigningGuide, setAssigningGuide] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -78,7 +115,7 @@ function DetailModal({ sub, onClose, onStatusChange, onDelete, onSuccess }: {
       });
       const json = await res.json();
       if (res.ok) {
-        alert('Pemandu berhasil ditugaskan.');
+        toast.success("Pemandu berhasil ditugaskan.", customToastStyle);
         onSuccess();
         onClose();
       } else {
@@ -91,54 +128,49 @@ function DetailModal({ sub, onClose, onStatusChange, onDelete, onSuccess }: {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    await onDelete(sub.subs_id);
+    setDeleting(false);
+    setShowDeleteModal(false);
+    onClose();
+  };
+
   const d = detail || sub;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-bold">Detail Subscription</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {loadingDetail ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+        <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-lg font-bold">Detail Subscription</h3>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+              <X className="h-5 w-5" />
+            </button>
           </div>
-        ) : (
-          <div className="space-y-4 mb-6">
-            <div className="flex flex-wrap items-center justify-between p-3 rounded-xl bg-muted/50 gap-2">
-              <span className="text-sm font-semibold">Status Subscription</span>
-              <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${statusConfig[d.status]?.color || ''}`}>
-                {statusConfig[d.status]?.label || d.status}
-              </span>
-            </div>
 
-            <div className="rounded-xl border border-border p-4 space-y-3">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Informasi Pengguna</div>
-              {[
-                { label: 'Nama', value: d.customer_name },
-                { label: 'Email', value: d.email },
-                { label: 'Kondisi Pengguna', value: d.customer_category || '-' },
-                { label: 'Nomor Telepon', value: d.phone_number || '-' },
-                { label: 'Domisili', value: d.domicile },
-              ].map((item) => (
-                <div key={item.label} className="flex flex-wrap justify-between text-sm gap-2 border-b border-border/50 pb-1 last:border-0">
-                  <span className="text-muted-foreground">{item.label}</span>
-                  <span className="font-semibold text-right break-all">{item.value}</span>
-                </div>
-              ))}
+          {loadingDetail ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
+          ) : (
+            <div className="space-y-4 mb-6">
+              <div className="flex flex-wrap items-center justify-between p-3 rounded-xl bg-muted/50 gap-2">
+                <span className="text-sm font-semibold">Status Subscription</span>
+                <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${statusConfig[d.status]?.color || ''}`}>
+                  {statusConfig[d.status]?.label || d.status}
+                </span>
+              </div>
 
-            {(d.emergency_contact_name || d.emergency_contact_phone) && (
               <div className="rounded-xl border border-border p-4 space-y-3">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Kontak Darurat</div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Informasi Pengguna</div>
                 {[
-                  { label: 'Nama', value: d.emergency_contact_name || '-' },
-                  { label: 'Nomor Telepon', value: d.emergency_contact_phone || '-' },
+                  { label: 'Nama', value: d.customer_name },
+                  { label: 'Email', value: d.email },
+                  { label: 'Kondisi Pengguna', value: d.customer_category || '-' },
+                  { label: 'Nomor Telepon', value: d.phone_number || '-' },
+                  { label: 'Domisili', value: d.domicile },
                 ].map((item) => (
                   <div key={item.label} className="flex flex-wrap justify-between text-sm gap-2 border-b border-border/50 pb-1 last:border-0">
                     <span className="text-muted-foreground">{item.label}</span>
@@ -146,85 +178,102 @@ function DetailModal({ sub, onClose, onStatusChange, onDelete, onSuccess }: {
                   </div>
                 ))}
               </div>
-            )}
 
-            <div className="rounded-xl border border-border p-4 space-y-3">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Informasi Pemandu</div>
-              {[
-                { label: 'Pemandu', value: d.guide_name || 'Belum ditugaskan' },
-                { label: 'Telepon Pemandu', value: d.guide_phone || '-' },
-                { label: 'Mulai', value: d.start_date || '-' },
-                { label: 'Berakhir', value: d.end_date || '-' },
-              ].map((item) => (
-                <div key={item.label} className="flex flex-wrap justify-between text-sm gap-2 border-b border-border/50 pb-1 last:border-0">
-                  <span className="text-muted-foreground">{item.label}</span>
-                  <span className="font-semibold text-right break-all">{item.value}</span>
+              {(d.emergency_contact_name || d.emergency_contact_phone) && (
+                <div className="rounded-xl border border-border p-4 space-y-3">
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Kontak Darurat</div>
+                  {[
+                    { label: 'Nama', value: d.emergency_contact_name || '-' },
+                    { label: 'Nomor Telepon', value: d.emergency_contact_phone || '-' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex flex-wrap justify-between text-sm gap-2 border-b border-border/50 pb-1 last:border-0">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-semibold text-right break-all">{item.value}</span>
+                    </div>
+                  ))}
                 </div>
+              )}
+
+              <div className="rounded-xl border border-border p-4 space-y-3">
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Informasi Pemandu</div>
+                {[
+                  { label: 'Pemandu', value: d.guide_name || 'Belum ditugaskan' },
+                  { label: 'Telepon Pemandu', value: d.guide_phone || '-' },
+                  { label: 'Mulai', value: d.start_date || '-' },
+                  { label: 'Berakhir', value: d.end_date || '-' },
+                ].map((item) => (
+                  <div key={item.label} className="flex flex-wrap justify-between text-sm gap-2 border-b border-border/50 pb-1 last:border-0">
+                    <span className="text-muted-foreground">{item.label}</span>
+                    <span className="font-semibold text-right break-all">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              {d.specific_needs && (
+                <div className="rounded-xl border border-border p-4">
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Kebutuhan Khusus</div>
+                  <p className="text-sm bg-muted/20 p-2 rounded-md whitespace-pre-wrap">{d.specific_needs}</p>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-border p-4 bg-muted/10">
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Tugaskan Pemandu</div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input value={assignEmployeeId} onChange={(e) => setAssignEmployeeId(e.target.value)}
+                    placeholder="Employee ID..."
+                    className="h-9 text-xs flex-1" />
+                  <Button size="sm" className="h-9 text-xs sm:w-24" disabled={assigningGuide || !assignEmployeeId.trim()}
+                    onClick={handleAssignGuide}>
+                    {assigningGuide ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Tugaskan'}
+                  </Button>
+                </div>
+              </div>
+
+              {errorMsg && (
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px]">
+                  {errorMsg}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-2 mb-4">
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Ubah Status</div>
+            <div className="grid grid-cols-2 gap-2">
+              {['Active', 'Pending', 'Expired', 'Cancelled'].map((s) => (
+                <Button key={s} size="sm"
+                  variant={d.status === s ? 'default' : 'outline'}
+                  className="text-[10px] h-8 px-1"
+                  disabled={updatingStatus}
+                  onClick={async () => {
+                    setUpdatingStatus(true);
+                    await onStatusChange(sub.subs_id, s);
+                    setUpdatingStatus(false);
+                    onClose();
+                  }}>
+                  {updatingStatus ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (statusConfig[s]?.label || s)}
+                </Button>
               ))}
             </div>
-
-            {d.specific_needs && (
-              <div className="rounded-xl border border-border p-4">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Kebutuhan Khusus</div>
-                <p className="text-sm bg-muted/20 p-2 rounded-md whitespace-pre-wrap">{d.specific_needs}</p>
-              </div>
-            )}
-
-            <div className="rounded-xl border border-border p-4 bg-muted/10">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Tugaskan Pemandu</div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Input value={assignEmployeeId} onChange={(e) => setAssignEmployeeId(e.target.value)}
-                  placeholder="Employee ID..."
-                  className="h-9 text-xs flex-1" />
-                <Button size="sm" className="h-9 text-xs sm:w-24" disabled={assigningGuide || !assignEmployeeId.trim()}
-                  onClick={handleAssignGuide}>
-                  {assigningGuide ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Tugaskan'}
-                </Button>
-              </div>
-            </div>
-
-            {errorMsg && (
-              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px]">
-                {errorMsg}
-              </div>
-            )}
           </div>
-        )}
 
-        <div className="space-y-2 mb-4">
-          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Ubah Status</div>
-          <div className="grid grid-cols-2 gap-2">
-            {['Active', 'Pending', 'Expired', 'Cancelled'].map((s) => (
-              <Button key={s} size="sm"
-                variant={d.status === s ? 'default' : 'outline'}
-                className="text-[10px] h-8 px-1"
-                disabled={updatingStatus}
-                onClick={async () => {
-                  setUpdatingStatus(true);
-                  await onStatusChange(sub.subs_id, s);
-                  setUpdatingStatus(false);
-                  onClose();
-                }}>
-                {updatingStatus ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (statusConfig[s]?.label || s)}
-              </Button>
-            ))}
-          </div>
+          <Button variant="outline" className="w-full text-[11px] text-rose-600 border-rose-200 hover:bg-rose-50 h-9"
+            onClick={() => setShowDeleteModal(true)}>
+            <Trash2 className="h-3.5 w-3.5 mr-2" />
+            Hapus Subscription
+          </Button>
         </div>
+      </div>
 
-        <Button variant="outline" className="w-full text-[11px] text-rose-600 border-rose-200 hover:bg-rose-50 h-9"
-          disabled={deleting}
-          onClick={async () => {
-            if (!confirm(`Hapus subscription ${sub.subs_id}?`)) return;
-            setDeleting(true);
-            await onDelete(sub.subs_id);
-            setDeleting(false);
-            onClose();
-          }}>
-          {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Trash2 className="h-3.5 w-3.5 mr-2" />}
-          Hapus Subscription
-        </Button>
-        </div>
-    </div>
+      {showDeleteModal && (
+        <DeleteModal 
+          sub={d} 
+          onConfirm={handleConfirmDelete} 
+          onCancel={() => setShowDeleteModal(false)}
+          deleting={deleting}
+        />
+      )}
+    </>
   );
 }
 
@@ -291,13 +340,14 @@ export default function AdminSubscriptions() {
         body: JSON.stringify({ status }),
       });
       if (res.ok) {
+        toast.success("Status berhasil diperbarui.", customToastStyle);
         fetchSubs(filterStatus, search);
       } else {
         const json = await res.json();
-        alert(json.message);
+        toast.error(json.message || "Gagal mengubah status.", customToastStyle);
       }
     } catch {
-      alert('Gagal mengubah status.');
+      toast.error('Terjadi kesalahan jaringan saat mengubah status.', customToastStyle);
     }
   };
 
@@ -309,13 +359,14 @@ export default function AdminSubscriptions() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
+        toast.success("Subscription berhasil dihapus.", customToastStyle);
         fetchSubs(filterStatus, search);
       } else {
         const json = await res.json();
-        alert(json.message);
+        toast.error(json.message || "Gagal menghapus subscription.", customToastStyle);
       }
     } catch {
-      alert('Gagal menghapus subscription.');
+      toast.error('Terjadi kesalahan jaringan saat menghapus subscription.', customToastStyle);
     }
   };
 
