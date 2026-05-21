@@ -94,8 +94,7 @@ const toggleUserStatus = async (req, res) => {
     }
 };
 
-// ==========================================
-// 3. DELETE USER
+
 // ==========================================
 // ==========================================
 // 3. DELETE USER
@@ -104,13 +103,16 @@ const deleteUser = async (req, res) => {
     try {
         const { user_id } = req.params;
 
-        // 1. Hapus riwayat langganan (subs) terlebih dahulu
+        // 1. Hapus riwayat langganan (subs)
         await pool.query(`DELETE FROM subs WHERE user_id = ?`, [user_id]);
-
+        
         // 2. Hapus profilnya
         await pool.query(`DELETE FROM profiles WHERE user_id = ?`, [user_id]);
-    
-        // 3. Terakhir, hapus akunnya dari tabel users
+
+        // 3. 👇 Hapus laporannya (Gunakan reporter_id, bukan user_id) 👇
+        await pool.query(`DELETE FROM reports WHERE reporter_id = ?`, [user_id]);
+        
+        // 4. Hapus akunnya dari tabel users
         const [result] = await pool.query(`DELETE FROM users WHERE user_id = ? AND role = 'Pengguna'`, [user_id]);
 
         if (result.affectedRows === 0) {
