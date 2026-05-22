@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
 import { Pagination } from '@/components/Admin/Pagination';
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner";
 
 interface User {
   user_id: string;
@@ -33,7 +33,6 @@ interface Stats {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
-// 👇 PERBAIKAN 1: Menambahkan Mapper agar tabel menampilkan Bahasa Indonesia
 const CATEGORY_MAP: Record<string, string> = {
   'general': 'General',
   'disability': 'Penyandang Disabilitas',
@@ -44,7 +43,6 @@ const CATEGORY_MAP: Record<string, string> = {
   'vulnerable-illness': 'Situasi Rentan'
 };
 
-// 👇 PERBAIKAN 2: Mengubah value 'vulnerable' menjadi 'vulnerable-illness' sesuai database
 const CATEGORIES: { label: string; value: string }[] = [
   { label: "Semua Kategori", value: "All" },
   { label: "Penyandang Disabilitas", value: "disability" },
@@ -64,7 +62,6 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
-// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
 const customToastStyle = {
   className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
@@ -120,7 +117,6 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
       <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl overflow-y-auto max-h-[90vh]">
         <h3 className="text-lg font-bold mb-4">Detail Pengguna</h3>
         <div className="space-y-3 mb-6">
-          {/* 👇 PERBAIKAN 3: Role Dihapus, dan Kategori menggunakan Mapper 👇 */}
           {[
             { label: "Nama Lengkap", value: user.full_name || "-" },
             { label: "Username", value: user.username },
@@ -303,7 +299,6 @@ export default function AdminUsers() {
 
       <main className="flex-1 overflow-x-hidden">
         <div className="p-4 md:p-8">
-          {/* Header */}
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-1">Manajemen Pengguna</h1>
@@ -313,7 +308,6 @@ export default function AdminUsers() {
             </div>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {[
               { label: "Total Pengguna", val: statsTotal, color: "text-primary" },
@@ -338,7 +332,6 @@ export default function AdminUsers() {
             ))}
           </div>
 
-          {/* Search + Filter */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -364,7 +357,6 @@ export default function AdminUsers() {
             </div>
           </div>
 
-          {/* Table dengan Horizontal Scroll */}
           <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <div className="overflow-x-auto w-full scrollbar-thin">
               <table className="w-full min-w-[800px]">
@@ -428,14 +420,12 @@ export default function AdminUsers() {
                             </div>
                           </td>
 
-                        {/* Kategori - Ditambahkan Map */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 px-2.5 py-1 rounded-full font-semibold">
                             {CATEGORY_MAP[user.category_status] || user.category_status || "-"}
                           </span>
                         </td>
 
-                        {/* Status */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
                             className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
@@ -447,12 +437,10 @@ export default function AdminUsers() {
                           </span>
                         </td>
 
-                        {/* Bergabung */}
                         <td className="px-6 py-4 text-sm text-muted-foreground">
                           {formatDate(user.created_at)}
                         </td>
 
-                        {/* Aksi */}
                         <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <Button
@@ -517,7 +505,6 @@ export default function AdminUsers() {
         </div>
       </main>
 
-      {/* Modals */}
       {deleteTarget && (
         <DeleteModal
           user={deleteTarget}

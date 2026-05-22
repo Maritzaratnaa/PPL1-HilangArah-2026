@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { Pagination } from '@/components/Admin/Pagination';
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner";
 
 export interface Report {
   report_id: string;
@@ -36,12 +36,10 @@ const getStatusInfo = (status: string) =>
 const getCategoryColor = (category: string) =>
   categoryConfig[category] || 'bg-slate-100 text-slate-700';
 
-// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
 const customToastStyle = {
   className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
 
-// ── DROPDOWN STATUS INLINE DI TABEL ──
 function StatusDropdown({ report, onStatusChange }: {
   report: Report;
   onStatusChange: (id: string, status: string) => void;
@@ -222,10 +220,8 @@ export default function AdminReports() {
   const [detailTarget, setDetailTarget] = useState<Report | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Report | null>(null);
 
-  // --- API SETTINGS ---
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-  // ── INTEGRASI SAMA PERSIS DENGAN KODE ASLI ──
   useEffect(() => {
     const fetchReports = async () => {
       setLoading(true);
@@ -288,7 +284,6 @@ export default function AdminReports() {
       toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
-  // ── END INTEGRASI ──
 
   const filtered = reports.filter(r => {
     const reporterName = r.reporter_name || '';
@@ -388,7 +383,6 @@ export default function AdminReports() {
                           <p className="text-sm text-muted-foreground truncate max-w-[200px]">{report.description}</p>
                         </td>
 
-                        {/* STATUS DROPDOWN INLINE — mengganti badge statis */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <StatusDropdown report={report} onStatusChange={handleStatusChange} />
                         </td>
