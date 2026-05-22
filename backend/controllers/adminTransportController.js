@@ -122,7 +122,7 @@ const getAllRoutes = async (req, res) => {
             FROM routes r
             LEFT JOIN stops o ON r.origin_stop_id = o.stop_id
             LEFT JOIN stops d ON r.destination_stop_id = d.stop_id
-            LEFT JOIN trans t ON r.trans_id = t.trans_id
+            LEFT JOIN trans t ON TRIM(r.trans_id) = TRIM(t.trans_id)
             ORDER BY r.route_name ASC`;
 
         const [routes] = await pool.query(query);
