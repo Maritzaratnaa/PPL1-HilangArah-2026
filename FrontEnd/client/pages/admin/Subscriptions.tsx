@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
 import { Pagination } from '@/components/Admin/Pagination';
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -32,12 +32,10 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   Cancelled: { label: "Dibatalkan", color: "bg-gray-100 text-gray-700 dark:bg-gray-950/30 dark:text-gray-300" },
 };
 
-// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
 const customToastStyle = {
   className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
 
-// --- MODAL KONFIRMASI HAPUS BARU ---
 function DeleteModal({ sub, onConfirm, onCancel, deleting }: {
   sub: Sub;
   onConfirm: () => Promise<void>;
@@ -75,7 +73,6 @@ function DetailModal({ sub, onClose, onStatusChange, onDelete, onSuccess }: {
   const [loadingDetail, setLoadingDetail] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   
-  // State untuk modal hapus
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   
@@ -388,7 +385,6 @@ export default function AdminSubscriptions() {
             <p className="text-muted-foreground text-sm">Kelola subscription pengguna ARAHIN</p>
           </div>
 
-          {/* Stats - Grid Adaptif */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             {[
               { label: 'Total Subscription', val: stats.total, color: 'text-primary' },
@@ -402,7 +398,6 @@ export default function AdminSubscriptions() {
             ))}
           </div>
 
-          {/* Search + Filter */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -431,7 +426,6 @@ export default function AdminSubscriptions() {
             </div>
           )}
 
-          {/* Table Container dengan Horizontal Scroll */}
           <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <div className="overflow-x-auto w-full scrollbar-thin">
               <table className="w-full min-w-[1000px]">

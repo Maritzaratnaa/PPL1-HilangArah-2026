@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { Pagination } from '@/components/Admin/Pagination';
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner";
 
 interface Guide {
   employee_id: string;
@@ -29,7 +29,6 @@ const emptyForm: Guide = {
   is_available: true,
 };
 
-// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
 const customToastStyle = {
   className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
@@ -201,7 +200,6 @@ export default function AdminGuides() {
 
   useEffect(() => { setCurrentPage(1); }, [search, filterAvailability, filterGender]);
 
-  // ── INTEGRASI TIDAK DIUBAH ──
   const fetchGuides = async () => {
     try {
       const res = await fetch(API_URL, {
@@ -305,8 +303,6 @@ export default function AdminGuides() {
   currentPage * ITEMS_PER_PAGE
   );
 
-  // ── END INTEGRASI ──
-
   return (
     <div className="min-h-screen flex bg-background">
       <AdminSidebar />
@@ -322,7 +318,6 @@ export default function AdminGuides() {
             </Button>
           </div>
 
-          {/* Stats - Adaptive Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {[
               { label: "Total Pemandu", val: guides.length, color: "text-primary" },
@@ -336,7 +331,6 @@ export default function AdminGuides() {
             ))}
           </div>
 
-          {/* Search + Filter */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -369,7 +363,6 @@ export default function AdminGuides() {
             </div>
           </div>
 
-          {/* Table Container with Horizontal Scroll */}
           <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <div className="overflow-x-auto w-full scrollbar-thin">
               <table className="w-full min-w-[900px]">
