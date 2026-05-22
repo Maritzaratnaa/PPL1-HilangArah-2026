@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,7 +15,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
   const customToastStyle = {
     className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
   };
@@ -24,7 +23,6 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Perbaikan URL localhost menjadi dinamis
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
@@ -92,7 +90,6 @@ export default function Login() {
                 />
               </div>
 
-              {/* Input Password & Lupa Password */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-base font-semibold">
