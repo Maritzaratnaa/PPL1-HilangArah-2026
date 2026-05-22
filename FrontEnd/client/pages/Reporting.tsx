@@ -50,7 +50,6 @@ interface Report {
   created_at: string;
 }
 
-// Kategori disesuaikan dengan ENUM backend: 'Fasilitas' | 'Pemandu'
 const reportCategories = [
   {
     value: "Fasilitas",
@@ -97,7 +96,6 @@ export default function Reporting() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Fetch riwayat laporan saat halaman dibuka
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -147,7 +145,7 @@ export default function Reporting() {
         setCategory("");
         setDescription("");
         setTimeout(() => setSuccessMessage(false), 4000);
-        fetchReports(); // refresh list
+        fetchReports();
       } else {
         alert(json.message);
       }
@@ -178,7 +176,6 @@ export default function Reporting() {
 
       <main className="flex-grow px-6 py-12 lg:px-10">
         <div className="mx-auto max-w-5xl">
-          {/* SUCCESS BANNER */}
           {successMessage && (
             <div className="mb-8 p-5 bg-green-50 border border-green-200 rounded-[24px] flex items-center justify-between animate-in zoom-in duration-300 shadow-sm">
               <div className="flex items-center gap-4">
@@ -198,7 +195,6 @@ export default function Reporting() {
             </div>
           )}
 
-          {/* HEADER */}
           <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="text-[32px] font-bold text-foreground leading-tight tracking-tight">
@@ -218,7 +214,6 @@ export default function Reporting() {
             )}
           </div>
 
-          {/* STATS CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
             {[
               {
@@ -259,7 +254,6 @@ export default function Reporting() {
             ))}
           </div>
 
-          {/* FORM CARD */}
           {showForm && (
             <Card className="mb-12 bg-card border-primary/20 rounded-[28px] p-8 lg:p-10 shadow-xl border-2 animate-in slide-in-from-top-4">
               <div className="flex items-center gap-4 mb-8">
@@ -336,7 +330,6 @@ export default function Reporting() {
             </Card>
           )}
 
-          {/* LIST SECTION */}
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <h2 className="text-[20px] font-bold text-foreground flex items-center gap-2">
@@ -360,7 +353,7 @@ export default function Reporting() {
                         : st === "pending"
                         ? "Menunggu"
                         : st === "processed"
-                        ? "Diproses" // Label baru
+                        ? "Diproses"
                         : "Selesai"}
                     </button>
                   ))}
@@ -403,7 +396,6 @@ export default function Reporting() {
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-start gap-4 min-w-0 flex-1">
-                          {/* Ikon Kategori - Beri shrink-0 agar tidak gepeng */}
                           <div
                             className={`w-14 h-14 rounded-2xl flex items-center justify-center text-[24px] shrink-0 ${cat?.color || "bg-gray-100 text-gray-700"}`}
                           >
@@ -411,7 +403,6 @@ export default function Reporting() {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            {/* Wrapper ID & Badge agar bisa wrap dengan rapi */}
                             <div className="flex flex-wrap items-center gap-2 mb-1">
                               <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
                                 #{report.report_id.slice(0, 8).toUpperCase()}
@@ -432,14 +423,12 @@ export default function Reporting() {
                               {cat?.label || report.category}
                             </h3>
 
-                            {/* Gunakan line-clamp agar deskripsi tetap rapi */}
                             <p className="text-muted-foreground text-[15px] font-medium line-clamp-1 break-words">
                               {report.description}
                             </p>
                           </div>
                         </div>
 
-                        {/* Bagian Tanggal & Panah */}
                         <div className="flex items-center justify-between md:justify-end border-t md:border-t-0 border-border pt-3 md:pt-0 shrink-0">
                           <div className="md:text-right">
                             <p className="text-[14px] font-bold text-foreground whitespace-nowrap">
@@ -475,7 +464,6 @@ export default function Reporting() {
         </div>
       </main>
 
-      {/* DETAIL MODAL */}
       <Dialog
         open={!!selectedReport}
         onOpenChange={(open) => !open && setSelectedReport(null)}

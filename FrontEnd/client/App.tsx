@@ -23,13 +23,13 @@ import Reporting from "./pages/Reporting";
 import NotFound from "./pages/NotFound";
 import RouteMap from "./pages/RouteMap";
 import VerifyEmail from "./pages/Auth/VerifyEmail";
-import AdminGuides from "./pages/Admin/Guides";
-import AdminSubscriptions from "./pages/Admin/Subscriptions";
-import AdminReports from "./pages/Admin/Reports";
-import AdminTransport from "./pages/Admin/Data";
-import AdminUsers from "./pages/Admin/Users";
-import Dashboard from "./pages/Admin/Dashboard";
-import AdminManage from "./pages/Admin/Admin";
+import AdminGuides from "./pages/admin/Guides";
+import AdminSubscriptions from "./pages/admin/Subscriptions";
+import AdminReports from "./pages/admin/Reports";
+import AdminTransport from "./pages/admin/Data";
+import AdminUsers from "./pages/admin/Users";
+import Dashboard from "./pages/admin/Dashboard";
+import AdminManage from "./pages/admin/Admin";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 
@@ -64,8 +64,8 @@ const App = () => (
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/data" element={<AdminTransport />} />
           <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/Admin/Dashboard" element={<Dashboard/>} />
-          <Route path="/Admin/Manage" element={<AdminManage/>} />
+          <Route path="/admin/dashboard" element={<Dashboard/>} />
+          <Route path="/admin/manage" element={<AdminManage/>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>

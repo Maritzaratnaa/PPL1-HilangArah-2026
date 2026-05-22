@@ -15,7 +15,6 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-// Menggunakan komponen Sidebar yang sudah kamu buat sebelumnya
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 
 const RADIAN = Math.PI / 180;
@@ -32,7 +31,6 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
 };
 
 export default function AdminDashboard() {
-  // State untuk menyimpan data dari API
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -42,7 +40,6 @@ export default function AdminDashboard() {
   const [recentReports, setRecentReports] = useState<any[]>([]);
   const [userCategoryData, setUserCategoryData] = useState<any[]>([]);
 
-  // --- 燥 LOGIKA FETCHING DATA API 燥 ---
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -101,11 +98,9 @@ export default function AdminDashboard() {
     <div className="min-h-screen flex bg-background">
       <AdminSidebar />
 
-      {/* Tambahkan overflow-x-hidden agar main content tidak merusak layout saat zoom */}
       <main className="flex-1 overflow-x-hidden">
         <div className="p-4 md:p-8">
 
-          {/* Header - Responsif untuk zoom (flex-wrap) */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
             <div className="min-w-[280px]">
               <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
@@ -113,9 +108,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Stats Grid - Adaptif grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {/* Total Pengguna */}
             <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
               <div className="flex justify-between items-start mb-6 gap-2 flex-wrap">
                 <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex-shrink-0">
@@ -131,7 +124,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Berlangganan Aktif */}
             <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
               <div className="flex justify-between items-start mb-6 gap-2 flex-wrap">
                 <div className="p-2.5 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex-shrink-0">
@@ -147,7 +139,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Laporan Baru */}
             <div className="bg-card rounded-2xl border border-border p-6 shadow-sm sm:col-span-2 lg:col-span-1">
               <div className="flex justify-between items-start mb-6 gap-2 flex-wrap">
                 <div className="p-2.5 bg-rose-100 dark:bg-rose-900/30 rounded-xl flex-shrink-0">
@@ -164,7 +155,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Second Row: Reports - Menggunakan Horizontal Scroll Wrapper */}
           <div className="mb-8">
             <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
               <div className="px-6 py-4 border-b border-border flex items-center justify-between">
@@ -209,7 +199,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Third Row: Distribusi Kategori Pengguna */}
           <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -221,7 +210,6 @@ export default function AdminDashboard() {
 
             {userCategoryData.length > 0 ? (
               <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8">
-                {/* Pie Chart Container - Ukuran tetap agar tidak distorsi saat zoom */}
                 <div className="flex-shrink-0" style={{ width: 260, height: 220 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -250,7 +238,6 @@ export default function AdminDashboard() {
                   </ResponsiveContainer>
                 </div>
 
-                {/* Legend + Detail - Grid Responsif */}
                 <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                   {userCategoryData.map((item) => {
                     const pct = pieTotalUsers > 0 ? ((item.value / pieTotalUsers) * 100).toFixed(1) : 0;

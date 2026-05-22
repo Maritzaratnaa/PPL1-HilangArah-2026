@@ -72,7 +72,6 @@ const emptyRoute: Route = {
   route_stops: [],
 };
 
-// ── TRANS MODAL ──
 function TransModal({ trans, onSave, onClose }: { trans: Partial<Trans>; onSave: (t: Trans) => void; onClose: () => void }) {
   const [form, setForm] = useState({ ...emptyTrans, ...trans });
   const isEdit = !!trans.name;
@@ -129,7 +128,6 @@ function TransModal({ trans, onSave, onClose }: { trans: Partial<Trans>; onSave:
   );
 }
 
-// ── STOP MODAL ──
 function StopModal({ stop, onSave, onClose }: { stop: Partial<Stop>; onSave: (s: Stop) => void; onClose: () => void }) {
   const [form, setForm] = useState({ ...emptyStop, ...stop });
   const isEdit = !!stop.name;
@@ -195,7 +193,6 @@ function StopModal({ stop, onSave, onClose }: { stop: Partial<Stop>; onSave: (s:
   );
 }
 
-// ── ROUTE MODAL ──
 function RouteModal({ route, transList, stopsList, onSave, onClose }: {
   route: Partial<Route>;
   transList: Trans[];
@@ -243,14 +240,12 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
         </div>
 
         <div className="space-y-5 mb-6">
-          {/* Nama Rute */}
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Nama Rute</Label>
             <Input value={form.route_name} onChange={(e) => setForm({ ...form, route_name: e.target.value })}
               placeholder="Nama rute" className="h-10" />
           </div>
 
-          {/* Transportasi */}
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Transportasi</Label>
             <select value={form.trans_id} onChange={(e) => setForm({ ...form, trans_id: e.target.value })}
@@ -260,7 +255,6 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
             </select>
           </div>
 
-          {/* Halte Asal */}
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Halte Asal</Label>
             <select value={form.origin_stop_id} onChange={(e) => {
@@ -272,7 +266,6 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
             </select>
           </div>
 
-          {/* Halte Tujuan */}
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Halte Tujuan</Label>
             <select value={form.destination_stop_id} onChange={(e) => {
@@ -286,7 +279,6 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
             </select>
           </div>
 
-          {/* Route Stops */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label className="text-sm font-semibold">Urutan Halte (Route Stops)</Label>
@@ -305,12 +297,10 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
             <div className="space-y-2">
               {form.route_stops.map((rs, idx) => (
                 <div key={idx} className="flex items-center gap-2 bg-muted/30 rounded-lg p-2 border border-border">
-                  {/* Stop Order */}
                   <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
                     {rs.stop_order}
                   </div>
 
-                  {/* Pilih Halte */}
                   <select value={rs.stop_id}
                     onChange={(e) => updateRouteStop(idx, 'stop_id', e.target.value)}
                     className="flex-1 h-8 px-2 rounded-md border border-border bg-background text-xs">
@@ -318,7 +308,6 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
                     {stopsList.map(s => <option key={s.stop_id} value={s.stop_id}>{s.name}</option>)}
                   </select>
 
-                  {/* Est Time */}
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <Input type="number" min={0}
                       value={rs.est_time_minutes}
@@ -327,7 +316,6 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
                     <span className="text-xs text-muted-foreground">mnt</span>
                   </div>
 
-                  {/* Hapus */}
                   <button onClick={() => removeRouteStop(idx)}
                     className="text-rose-500 hover:text-rose-700 flex-shrink-0">
                     <X className="h-3.5 w-3.5" />
@@ -337,7 +325,6 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
             </div>
           </div>
 
-          {/* Aktif */}
           <div className="flex items-center gap-2 pt-2 border-t border-border">
             <input type="checkbox" id="route_active" checked={form.is_active}
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4" />
@@ -359,7 +346,6 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
   );
 }
 
-// ── DELETE MODAL ──
 function DeleteModal({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -378,19 +364,15 @@ function DeleteModal({ name, onConfirm, onCancel }: { name: string; onConfirm: (
   );
 }
 
-// ── MAIN COMPONENT ──
 export default function AdminData() {
   const [activeTab, setActiveTab] = useState<'trans' | 'stops' | 'routes'>('trans');
   const [search, setSearch] = useState('');
 
-  // Transport & Stops menggunakan Dummy Data Sementara
   const [transList, setTransList] = useState([]);
   const [stopsList, setStopsList] = useState([]);
 
-  // Routes di-set kosong karena akan di-fetch dari Backend API
   const [routesList, setRoutesList] = useState([]);
 
-  // Filter states
   const [filterType, setFilterType] = useState('All');
   const [filterFacility, setFilterFacility] = useState('All');
 
@@ -399,20 +381,14 @@ export default function AdminData() {
   const [routeModal, setRouteModal] = useState<Partial<Route> | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ name: string; onConfirm: () => void } | null>(null);
 
-  // --- KUSTOMISASI GAYA TOAST ---
   const customToastStyle = {
     className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
   };
 
-  // --- API SETTINGS ---
   const API_URL_ROUTES = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/transportations/routes` : "http://localhost:3000/api/admin/transportations/routes";
   const API_URL_TRANS = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/transportations/trans` : "http://localhost:3000/api/admin/transportations/trans";
   const API_URL_STOPS = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/transportations/stops` : "http://localhost:3000/api/admin/transportations/stops";
   const token = localStorage.getItem("token");
-
-  // ==========================================
-  // 🚀 LOGIKA API RUTE (FETCH, SAVE, DELETE)
-  // ==========================================
 
   const fetchRoutes = async () => {
     try {
@@ -422,7 +398,6 @@ export default function AdminData() {
       const json = await res.json();
 
       if (res.ok) {
-        // Konversi format DB ke format State UI
         const mappedRoutes = json.data.map((r: any) => ({
           route_id: r.route_id,
           trans_id: r.trans_id,
@@ -430,9 +405,9 @@ export default function AdminData() {
           origin_stop_id: r.origin_stop_id,
           destination_stop_id: r.destination_stop_id,
           origin_stop_name: r.origin_stop_name || '',
-          dest_stop_name: r.destination_stop_name || '', // Di UI menggunakan dest_stop_name
-          is_active: r.is_active === 1, // Ubah tinyint(1) ke boolean true/false
-          route_stops: r.route_stops || [], // Ambil dari API
+          dest_stop_name: r.destination_stop_name || '',
+          is_active: r.is_active === 1,
+          route_stops: r.route_stops || [],
         }));
         setRoutesList(mappedRoutes);
       }
@@ -441,7 +416,6 @@ export default function AdminData() {
     }
   };
 
-  // Muat data saat pertama kali halaman dibuka
   useEffect(() => {
     fetchRoutes();
     fetchTrans();
@@ -465,7 +439,7 @@ export default function AdminData() {
           origin_stop_id: r.origin_stop_id,
           destination_stop_id: r.destination_stop_id,
           trans_id: r.trans_id,
-          is_active: r.is_active ? 1 : 0, // Ubah boolean kembali ke angka
+          is_active: r.is_active ? 1 : 0,
           route_stops: r.route_stops
         }),
       });
@@ -473,8 +447,8 @@ export default function AdminData() {
       const json = await res.json();
       if (res.ok) {
         toast.success(json.message || "Rute berhasil disimpan.", customToastStyle);
-        fetchRoutes(); // Refresh data dari DB
-        setRouteModal(null); // Tutup modal
+        fetchRoutes();
+        setRouteModal(null);
       } else {
         toast.error(json.message || "Gagal menyimpan rute.", customToastStyle);
       }
@@ -492,7 +466,7 @@ export default function AdminData() {
 
       if (res.ok) {
         toast.success("Rute berhasil dihapus.", customToastStyle);
-        fetchRoutes(); // Refresh data
+        fetchRoutes();
         setDeleteModal(null);
       } else {
         const json = await res.json();
@@ -503,12 +477,6 @@ export default function AdminData() {
     }
   };
 
-  // ==========================================
-  // 🛑 END LOGIKA API RUTE
-  // ==========================================
-
-
-  // ── FILTERED DATA ──
   const filteredTrans = transList.filter(t => {
     const matchSearch = t.name.toLowerCase().includes(search.toLowerCase());
     const matchType = filterType === 'All' || t.type === filterType;
@@ -532,7 +500,6 @@ export default function AdminData() {
     r.dest_stop_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Integrasi API Transportasi
   const fetchTrans = async () => {
     try {
       const res = await fetch(API_URL_TRANS, {
@@ -619,7 +586,6 @@ export default function AdminData() {
     }
   };
 
-  // Integrasi API Halte
   const fetchStops = async () => {
     try {
       const res = await fetch(API_URL_STOPS, {
@@ -706,7 +672,6 @@ export default function AdminData() {
     }
   };
 
-  // ── STATS ──
   const transStats = {
     all: transList.length,
     Bus: transList.filter(t => t.type === 'Bus').length,
@@ -734,7 +699,6 @@ export default function AdminData() {
   const [routesPage, setRoutesPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Reset saat tab ganti
   useEffect(() => {
     setTransPage(1); setStopsPage(1); setRoutesPage(1);
   }, [activeTab, search, filterType, filterFacility]);
@@ -748,10 +712,8 @@ export default function AdminData() {
     <div className="min-h-screen flex bg-background">
       <AdminSidebar />
 
-      {/* Main content */}
       <main className="flex-1 overflow-auto">
         <div className="p-8">
-          {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold mb-1">Manajemen Data</h1>
             <p className="text-muted-foreground text-sm">
@@ -759,7 +721,6 @@ export default function AdminData() {
             </p>
           </div>
 
-          {/* ── STATS: TRANSPORTASI ── */}
           {activeTab === "trans" && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
               {[
@@ -788,7 +749,6 @@ export default function AdminData() {
             </div>
           )}
 
-          {/* ── STATS: HALTE ── */}
           {activeTab === "stops" && (
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
               {[
@@ -828,7 +788,6 @@ export default function AdminData() {
             </div>
           )}
 
-          {/* Tabs */}
           <div className="flex items-center gap-2 mb-6 border-b border-border">
             {tabs.map((tab) => (
               <button
@@ -850,7 +809,6 @@ export default function AdminData() {
             ))}
           </div>
 
-          {/* ── SEARCH + FILTER + ADD ── */}
           <div className="flex flex-col gap-3 mb-6">
             <div className="flex gap-3">
               <div className="relative flex-1">
@@ -880,7 +838,6 @@ export default function AdminData() {
               </Button>
             </div>
 
-            {/* Filter Tipe Transportasi */}
             {activeTab === "trans" && (
               <div className="flex flex-wrap gap-2">
                 {["All", "Bus", "MRT", "Train", "LRT"].map((f) => (
@@ -897,7 +854,6 @@ export default function AdminData() {
               </div>
             )}
 
-            {/* Filter Fasilitas Halte */}
             {activeTab === "stops" && (
               <div className="flex flex-wrap gap-2">
                 {[
@@ -921,7 +877,6 @@ export default function AdminData() {
             )}
           </div>
 
-          {/* ── TAB: TRANSPORTASI ── */}
           {activeTab === "trans" && (
             <>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -1056,7 +1011,6 @@ export default function AdminData() {
           )}
           
 
-          {/* ── TAB: HALTE ── */}
           {activeTab === "stops" && (
             <>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -1179,8 +1133,6 @@ export default function AdminData() {
             </>
           )}
           
-
-          {/* ── TAB: RUTE ── */}
           {activeTab === "routes" && (
             <>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -1328,7 +1280,6 @@ export default function AdminData() {
         </div>
       </main>
 
-      {/* Modals */}
       {transModal && (
         <TransModal
           trans={transModal}
