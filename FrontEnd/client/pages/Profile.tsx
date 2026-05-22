@@ -67,7 +67,6 @@ const allStatuses = [
   },
 ];
 
-// 1. UPDATE INTERFACE
 interface UserProfile {
   email: string;
   full_name: string;
@@ -144,7 +143,6 @@ export default function Profile() {
         .toUpperCase()
     : "?";
 
-  // 2. FUNGSI RENDER BADGE STATUS
   const renderSubscriptionBadge = () => {
     if (profile?.is_subscriber) {
       return (
@@ -170,7 +168,6 @@ export default function Profile() {
       );
     }
 
-    // Default jika status null atau tidak ada record
     return (
       <div className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/30 dark:text-slate-300 dark:border-slate-700">
         Pengguna Gratis
@@ -208,8 +205,6 @@ export default function Profile() {
         <div className="mx-auto max-w-2xl">
           <div className="flex items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-4 min-w-0">
-              {" "}
-              {/* min-w-0 penting untuk flex child */}
               <Link to="/home" className="shrink-0">
                 <Button variant="ghost" size="icon" className="h-11 w-11">
                   <ArrowLeft className="h-5 w-5" />
