@@ -56,35 +56,35 @@ interface RouteResult {
 const BASE_URL = "http://localhost:3000";
 
 function getFacilityTips(category: string, facilities: Facility) {
-  const tips: { icon: string; label: string; color: string }[] = [];
+  const tips: {label: string; color: string }[] = [];
   if (!facilities) return tips;
 
   const safeCategory = (category || "").trim().toLowerCase();
 
   if (["wanita", "perempuan", "women"].includes(safeCategory)) {
     if (facilities.women_area) {
-      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+      tips.push({label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
     }
   } 
   else if (["ibu hamil", "pregnant"].includes(safeCategory)) {
     if (facilities.women_area) {
-      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+      tips.push({label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
     }
     if (facilities.priority_seat) {
-      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+      tips.push({label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
     }
   } 
   else if (["disabilitas", "disability", "tunanetra", "tuli", "pengguna kursi roda"].includes(safeCategory)) {
     if (facilities.low_entry) {
-      tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
+      tips.push({label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
     }
     if (facilities.wheelchair_slot) {
-      tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
+      tips.push({label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
     }
   } 
   else if (["lansia", "elderly", "penyakit rentan", "vulnerable", "anak-anak", "children"].includes(safeCategory)) {
     if (facilities.priority_seat) {
-      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+      tips.push({label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
     }
   }
   
@@ -402,7 +402,7 @@ export default function RouteResults() {
                           <div className="flex flex-wrap gap-2 mb-4">
                             {facilityTips.map((tip, i) => (
                               <span key={i} className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-transparent shadow-sm ${tip.color}`}>
-                                {tip.icon} {tip.label}
+                                {tip.label}
                               </span>
                             ))}
                           </div>
