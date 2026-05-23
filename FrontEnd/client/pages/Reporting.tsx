@@ -33,7 +33,6 @@ import {
   Sparkles,
   X,
   Calendar,
-  Mail,
   Loader2,
 } from "lucide-react";
 
@@ -54,13 +53,13 @@ const reportCategories = [
   {
     value: "Fasilitas",
     label: "Fasilitas",
-    icon: "🏗️",
+    icon: "apartment",
     color: "bg-blue-100 text-blue-700",
   },
   {
     value: "Pemandu",
     label: "Pemandu",
-    icon: "🧭",
+    icon: "tour",
     color: "bg-orange-100 text-orange-700",
   },
 ];
@@ -160,7 +159,7 @@ export default function Reporting() {
     (r) =>
       filterStatus === "all" ||
       (filterStatus === "pending" && r.status === "Pending") ||
-      (filterStatus === "processed" && r.status === "Processed") || 
+      (filterStatus === "processed" && r.status === "Processed") ||
       (filterStatus === "resolved" && r.status === "Resolved"),
   );
 
@@ -278,9 +277,14 @@ export default function Reporting() {
                         <SelectItem
                           key={cat.value}
                           value={cat.value}
-                          className="py-3"
+                          className="py-3 flex items-center"
                         >
-                          <span className="mr-2">{cat.icon}</span> {cat.label}
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[20px]">
+                              {cat.icon}
+                            </span>
+                            <span>{cat.label}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -397,9 +401,11 @@ export default function Reporting() {
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-start gap-4 min-w-0 flex-1">
                           <div
-                            className={`w-14 h-14 rounded-2xl flex items-center justify-center text-[24px] shrink-0 ${cat?.color || "bg-gray-100 text-gray-700"}`}
+                            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${cat?.color || "bg-gray-100 text-gray-700"}`}
                           >
-                            {cat?.icon || "📋"}
+                            <span className="material-symbols-outlined text-[28px]">
+                              {cat?.icon || "assignment"}
+                            </span>
                           </div>
 
                           <div className="min-w-0 flex-1">
