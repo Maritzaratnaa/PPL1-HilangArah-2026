@@ -5,14 +5,13 @@ const sendResetEmail = async (emailTo, resetToken) => {
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
             port: 587,
-            secure: false, // true for 465, false for other ports
+            secure: false,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
             }
         });
 
-        // Gunakan port 8080 untuk frontend (sesuai docker-compose)
         const resetLink = `http://localhost:8080/reset-password?token=${resetToken}`;
 
         const mailOptions = {
@@ -35,9 +34,9 @@ const sendResetEmail = async (emailTo, resetToken) => {
         };
 
         await transporter.sendMail(mailOptions);
-        console.log("📧 Email Reset Password berhasil dikirim ke:", emailTo);
+        console.log("Email Reset Password berhasil dikirim ke:", emailTo);
     } catch (error) {
-        console.error("❌ Gagal mengirim email reset:", error);
+        console.error("Gagal mengirim email reset:", error);
     }
 };
 

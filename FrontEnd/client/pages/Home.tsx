@@ -16,27 +16,22 @@ export default function Home() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
 
-  // --- STATE BARU UNTUK SUBSCRIPTION ---
   const [hasSubs, setHasSubs] = useState(false);
   const [subsDays, setSubsDays] = useState(0);
   const [subsStatus, setSubsStatus] = useState("");
   const [subsEndDate, setSubsEndDate] = useState("");
   
-  // 👇 STATE CEK TAGIHAN TERTUNDA DARI MIDTRANS 👇
   const [hasPendingPayment, setHasPendingPayment] = useState(false);
 
-  // --- STATE UNTUK RINGKASAN LAPORAN ---
   const [totalReports, setTotalReports] = useState(0);
   const [processedReports, setProcessedReports] = useState(0);
 
   useEffect(() => {
-    // 1. Ambil data profil lokal
     const name = localStorage.getItem("userName") || "Pengguna";
     const category = localStorage.getItem("userCategory") || "";
     setUserName(name.split(" ")[0]);
     setUserCategory(category);
 
-    // Cek apakah ada pembayaran tertunda di memori
     const pendingData = localStorage.getItem("pendingPayment");
     if (pendingData) {
       setHasPendingPayment(true);
@@ -52,7 +47,6 @@ export default function Home() {
       }),
     );
 
-    // 2. Cek laporan aktif
     const fetchReports = async () => {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -83,7 +77,6 @@ export default function Home() {
 
     fetchReports(); 
 
-    // 3. Cek status subscription ke Backend
     const fetchSubs = async () => {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -129,7 +122,6 @@ export default function Home() {
     );
   };
 
-  // 👇 QUICK ACTIONS DIUPDATE LOGIKANYA 👇
   const quickActions = [
     {
       icon: <AlertCircle className="h-6 w-6" />,
@@ -142,7 +134,6 @@ export default function Home() {
     {
       icon: <Star className="h-6 w-6" />,
       label: "Langganan",
-      // Teks dinamis berdasarkan urutan: Pending Payment -> Pending Backend -> Active -> Belum langganan
       sub: hasPendingPayment
         ? "Lanjutkan pembayaran"
         : hasSubs
@@ -152,7 +143,6 @@ export default function Home() {
         : "Daftar pemandu",
       bg: "bg-blue-50 dark:bg-blue-950/30",
       color: "text-blue-600",
-      // Rute Dinamis
       href: hasPendingPayment
         ? "/subscription/Payment"
         : hasSubs
@@ -161,7 +151,6 @@ export default function Home() {
     },
   ];
 
-  // Style kondisional berdasarkan high contrast
   const heroStyle = isHC
     ? { background: "#000000" }
     : {
@@ -270,7 +259,6 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Search bar */}
               <div className="rounded-xl p-3 mb-0" style={searchBoxStyle}>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <div
@@ -314,7 +302,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 👇 KARTU LANGGANAN DI HERO DIUPDATE LOGIKANYA 👇 */}
             <div className="rounded-xl p-5 mb-0 self-end" style={subCardStyle}>
               {hasPendingPayment ? (
                 <>
@@ -452,7 +439,6 @@ export default function Home() {
         </svg>
       </section>
 
-      {/* STATS SECTION */}
       <section className="bg-muted/50 py-10 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-lg font-bold mb-5">Ringkasan Saya</h2>
@@ -496,7 +482,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* QUICK ACTIONS */}
       <section className="bg-background py-10 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-lg font-bold mb-5">Akses Cepat</h2>
