@@ -68,7 +68,6 @@ export function Footer() {
             <div className={`flex gap-4 text-xs ${isHC ? 'text-[#ffff00]' : 'text-muted-foreground'}`}>
               <a href="#" className="hover:underline transition-colors">Privasi</a>
               <a href="#" className="hover:underline transition-colors">Syarat & Ketentuan</a>
-              <a href="#" className="hover:underline transition-colors">Buku Panduan</a>
             </div>
           </div>
 
