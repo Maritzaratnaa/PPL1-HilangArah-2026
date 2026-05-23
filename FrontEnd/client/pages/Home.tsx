@@ -269,7 +269,7 @@ export default function Home() {
                     <input
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
-                      placeholder="📍 Halte asal..."
+                      placeholder="Halte asal..."
                       className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40"
                     />
                   </div>
@@ -281,7 +281,7 @@ export default function Home() {
                     <input
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
-                      placeholder="🏁 Halte tujuan..."
+                      placeholder="Halte tujuan..."
                       className="bg-transparent text-white text-sm outline-none w-full placeholder:text-white/40"
                     />
                   </div>
