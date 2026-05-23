@@ -1,6 +1,6 @@
 const pool = require('../db');
 const bcrypt = require('bcrypt');
-const crypto = require('crypto'); // <-- Tambahkan ini untuk membuat UUID
+const crypto = require('crypto'); 
 
 const getAllAdmins = async (req, res) => {
     try {
@@ -26,12 +26,10 @@ const assignAdminRole = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // 1. Validasi input
         if (!email || !password) {
             return res.status(400).json({message: "Email dan password harus diisi!"});
         }
 
-        // 2. Cek apakah email sudah terdaftar di database
         const checkQuery = `SELECT user_id FROM users WHERE email = ?`;
         const [existingUsers] = await pool.query(checkQuery, [email]);
     
@@ -41,14 +39,11 @@ const assignAdminRole = async (req, res) => {
             });
         }
 
-        // 3. Buat admin baru
         const hashedPassword = await bcrypt.hash(password, 10);
         const username = email.split('@')[0];
         
-        // Buat UUID baru secara otomatis dari backend
         const newUserId = crypto.randomUUID(); 
 
-        // Masukkan newUserId beserta kolom lainnya ke dalam query INSERT
         const insertQuery = `INSERT INTO users (user_id, username, email, password, role, is_active, is_verified) VALUES (?, ?, ?, ?, 'Admin', 1, 1)`; 
         await pool.query(insertQuery, [newUserId, username, email, hashedPassword]);
 
