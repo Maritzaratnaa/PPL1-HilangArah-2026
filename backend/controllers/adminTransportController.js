@@ -1,6 +1,5 @@
 const pool = require('../db');
 
-// Helper untuk generate ID berurutan (contoh: TR-001, STP-001)
 const generateCustomId = async (connectionOrPool, table, idColumn, prefix) => {
     const query = `SELECT ${idColumn} FROM ${table} WHERE ${idColumn} LIKE ? ORDER BY ${idColumn} DESC LIMIT 1`;
     const [rows] = await connectionOrPool.query(query, [`${prefix}%`]);
@@ -21,7 +20,6 @@ const generateCustomId = async (connectionOrPool, table, idColumn, prefix) => {
     return `${prefix}${paddedNum}`;
 };
 
-// Get Data Transport
 const getAllTransports = async (req, res) => {
     try {
         const { type } = req.query;
@@ -51,7 +49,6 @@ const getAllTransports = async (req, res) => {
 };
 
 
-// Create Data Transport
 const createTransport = async (req, res) => {
     try {
         const { name, type, is_low_entry, has_wheelchair_slot, has_priority_seat, has_women_area, is_active } = req.body;
@@ -76,7 +73,6 @@ const createTransport = async (req, res) => {
     }
 };
 
-// Update Data Transport
 const updateTransport = async (req, res) => {
     try {
         const { id } = req.params;
@@ -103,7 +99,6 @@ const updateTransport = async (req, res) => {
     }
 };
 
-// Get Data Rute
 const getAllRoutes = async (req, res) => {
     console.log(`[DEBUG] getAllRoutes: Request received!`);
     try {
@@ -152,7 +147,6 @@ const getAllRoutes = async (req, res) => {
     }
 };
 
-// Create Data Rute
 const createRoute = async (req, res) => {
     let connection;
     try {
@@ -169,7 +163,6 @@ const createRoute = async (req, res) => {
             INSERT INTO routes (route_id, route_name, origin_stop_id, destination_stop_id, is_active, trans_id) 
             VALUES (?, ?, ?, ?, ?, ?)`;
 
-        // Pad trans_id with spaces up to 36 chars to bypass the foreign key VARCHAR vs CHAR schema mismatch
         const paddedTransId = trans_id.padEnd(36, ' ');
 
         await connection.query(query, [
@@ -199,7 +192,6 @@ const createRoute = async (req, res) => {
     }
 };
 
-// Update Data Rute
 const updateRoute = async (req, res) => {
     let connection;
     try {
@@ -254,10 +246,8 @@ const deleteRoute = async (req, res) => {
         await connection.beginTransaction();
         const { id } = req.params;
 
-        // Delete from route_stops first to prevent foreign key constraint error
         await connection.query(`DELETE FROM route_stops WHERE route_id = ?`, [id]);
         
-        // Delete the route
         const [result] = await connection.query(`DELETE FROM routes WHERE route_id = ?`, [id]);
 
         if (result.affectedRows === 0) {
@@ -276,7 +266,6 @@ const deleteRoute = async (req, res) => {
     }
 };
 
-// Get Data Halte
 const getAllStops = async (req, res) => {
     try {
         const { facility } = req.query;
@@ -316,7 +305,6 @@ const getAllStops = async (req, res) => {
     }
 };
 
-// Create Data Halte
 const createStop = async (req, res) => {
     try {
         const { name, address, latitude, longitude, has_ramp, has_elevator, is_active } = req.body;
@@ -340,7 +328,6 @@ const createStop = async (req, res) => {
     }
 };
 
-// Update Data Halte
 const updateStop = async (req, res) => {
     try {
         const { id } = req.params;
@@ -399,7 +386,6 @@ const deleteStop = async (req, res) => {
     }
 };
 
-// Get Data Route Stop
 const getAllRouteStops = async (req, res) => {
     try {
         const query = `
@@ -431,7 +417,6 @@ const getAllRouteStops = async (req, res) => {
     }
 };
 
-// Create Data Route Stop
 const createRouteStop = async (req, res) => {
     try {
         const { route_id, stop_id, stop_order, est_time_minutes } = req.body;
@@ -456,7 +441,6 @@ const createRouteStop = async (req, res) => {
     }
 };
 
-// Update Data Route Stop
 const updateRouteStop = async (req, res) => {
     try {
         const { id } = req.params;
