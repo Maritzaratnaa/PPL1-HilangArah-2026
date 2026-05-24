@@ -81,35 +81,35 @@ function getAccessibilityBadge(facilities: Facility, category: string) {
 }
 
 function getFacilityTips(facilities: Facility, category: string) {
-  const tips: { icon: string; label: string; color: string }[] = [];
+  const tips: {label: string; color: string }[] = [];
   if (!facilities) return tips;
 
   const safeCategory = (category || "").trim().toLowerCase();
 
   if (["wanita", "perempuan", "women"].includes(safeCategory)) {
     if (facilities.women_area) {
-      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
+      tips.push({label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
     }
   } 
   else if (["ibu hamil", "pregnant"].includes(safeCategory)) {
     if (facilities.women_area) {
-      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
+      tips.push({label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
     }
     if (facilities.priority_seat) {
-      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
+      tips.push({label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
     }
   } 
   else if (["disabilitas", "disability", "tunanetra", "tuli", "pengguna kursi roda"].includes(safeCategory)) {
     if (facilities.low_entry) {
-      tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300" });
+      tips.push({label: "Low Entry", color: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300" });
     }
     if (facilities.wheelchair_slot) {
-      tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300" });
+      tips.push({label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300" });
     }
   } 
   else if (["lansia", "elderly", "penyakit rentan", "vulnerable", "anak-anak", "children"].includes(safeCategory)) {
     if (facilities.priority_seat) {
-      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
+      tips.push({label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
     }
   }
 
@@ -444,7 +444,7 @@ export default function RouteMap() {
                             <div className="flex flex-wrap gap-2">
                               {getFacilityTips(t.facilities, filterCategory).map((facility, i) => (
                                 <div key={i} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold shadow-sm ${facility.color}`}>
-                                  <span>{facility.icon}</span> {facility.label}
+                                  {facility.label}
                                 </div>
                               ))}
                             </div>

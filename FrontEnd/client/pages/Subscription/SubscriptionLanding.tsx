@@ -235,29 +235,6 @@ export default function SubscriptionLanding() {
               ))}
             </div>
             
-            <div className={`rounded-2xl p-4 flex items-center gap-3 sm:gap-4 ${
-              isHC ? "border-2 border-[#ffff00]" : "bg-white/12 border border-white/20"
-            }`}>
-              <div className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-sm ${
-                isHC ? "bg-transparent border-2 border-[#ffff00] text-[#ffff00]" : "bg-white/20 text-white"
-              }`}>
-                RS
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className={`text-sm font-bold truncate ${isHC ? "text-[#ffff00]" : "text-white"}`}>
-                  Rizky Santoso
-                </div>
-                <div className={`text-[11px] font-medium truncate ${isHC ? "text-white" : "text-white/50"}`}>
-                  Pemandu KRL Jabodetabek · ⭐ 4.9
-                </div>
-              </div>
-              <div className={`flex-shrink-0 rounded-full px-3 py-1 text-[10px] font-bold flex items-center gap-1 ${
-                isHC ? "bg-black border-2 border-[#ffff00] text-[#ffff00]" : "bg-green-500/20 border border-green-500/40 text-green-300"
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isHC ? "bg-[#ffff00]" : "bg-green-400"}`} />
-                <span className="whitespace-nowrap">Aktif</span>
-              </div>
-            </div>
             <p className={`text-[11px] font-medium text-center mt-1 ${isHC ? "text-white" : "text-white/40"}`}>
               Cocokkan pemandu sesuai kebutuhan Anda
             </p>
@@ -497,13 +474,16 @@ export default function SubscriptionLanding() {
             <p className={`text-[14px] font-medium mb-3 ${isHC ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
               Masih ada pertanyaan?
             </p>
-            <button className={`px-6 py-2.5 rounded-lg text-[14px] font-bold transition-all focus:outline-none ${
-              isHC 
-                ? "bg-black border-2 border-[#ffff00] text-[#ffff00] hover:bg-[#ffff00] hover:text-black" 
-                : "border border-[#007C8A] dark:border-[#26c6da] text-[#007C8A] dark:text-[#26c6da] hover:bg-[#007C8A] dark:hover:bg-[#26c6da] hover:text-white dark:hover:text-gray-900"
-            }`}>
+            <a 
+              href="mailto:arahin.support@gmail.com"
+              className={`inline-block px-6 py-2.5 rounded-lg text-[14px] font-bold transition-all focus:outline-none ${
+                isHC 
+                  ? "bg-black border-2 border-[#ffff00] text-[#ffff00] hover:bg-[#ffff00] hover:text-black" 
+                  : "border border-[#007C8A] dark:border-[#26c6da] text-[#007C8A] dark:text-[#26c6da] hover:bg-[#007C8A] dark:hover:bg-[#26c6da] hover:text-white dark:hover:text-gray-900"
+              }`}
+            >
               Hubungi Tim Kami
-            </button>
+            </a>
           </div>
         </div>
       </section>
