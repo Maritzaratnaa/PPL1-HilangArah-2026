@@ -3,9 +3,8 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -19,7 +18,7 @@ import {
   ShieldAlert, Inbox, Sparkles, X, Calendar, Loader2,
 } from "lucide-react";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 interface Report {
   report_id: string;
@@ -27,9 +26,17 @@ interface Report {
   description: string;
   status: "Pending" | "Processed" | "Resolved";
   stop_id: string | null;
+  stop_name: string | null;
   subs_id: string | null;
   resolved_by: string | null;
   created_at: string;
+}
+
+interface LocationOption {
+  id: string;
+  name: string;
+  type: "stop" | "trans";
+  detail?: string;
 }
 
 const reportCategories = [
@@ -38,91 +45,162 @@ const reportCategories = [
 ];
 
 const statusConfig = {
-  Pending: { label: "Menunggu", color: "bg-amber-100 text-amber-700", icon: Clock },
-  Processed: { label: "Diproses", color: "bg-blue-100 text-blue-700", icon: AlertCircle },
-  Resolved: { label: "Selesai", color: "bg-green-100 text-green-700", icon: CheckCircle },
+  Pending:   { label: "Menunggu", color: "bg-amber-100 text-amber-700",  icon: Clock        },
+  Processed: { label: "Diproses", color: "bg-blue-100 text-blue-700",    icon: AlertCircle  },
+  Resolved:  { label: "Selesai",  color: "bg-green-100 text-green-700",  icon: CheckCircle  },
 };
 
 function extractLocationFromDesc(desc: string): { location: string; cleanDesc: string } {
   const match = desc.match(/^\[Lokasi: (.+?)\]\n?/);
-  if (match) {
-    return { location: match[1], cleanDesc: desc.replace(match[0], '') };
-  }
-  return { location: '-', cleanDesc: desc };
+  if (match) return { location: match[1], cleanDesc: desc.replace(match[0], "") };
+  return { location: "-", cleanDesc: desc };
 }
 
 export default function Reporting() {
   const navigate = useNavigate();
-  const [showForm, setShowForm] = useState(false);
-  const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("");
+  const [showForm, setShowForm]       = useState(false);
+  const [category, setCategory]       = useState("");
+  const [locationId, setLocationId]   = useState("");
   const [description, setDescription] = useState("");
   const [successMessage, setSuccessMessage] = useState(false);
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reports, setReports]         = useState<Report[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading]         = useState(true);
+  const [submitting, setSubmitting]   = useState(false);
+  const [errorMsg, setErrorMsg]       = useState("");
+
+  const [locationOptions, setLocationOptions]   = useState<LocationOption[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [locationError, setLocationError]       = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
     fetchReports();
+    fetchLocations();
   }, [navigate]);
 
   const fetchReports = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${BASE_URL}/api/reports/my-reports`, {
+      const res   = await fetch(`${BASE_URL}/api/reports/my-reports`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
-      if (res.ok) setReports(json.data);
+      if (res.ok) setReports(json.data ?? []);
       else setErrorMsg(json.message);
-    } catch { setErrorMsg("Gagal menghubungi server."); }
-    finally { setLoading(false); }
+    } catch {
+      setErrorMsg("Gagal menghubungi server.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
-    if (!category || !location.trim() || description.length < 10) return;
+    if (!category || !locationId || description.length < 10) return;
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
-      const fullDescription = `[Lokasi: ${location.trim()}]\n${description}`;
-
-      const res = await fetch(`${BASE_URL}/api/reports`, {
+      const res   = await fetch(`${BASE_URL}/api/reports`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ category, description: fullDescription }),
+        body: JSON.stringify({ category, description, stop_id: locationId }),
       });
       const json = await res.json();
       if (res.ok) {
         setSuccessMessage(true);
         setShowForm(false);
         setCategory("");
-        setLocation("");
+        setLocationId("");
         setDescription("");
         setTimeout(() => setSuccessMessage(false), 4000);
         fetchReports();
-      } else { alert(json.message); }
-    } catch { alert("Gagal menghubungi server."); }
-    finally { setSubmitting(false); }
+      } else {
+        alert(json.message);
+      }
+    } catch {
+      alert("Gagal menghubungi server.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const fetchLocations = async () => {
+    setLoadingLocations(true);
+    setLocationError("");
+    try {
+      const token = localStorage.getItem("token");
+      const res   = await fetch(`${BASE_URL}/api/reports/locations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setLocationError("Gagal memuat daftar lokasi. Periksa koneksi Anda.");
+        return;
+      }
+
+      const stops: LocationOption[] = (json.data?.stops ?? []).map((s: any) => ({
+        id:     s.id,
+        name:   s.name,
+        type:   "stop" as const,
+        detail: s.detail || "",
+      }));
+
+      const trans: LocationOption[] = (json.data?.trans ?? []).map((t: any) => ({
+        id:     t.id,
+        name:   t.name,
+        type:   "trans" as const,
+        detail: t.detail || "",
+      }));
+
+      const combined = [...stops, ...trans];
+      setLocationOptions(combined);
+
+      if (combined.length === 0) {
+        setLocationError("Belum ada data lokasi aktif. Silakan hubungi admin.");
+      }
+    } catch (err) {
+      console.error("Gagal fetch lokasi:", err);
+      setLocationError("Gagal memuat daftar lokasi. Periksa koneksi Anda.");
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const resetForm = () => {
+    setShowForm(false);
+    setCategory("");
+    setLocationId("");
+    setDescription("");
+  };
+
+  const selectedLocation = locationOptions.find((o) => o.id === locationId);
 
   const filteredReports = reports.filter(
     (r) =>
       filterStatus === "all" ||
-      (filterStatus === "pending" && r.status === "Pending") ||
+      (filterStatus === "pending"   && r.status === "Pending")   ||
       (filterStatus === "processed" && r.status === "Processed") ||
-      (filterStatus === "resolved" && r.status === "Resolved"),
+      (filterStatus === "resolved"  && r.status === "Resolved"),
   );
 
   const stats = {
-    total: reports.length,
+    total:   reports.length,
     pending: reports.filter((r) => r.status === "Pending").length,
     resolved: reports.filter((r) => r.status === "Resolved").length,
+  };
+
+  const getLocationDisplay = (report: Report) => {
+    if (report.stop_name) return report.stop_name;
+    if (report.stop_id) {
+      const opt = locationOptions.find((o) => o.id === report.stop_id);
+      if (opt) return opt.name;
+    }
+    const { location } = extractLocationFromDesc(report.description);
+    return location;
   };
 
   return (
@@ -135,9 +213,7 @@ export default function Reporting() {
           {successMessage && (
             <div className="mb-8 p-5 bg-green-50 border border-green-200 rounded-[24px] flex items-center justify-between animate-in zoom-in duration-300 shadow-sm">
               <div className="flex items-center gap-4">
-                <div className="bg-green-500 text-white p-2 rounded-full shadow-sm">
-                  <CheckCircle size={20} />
-                </div>
+                <div className="bg-green-500 text-white p-2 rounded-full shadow-sm"><CheckCircle size={20} /></div>
                 <div>
                   <p className="font-bold text-green-800 text-[16px]">Laporan Berhasil Dikirim!</p>
                   <p className="text-green-700 text-[14px]">Terima kasih, tim kami akan segera menindaklanjuti.</p>
@@ -149,18 +225,13 @@ export default function Reporting() {
 
           <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <h1 className="text-[32px] font-bold text-foreground leading-tight tracking-tight">
-                Pusat Bantuan ARAHIN
-              </h1>
-              <p className="text-muted-foreground text-[16px] font-medium mt-1">
-                Kelola laporan kendala Anda di sini.
-              </p>
+              <h1 className="text-[32px] font-bold text-foreground leading-tight tracking-tight">Pusat Bantuan ARAHIN</h1>
+              <p className="text-muted-foreground text-[16px] font-medium mt-1">Kelola laporan kendala Anda di sini.</p>
             </div>
             {!showForm && (
               <Button
                 onClick={() => setShowForm(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 px-8 rounded-2xl font-bold text-[16px] shadow-lg shadow-primary/20 flex items-center gap-2 transition-all active:scale-95"
-              >
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 px-8 rounded-2xl font-bold text-[16px] shadow-lg shadow-primary/20 flex items-center gap-2 transition-all active:scale-95">
                 <Plus size={20} strokeWidth={3} /> Buat Laporan
               </Button>
             )}
@@ -168,9 +239,9 @@ export default function Reporting() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
             {[
-              { label: "Total Laporan", value: stats.total, icon: Inbox, color: "text-primary" },
-              { label: "Menunggu", value: stats.pending, icon: Clock, color: "text-amber-500" },
-              { label: "Selesai", value: stats.resolved, icon: CheckCircle, color: "text-green-500" },
+              { label: "Total Laporan", value: stats.total,   icon: Inbox,       color: "text-primary"    },
+              { label: "Menunggu",      value: stats.pending, icon: Clock,       color: "text-amber-500"  },
+              { label: "Selesai",       value: stats.resolved, icon: CheckCircle, color: "text-green-500" },
             ].map((s, i) => (
               <Card key={i} className="p-6 border-border rounded-[24px] flex items-center gap-5 shadow-sm">
                 <div className={`p-3 rounded-xl bg-muted/50 ${s.color}`}><s.icon size={24} /></div>
@@ -188,11 +259,12 @@ export default function Reporting() {
                 <div className="p-3 bg-primary/10 rounded-2xl text-primary"><ShieldAlert size={24} /></div>
                 <h2 className="text-[22px] font-bold text-foreground">Form Laporan Kendala</h2>
               </div>
+
               <div className="space-y-6">
 
                 <div className="space-y-3">
                   <Label className="text-[15px] font-bold text-foreground ml-1">Kategori Masalah</Label>
-                  <Select value={category} onValueChange={setCategory}>
+                  <Select value={category} onValueChange={setCategory} disabled={submitting}>
                     <SelectTrigger className="h-14 border-border rounded-2xl font-medium text-[16px]">
                       <SelectValue placeholder="Pilih kategori kendala" />
                     </SelectTrigger>
@@ -215,17 +287,53 @@ export default function Reporting() {
                   <Label className="text-[15px] font-bold text-foreground ml-1">
                     Lokasi Kejadian
                   </Label>
-                  <Input
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Contoh: Halte Sudirman, Stasiun Manggarai..."
-                    className="h-14 border-border rounded-2xl font-medium text-[16px]"
-                    disabled={submitting}
-                    maxLength={100}
-                  />
-                  <p className="text-[12px] text-muted-foreground ml-1">
-                    Sebutkan nama halte, stasiun, atau lokasi spesifik tempat kejadian berlangsung.
-                  </p>
+
+                  <Select value={locationId} onValueChange={setLocationId}>
+                    <SelectTrigger className="h-14 border-border rounded-2xl font-medium text-[16px]">
+                      {loadingLocations ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 size={16} className="animate-spin" /> Memuat
+                          lokasi...
+                        </div>
+                      ) : (
+                        <SelectValue placeholder="Pilih halte atau kendaraan" />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl max-h-72">
+                      <SelectGroup>
+                        <SelectLabel className="bg-muted/50 px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+                          Halte / Stasiun
+                        </SelectLabel>
+                        {locationOptions
+                          .filter((o) => o.type === "stop")
+                          .map((opt) => (
+                            <SelectItem
+                              key={opt.id}
+                              value={opt.id}
+                              className="py-3 text-[15px]"
+                            >
+                              {opt.name}
+                            </SelectItem>
+                          ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel className="bg-muted/50 px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-t mt-1">
+                          Transportasi
+                        </SelectLabel>
+                        {locationOptions
+                          .filter((o) => o.type === "trans")
+                          .map((opt) => (
+                            <SelectItem
+                              key={opt.id}
+                              value={opt.id}
+                              className="py-3 text-[15px]"
+                            >
+                              {opt.name}
+                            </SelectItem>
+                          ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-3">
@@ -242,14 +350,20 @@ export default function Reporting() {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                  <Button variant="ghost" onClick={() => { setShowForm(false); setLocation(''); setCategory(''); setDescription(''); }}
-                    className="h-12 px-6 rounded-xl font-bold" disabled={submitting}>
+                  <Button
+                    variant="ghost"
+                    onClick={resetForm}
+                    className="h-12 px-6 rounded-xl font-bold"
+                    disabled={submitting}>
                     Batal
                   </Button>
-                  <Button onClick={handleSubmit}
-                    disabled={submitting || !category || !location.trim() || description.length < 10}
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={submitting || !category || !locationId || description.length < 10}
                     className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold">
-                    {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Mengirim...</> : "Kirim Laporan"}
+                    {submitting
+                      ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Mengirim...</>
+                      : "Kirim Laporan"}
                   </Button>
                 </div>
               </div>
@@ -263,14 +377,18 @@ export default function Reporting() {
               </h2>
               <div className="flex bg-muted/50 p-1.5 rounded-2xl border border-border">
                 {[
-                  { key: 'all', label: 'Semua' },
-                  { key: 'pending', label: 'Menunggu' },
-                  { key: 'processed', label: 'Diproses' },
-                  { key: 'resolved', label: 'Selesai' },
+                  { key: "all",       label: "Semua"    },
+                  { key: "pending",   label: "Menunggu" },
+                  { key: "processed", label: "Diproses" },
+                  { key: "resolved",  label: "Selesai"  },
                 ].map((st) => (
-                  <button key={st.key} onClick={() => setFilterStatus(st.key)}
+                  <button
+                    key={st.key}
+                    onClick={() => setFilterStatus(st.key)}
                     className={`px-4 py-1.5 rounded-xl text-[13px] font-bold transition-all ${
-                      filterStatus === st.key ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      filterStatus === st.key
+                        ? "bg-card text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}>
                     {st.label}
                   </button>
@@ -295,13 +413,16 @@ export default function Reporting() {
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {filteredReports.map((report) => {
-                  const cat = reportCategories.find((c) => c.value === report.category);
-                  const status = statusConfig[report.status] || statusConfig["Pending"];
+                  const cat      = reportCategories.find((c) => c.value === report.category);
+                  const status   = statusConfig[report.status] || statusConfig["Pending"];
                   const StatusIcon = status.icon;
-                  const { location: reportLocation, cleanDesc } = extractLocationFromDesc(report.description);
+                  const { cleanDesc } = extractLocationFromDesc(report.description);
+                  const locationDisplay = getLocationDisplay(report);
 
                   return (
-                    <Card key={report.report_id} onClick={() => setSelectedReport(report)}
+                    <Card
+                      key={report.report_id}
+                      onClick={() => setSelectedReport(report)}
                       className="bg-card border-border rounded-[24px] p-6 hover:border-primary/50 transition-all shadow-sm group cursor-pointer active:scale-[0.99]">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -320,14 +441,10 @@ export default function Reporting() {
                             <h3 className="font-bold text-foreground text-[17px] mb-1 group-hover:text-primary transition-colors truncate">
                               {cat?.label || report.category}
                             </h3>
-                            {reportLocation !== '-' && (
-                              <p className="text-[13px] text-primary font-semibold mb-1">
-                                {reportLocation}
-                              </p>
+                            {locationDisplay !== "-" && (
+                              <p className="text-[13px] text-primary font-semibold mb-1">{locationDisplay}</p>
                             )}
-                            <p className="text-muted-foreground text-[15px] font-medium line-clamp-1 break-words">
-                              {cleanDesc}
-                            </p>
+                            <p className="text-muted-foreground text-[15px] font-medium line-clamp-1 break-words">{cleanDesc}</p>
                           </div>
                         </div>
                         <div className="flex items-center justify-between md:justify-end border-t md:border-t-0 border-border pt-3 md:pt-0 shrink-0">
@@ -354,9 +471,11 @@ export default function Reporting() {
       <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
         <DialogContent className="max-w-2xl rounded-[32px] p-8 lg:p-10 border-border bg-card font-['Atkinson_Hyperlegible']">
           {selectedReport && (() => {
-            const cat = reportCategories.find((c) => c.value === selectedReport.category);
+            const cat    = reportCategories.find((c) => c.value === selectedReport.category);
             const status = statusConfig[selectedReport.status] || statusConfig["Pending"];
-            const { location: reportLocation, cleanDesc } = extractLocationFromDesc(selectedReport.description);
+            const { cleanDesc } = extractLocationFromDesc(selectedReport.description);
+            const locationDisplay = getLocationDisplay(selectedReport);
+
             return (
               <>
                 <DialogHeader className="space-y-4">
@@ -369,7 +488,9 @@ export default function Reporting() {
                         {status.label}
                       </Badge>
                     </div>
-                    <button onClick={() => setSelectedReport(null)} className="p-2 hover:bg-muted rounded-full transition-colors">
+                    <button
+                      onClick={() => setSelectedReport(null)}
+                      className="p-2 hover:bg-muted rounded-full transition-colors">
                       <X size={20} className="text-muted-foreground" />
                     </button>
                   </div>
@@ -396,10 +517,10 @@ export default function Reporting() {
                     </div>
                   </div>
 
-                  {reportLocation !== '-' && (
+                  {locationDisplay !== "-" && (
                     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/15">
                       <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">Lokasi Kejadian</p>
-                      <p className="font-bold text-foreground text-[15px]">{reportLocation}</p>
+                      <p className="font-bold text-foreground text-[15px]">{locationDisplay}</p>
                     </div>
                   )}
 
@@ -413,9 +534,7 @@ export default function Reporting() {
                   </div>
 
                   <div className="flex items-start gap-4 p-5 bg-primary/5 border border-primary/10 rounded-2xl">
-                    <div className="p-2 bg-primary/10 rounded-xl text-primary flex-shrink-0">
-                      <ShieldAlert size={20} />
-                    </div>
+                    <div className="p-2 bg-primary/10 rounded-xl text-primary flex-shrink-0"><ShieldAlert size={20} /></div>
                     <div>
                       <p className="text-[15px] font-bold text-foreground">Informasi Penanganan</p>
                       <p className="text-[14px] font-medium text-muted-foreground leading-relaxed mt-1">
@@ -430,7 +549,8 @@ export default function Reporting() {
                 </div>
 
                 <DialogFooter>
-                  <Button onClick={() => setSelectedReport(null)}
+                  <Button
+                    onClick={() => setSelectedReport(null)}
                     className="w-full bg-primary text-primary-foreground h-14 rounded-2xl font-bold text-[17px]">
                     Tutup Rincian
                   </Button>
