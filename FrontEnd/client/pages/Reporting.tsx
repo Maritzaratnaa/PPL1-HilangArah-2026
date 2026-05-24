@@ -43,7 +43,6 @@ const statusConfig = {
   Resolved: { label: "Selesai", color: "bg-green-100 text-green-700", icon: CheckCircle },
 };
 
-// Helper: ekstrak lokasi dari description jika ada prefix [Lokasi: ...]
 function extractLocationFromDesc(desc: string): { location: string; cleanDesc: string } {
   const match = desc.match(/^\[Lokasi: (.+?)\]\n?/);
   if (match) {
@@ -56,7 +55,7 @@ export default function Reporting() {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [category, setCategory] = useState("");
-  const [location, setLocation] = useState(""); // field lokasi baru
+  const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [successMessage, setSuccessMessage] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
@@ -66,7 +65,6 @@ export default function Reporting() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ── INTEGRASI TIDAK DIUBAH ──
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
@@ -92,7 +90,6 @@ export default function Reporting() {
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
-      // Gabungkan lokasi ke dalam description dengan prefix
       const fullDescription = `[Lokasi: ${location.trim()}]\n${description}`;
 
       const res = await fetch(`${BASE_URL}/api/reports`, {
@@ -113,7 +110,6 @@ export default function Reporting() {
     } catch { alert("Gagal menghubungi server."); }
     finally { setSubmitting(false); }
   };
-  // ── END INTEGRASI ──
 
   const filteredReports = reports.filter(
     (r) =>
@@ -136,7 +132,6 @@ export default function Reporting() {
       <main className="flex-grow px-6 py-12 lg:px-10">
         <div className="mx-auto max-w-5xl">
 
-          {/* SUCCESS BANNER */}
           {successMessage && (
             <div className="mb-8 p-5 bg-green-50 border border-green-200 rounded-[24px] flex items-center justify-between animate-in zoom-in duration-300 shadow-sm">
               <div className="flex items-center gap-4">
@@ -152,7 +147,6 @@ export default function Reporting() {
             </div>
           )}
 
-          {/* HEADER */}
           <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="text-[32px] font-bold text-foreground leading-tight tracking-tight">
@@ -172,7 +166,6 @@ export default function Reporting() {
             )}
           </div>
 
-          {/* STATS CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
             {[
               { label: "Total Laporan", value: stats.total, icon: Inbox, color: "text-primary" },
@@ -189,7 +182,6 @@ export default function Reporting() {
             ))}
           </div>
 
-          {/* FORM CARD */}
           {showForm && (
             <Card className="mb-12 bg-card border-primary/20 rounded-[28px] p-8 lg:p-10 shadow-xl border-2 animate-in slide-in-from-top-4">
               <div className="flex items-center gap-4 mb-8">
@@ -198,7 +190,6 @@ export default function Reporting() {
               </div>
               <div className="space-y-6">
 
-                {/* Kategori */}
                 <div className="space-y-3">
                   <Label className="text-[15px] font-bold text-foreground ml-1">Kategori Masalah</Label>
                   <Select value={category} onValueChange={setCategory}>
@@ -220,7 +211,6 @@ export default function Reporting() {
                   </Select>
                 </div>
 
-                {/* Lokasi — field wajib */}
                 <div className="space-y-3">
                   <Label className="text-[15px] font-bold text-foreground ml-1">
                     Lokasi Kejadian
@@ -238,7 +228,6 @@ export default function Reporting() {
                   </p>
                 </div>
 
-                {/* Deskripsi */}
                 <div className="space-y-3">
                   <Label className="text-[15px] font-bold text-foreground ml-1">Deskripsi Masalah</Label>
                   <Textarea
@@ -267,7 +256,6 @@ export default function Reporting() {
             </Card>
           )}
 
-          {/* LIST SECTION */}
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <h2 className="text-[20px] font-bold text-foreground flex items-center gap-2">
@@ -332,7 +320,6 @@ export default function Reporting() {
                             <h3 className="font-bold text-foreground text-[17px] mb-1 group-hover:text-primary transition-colors truncate">
                               {cat?.label || report.category}
                             </h3>
-                            {/* Tampilkan lokasi jika ada */}
                             {reportLocation !== '-' && (
                               <p className="text-[13px] text-primary font-semibold mb-1">
                                 {reportLocation}
@@ -364,7 +351,6 @@ export default function Reporting() {
         </div>
       </main>
 
-      {/* DETAIL MODAL */}
       <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
         <DialogContent className="max-w-2xl rounded-[32px] p-8 lg:p-10 border-border bg-card font-['Atkinson_Hyperlegible']">
           {selectedReport && (() => {
@@ -410,7 +396,6 @@ export default function Reporting() {
                     </div>
                   </div>
 
-                  {/* Lokasi di modal detail */}
                   {reportLocation !== '-' && (
                     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/15">
                       <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">Lokasi Kejadian</p>
