@@ -64,8 +64,8 @@ const App = () => (
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/data" element={<AdminTransport />} />
           <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/dashboard" element={<Dashboard/>} />
-          <Route path="/admin/manage" element={<AdminManage/>} />
+          <Route path="/Admin/Dashboard" element={<Dashboard/>} />
+          <Route path="/Admin/Manage" element={<AdminManage/>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>

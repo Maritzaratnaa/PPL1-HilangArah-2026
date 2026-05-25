@@ -1,6 +1,7 @@
 const pool = require('../db');
 const { report } = require('../routes/authRoutes');
 
+// Fungsi Get Laporan
 const getAllReports = async (req, res) => {
     try {
         const query =
@@ -29,6 +30,7 @@ const getAllReports = async (req, res) => {
     }
 };
 
+// Update Status Laporan
 const updateReportStatus = async (req, res) => {
     const {report_id, status} = req.body;
     const admin_id = req.user.user_id;
@@ -66,6 +68,7 @@ const updateReportStatus = async (req, res) => {
     }
 };
 
+// Hapus Laporan
 const deleteReport = async (req, res) => {
     try {
         const {id} = req.params;

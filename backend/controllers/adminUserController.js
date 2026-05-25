@@ -1,6 +1,8 @@
 const pool = require('../db');
 
-// Get All User
+// ==========================================
+// 1. GET ALL USERS & STATS
+// ==========================================
 const getAllUsers = async (req, res) => {
     try {
         const { search, category } = req.query;
@@ -15,12 +17,12 @@ const getAllUsers = async (req, res) => {
         `;
         const [statsResult] = await pool.query(statsQuery);
 
+        // Query Tabel (Data Pengguna) dengan JOIN ke tabel profiles
         let tableQuery = `
             SELECT 
                 u.user_id, 
                 u.email, 
                 u.username, 
-                u.is_verified,
                 u.is_Active, 
                 u.created_at,
                 p.full_name, 
@@ -32,13 +34,13 @@ const getAllUsers = async (req, res) => {
         `;
         const queryParams = [];
 
-        // Filter Search
+        // Filter Pencarian (Nama, Email, Username)
         if (search) {
             tableQuery += ` AND (p.full_name LIKE ? OR u.email LIKE ? OR u.username LIKE ?)`;
             queryParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
 
-        // Filter Kategori
+        // Filter Kategori (Dari dropdown tab UI)
         if (category && category !== 'All') {
             tableQuery += ` AND p.category_status = ?`;
             queryParams.push(category);
@@ -65,16 +67,18 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-// Toggle Status
+// ==========================================
+// 2. TOGGLE STATUS AKTIF/SUSPEND
+// ==========================================
 const toggleUserStatus = async (req, res) => {
     try {
         const { user_id } = req.params;
-        const { is_Active } = req.body;
+        const { is_Active } = req.body; // Menerima boolean true/false atau 1/0
 
         const val = is_Active ? 1 : 0;
 
         const [result] = await pool.query(
-            `UPDATE users SET is_Active = ? WHERE user_id = ? AND role = 'Pengguna'`,
+            `UPDATE users SET is_Active = ? WHERE user_id = ? AND role = 'Pengguna'`, 
             [val, user_id]
         );
 
@@ -90,21 +94,23 @@ const toggleUserStatus = async (req, res) => {
     }
 };
 
-// Delete User
+// ==========================================
+// 3. DELETE USER
+// ==========================================
+// ==========================================
+// 3. DELETE USER
+// ==========================================
 const deleteUser = async (req, res) => {
     try {
         const { user_id } = req.params;
 
-        // Delete data subs
+        // 1. Hapus riwayat langganan (subs) terlebih dahulu
         await pool.query(`DELETE FROM subs WHERE user_id = ?`, [user_id]);
 
-        // Delete data profile
+        // 2. Hapus profilnya
         await pool.query(`DELETE FROM profiles WHERE user_id = ?`, [user_id]);
-
-        // Delete data report
-        await pool.query(`DELETE FROM reports WHERE reporter_id = ?`, [user_id]);
-
-        // Delete akun dari tabel user
+    
+        // 3. Terakhir, hapus akunnya dari tabel users
         const [result] = await pool.query(`DELETE FROM users WHERE user_id = ? AND role = 'Pengguna'`, [user_id]);
 
         if (result.affectedRows === 0) {

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -16,9 +16,11 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
+  // Mengambil token dari URL (misal: ?token=abc123xyz)
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
+  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
   const customToastStyle = {
     className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
   };
@@ -38,6 +40,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
+      // Perbaikan URL localhost menjadi dinamis
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const res = await fetch(`${apiUrl}/api/auth/reset-password`, {
         method: "POST",
@@ -72,6 +75,8 @@ export default function ResetPassword() {
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {/* Password Baru */}
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-base font-semibold">
                   Password Baru
@@ -97,6 +102,7 @@ export default function ResetPassword() {
                 </div>
               </div>
 
+              {/* Konfirmasi Password Baru */}
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-base font-semibold">
                   Konfirmasi Password Baru

@@ -44,11 +44,13 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validasi Password
     if (password !== confirmPassword) {
       toast.error("Password dan konfirmasi password tidak sama!", customToastStyle);
       return;
     }
 
+    // Validasi Kategori
     if (!userCategory) {
       toast.error("Mohon pilih kategori Anda.", customToastStyle);
       return;
@@ -56,6 +58,7 @@ export default function Register() {
 
     setLoading(true);
     try {
+      // Perbaikan URL localhost menjadi dinamis
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const res = await fetch(`${apiUrl}/api/auth/register`, {
         method: "POST",
@@ -72,6 +75,7 @@ export default function Register() {
       
       if (res.ok) {
         toast.success("Registrasi berhasil! Silakan cek email Anda untuk kode OTP.", customToastStyle);
+        // Arahkan ke halaman verifikasi dan bawa data emailnya
         navigate("/verify-email", { state: { email: email } });
       } else {
         toast.error(json.message || "Gagal melakukan pendaftaran.", customToastStyle);
@@ -95,6 +99,7 @@ export default function Register() {
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Full Name Field */}
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-base font-semibold">
                   Nama Lengkap
@@ -111,6 +116,7 @@ export default function Register() {
                 />
               </div>
 
+              {/* Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-base font-semibold">
                   Alamat Email
@@ -127,6 +133,7 @@ export default function Register() {
                 />
               </div>
 
+              {/* User Category */}
               <div className="space-y-2">
                 <Label
                   htmlFor="userCategory"
@@ -155,6 +162,7 @@ export default function Register() {
                 </p>
               </div>
 
+              {/* Password Field */}
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-base font-semibold">
                   Kata Sandi
@@ -187,6 +195,7 @@ export default function Register() {
                 </div>
               </div>
 
+              {/* Confirm Password Field */}
               <div className="space-y-2">
                 <Label
                   htmlFor="confirmPassword"
@@ -222,6 +231,7 @@ export default function Register() {
                 </div>
               </div>
 
+              {/* Terms Checkbox */}
               <div className="flex items-start gap-2">
                 <input
                   id="terms"
@@ -238,6 +248,7 @@ export default function Register() {
                 </Label>
               </div>
 
+              {/* Submit Button */}
               <Button
                 type="submit"
                 size="lg"
@@ -248,6 +259,7 @@ export default function Register() {
               </Button>
             </form>
 
+            {/* Login Link */}
             <div className="mt-6 text-center">
               <p className="text-muted-foreground">
                 Sudah punya akun?{" "}

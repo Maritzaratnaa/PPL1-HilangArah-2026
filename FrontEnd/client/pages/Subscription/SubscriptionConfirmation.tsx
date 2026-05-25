@@ -9,16 +9,20 @@ import { useEffect } from 'react';
 export default function SubscriptionConfirmation() {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Menangkap subs_id yang dikirim dari halaman pembayaran
   const subsId = location.state?.subs_id;
 
   const planLabel = location.state?.planLabel 
   || localStorage.getItem('activePlanLabel') 
   || 'Paket Bulanan';
 
+  // Memastikan halaman selalu termuat dari posisi paling atas
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Data tanggal hari ini untuk bukti aktivasi
   const today = new Date().toLocaleDateString('id-ID', { 
     day: 'numeric', 
     month: 'long', 
@@ -31,9 +35,12 @@ export default function SubscriptionConfirmation() {
 
       <main className="flex-grow px-6 py-10 lg:px-10">
         <div className="mx-auto max-w-6xl">
+          
+          {/* STEPPER - Responsif (Format sama dengan Form & Payment) */}
           <div className="mb-12">
             <div className="flex items-center justify-between relative max-w-3xl mx-auto">
               <div className="absolute top-5 left-0 right-0 h-px bg-border z-0 mx-10 sm:mx-16" />
+
               {[
                 { num: 1, label: "Isi Data", icon: "📋", active: false, completed: true },
                 { num: 2, label: "Pembayaran", icon: "💳", active: false, completed: true },
@@ -56,6 +63,7 @@ export default function SubscriptionConfirmation() {
                     )}
                   </div>
                   <div className="text-center mt-1">
+                    {/* Tambahan whitespace-nowrap agar teks tidak turun ke bawah di HP */}
                     <p className={`text-[10px] sm:text-xs font-bold leading-tight whitespace-nowrap ${
                       step.active || step.completed ? "text-primary" : "text-muted-foreground"
                     }`}>
@@ -67,11 +75,14 @@ export default function SubscriptionConfirmation() {
             </div>
           </div>
 
+          {/* KONTEN KONFIRMASI */}
           <div className="max-w-3xl mx-auto text-center">
             <Card className="bg-card border-border rounded-[var(--radius)] p-10 lg:p-16 shadow-sm relative overflow-hidden">
+              {/* Elemen Dekoratif */}
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full" />
               
               <div className="relative z-10">
+                {/* Icon Sukses */}
                 <div className="inline-flex items-center justify-center h-24 w-24 rounded-full bg-green-100 text-green-600 mb-8 animate-bounce">
                   <Check size={48} strokeWidth={3} />
                 </div>
@@ -83,6 +94,7 @@ export default function SubscriptionConfirmation() {
                   Selamat! Paket langganan Anda telah aktif. Sekarang Anda dapat menikmati pendampingan pemandu pribadi untuk setiap perjalanan Anda.
                 </p>
 
+                {/* Ringkasan Transaksi */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mb-12">
                   <div className="p-5 bg-muted/30 rounded-2xl border border-border flex items-center gap-4">
                     <div className="p-2 bg-background rounded-lg text-primary shadow-sm"><Calendar size={20} /></div>
@@ -100,6 +112,7 @@ export default function SubscriptionConfirmation() {
                   </div>
                 </div>
 
+                {/* Detail Paket */}
                 <div className="bg-muted/30 border border-border rounded-2xl p-6 mb-12 text-left">
                   <div className="flex justify-between items-center mb-4">
                     <div>
@@ -126,6 +139,7 @@ export default function SubscriptionConfirmation() {
                   </ul>
                 </div>
 
+                {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button 
                     onClick={() => navigate('/')} 

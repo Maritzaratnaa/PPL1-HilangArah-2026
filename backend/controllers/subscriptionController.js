@@ -2,18 +2,18 @@ const pool = require('../db');
 const { v4: uuidv4 } = require('uuid');
 const midtransClient = require('midtrans-client');
 
-// Create Subs
+// Fungsi Create (Buat Langganan Baru)
 const createSubscription = async (req, res) => {
     try {
-        const userId = req.user.user_id;
-
+        const userId = req.user.user_id; 
+        
         const {
             phone_number,
             emergency_contact_name,
             emergency_contact_phone,
             domicile,
             specific_needs,
-            duration
+            duration // 1. TANGKAP DURATION DARI FRONTEND
         } = req.body;
 
         if (!phone_number || !emergency_contact_name || !emergency_contact_phone || !domicile) {
@@ -24,19 +24,21 @@ const createSubscription = async (req, res) => {
         const [existingSubs] = await pool.query(checkQuery, [userId]);
 
         if (existingSubs.length > 0) {
-            return res.status(400).json({
-                message: `Anda sudah memiliki langganan dengan status: ${existingSubs[0].status}. Selesaikan atau tunggu langganan sebelumnya.`
+            return res.status(400).json({ 
+                message: `Anda sudah memiliki langganan dengan status: ${existingSubs[0].status}. Selesaikan atau tunggu langganan sebelumnya.` 
             });
         }
 
         const subsId = uuidv4();
 
+        // 2. TAMBAHKAN KOLOM duration PADA QUERY INSERT
         const insertQuery = `
             INSERT INTO subs 
             (subs_id, user_id, phone_number, emergency_contact_name, emergency_contact_phone, domicile, specific_needs, duration) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
+        // 3. MASUKKAN NILAI duration KE DALAM ARRAY PARAMETER
         await pool.query(insertQuery, [
             subsId,
             userId,
@@ -45,7 +47,7 @@ const createSubscription = async (req, res) => {
             emergency_contact_phone,
             domicile,
             specific_needs || null,
-            duration || 'Monthly'
+            duration || 'Monthly' // Kasih fallback 'Monthly' buat jaga-jaga kalau kosong
         ]);
 
         res.status(201).json({
@@ -59,7 +61,7 @@ const createSubscription = async (req, res) => {
     }
 };
 
-// Get Subs
+// Fungsi Get (Ambil Data Subscription)
 const getMySubscription = async (req, res) => {
     try {
         const userId = req.user.user_id;
@@ -132,12 +134,13 @@ const cancelSubscription = async (req, res) => {
     }
 };
 
-// Update Subs
+// Fungsi Update (Mengaktifkan Langganan)
 const activateSubscription = async (req, res) => {
     try {
         const userId = req.user.user_id;
         const { subs_id } = req.body;
 
+        // 4. CEK DURATION DULU SEBELUM MENENTUKAN END_DATE
         const checkQuery = `SELECT duration FROM subs WHERE subs_id = ? AND user_id = ?`;
         const [subsData] = await pool.query(checkQuery, [subs_id, userId]);
 
@@ -149,12 +152,13 @@ const activateSubscription = async (req, res) => {
         const startDate = new Date();
         const endDate = new Date();
 
+        // 5. ATUR END_DATE BERDASARKAN DURATION YANG DIPILIH
         if (durationType === 'Daily') {
             endDate.setDate(endDate.getDate() + 1);
         } else if (durationType === 'Weekly') {
             endDate.setDate(endDate.getDate() + 7);
         } else {
-            endDate.setDate(endDate.getDate() + 30);
+            endDate.setDate(endDate.getDate() + 30); // Default ke Monthly
         }
 
         const startStr = startDate.toISOString().split('T')[0];
@@ -165,7 +169,7 @@ const activateSubscription = async (req, res) => {
             SET status = 'Active', start_date = ?, end_date = ? 
             WHERE subs_id = ? AND user_id = ?
         `;
-
+        
         const [result] = await pool.query(updateQuery, [startStr, endStr, subs_id, userId]);
 
         if (result.affectedRows === 0) {
@@ -181,17 +185,18 @@ const activateSubscription = async (req, res) => {
 };
 
 const snap = new midtransClient.Snap({
-    isProduction: false, // Ubah ke true kalo udah di deploy!!
+    isProduction: false, // Ubah ke true nanti kalau udah rilis
     serverKey: process.env.MIDTRANS_SERVER_KEY,
     clientKey: process.env.MIDTRANS_CLIENT_KEY
 });
 
-// Get Token Pembayaran
+// Fungsi untuk mendapatkan Token Pembayaran
 const getPaymentToken = async (req, res) => {
     try {
         const { subs_id, amount } = req.body;
-        const user = req.user;
+        const user = req.user; // Dari token JWT
 
+        // Parameter yang dikirim ke Midtrans
         let parameter = {
             "transaction_details": {
                 "order_id": subs_id,
@@ -204,7 +209,8 @@ const getPaymentToken = async (req, res) => {
         };
 
         const transaction = await snap.createTransaction(parameter);
-
+        
+        // Kirim token ke frontend
         res.status(200).json({ token: transaction.token });
 
     } catch (error) {
@@ -213,9 +219,9 @@ const getPaymentToken = async (req, res) => {
     }
 };
 
-module.exports = {
-    createSubscription,
-    getMySubscription,
+module.exports = { 
+    createSubscription, 
+    getMySubscription, 
     cancelSubscription,
     activateSubscription,
     getPaymentToken

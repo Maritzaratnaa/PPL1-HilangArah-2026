@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
 import { Pagination } from '@/components/Admin/Pagination';
-import { toast } from "sonner";
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 interface User {
   user_id: string;
@@ -22,7 +22,6 @@ interface User {
   category_status: string;
   role: string;
   is_Active: boolean;
-  is_verified: boolean;
   created_at: string;
 }
 
@@ -34,6 +33,7 @@ interface Stats {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
+// 👇 PERBAIKAN 1: Menambahkan Mapper agar tabel menampilkan Bahasa Indonesia
 const CATEGORY_MAP: Record<string, string> = {
   'general': 'General',
   'disability': 'Penyandang Disabilitas',
@@ -44,6 +44,7 @@ const CATEGORY_MAP: Record<string, string> = {
   'vulnerable-illness': 'Situasi Rentan'
 };
 
+// 👇 PERBAIKAN 2: Mengubah value 'vulnerable' menjadi 'vulnerable-illness' sesuai database
 const CATEGORIES: { label: string; value: string }[] = [
   { label: "Semua Kategori", value: "All" },
   { label: "Penyandang Disabilitas", value: "disability" },
@@ -63,6 +64,7 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
+// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
 const customToastStyle = {
   className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
@@ -118,20 +120,14 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
       <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl overflow-y-auto max-h-[90vh]">
         <h3 className="text-lg font-bold mb-4">Detail Pengguna</h3>
         <div className="space-y-3 mb-6">
+          {/* 👇 PERBAIKAN 3: Role Dihapus, dan Kategori menggunakan Mapper 👇 */}
           {[
             { label: "Nama Lengkap", value: user.full_name || "-" },
             { label: "Username", value: user.username },
             { label: "Email", value: user.email },
             { label: "Nomor Telepon", value: user.phone_number || "-" },
             { label: "Kategori", value: CATEGORY_MAP[user.category_status] || user.category_status || "-" },
-            { 
-              label: "Status", 
-              value: !user.is_verified 
-                ? "Belum Verifikasi" 
-                : user.is_Active 
-                ? "Aktif" 
-                : "Suspended" 
-            },
+            { label: "Status", value: user.is_Active ? "Aktif" : "Suspended" },
             {
               label: "Bergabung",
               value: new Date(user.created_at).toLocaleDateString("id-ID", {
@@ -147,23 +143,14 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
             </div>
           ))}
 
-          {/* Alert Dinamis Berdasarkan Status Verifikasi & Aktif */}
-          {!user.is_verified ? (
-            <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 flex gap-2 items-start text-amber-700 text-xs leading-relaxed dark:bg-amber-950/40 dark:border-amber-900/50 dark:text-amber-300">
-              <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong>Belum Verifikasi:</strong> Pengguna ini belum melakukan verifikasi email (OTP) sehingga tidak dapat login dan menggunakan fitur aplikasi.
-              </div>
-            </div>
-          ) : !user.is_Active ? (
+          {!user.is_Active && (
             <div className="mt-4 p-3 rounded-lg bg-rose-50 border border-rose-200 flex gap-2 items-start text-rose-700 text-xs leading-relaxed dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-300">
               <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
               <div>
                 <strong>Akses Login Diblokir:</strong> Akun ini berstatus Suspended. Pengguna tidak dapat melakukan login sampai statusnya diaktifkan kembali.
               </div>
             </div>
-          ) : null}
-
+          )}
         </div>
         <Button variant="outline" className="w-full" onClick={onClose}>
           Tutup
@@ -316,6 +303,7 @@ export default function AdminUsers() {
 
       <main className="flex-1 overflow-x-hidden">
         <div className="p-4 md:p-8">
+          {/* Header */}
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-1">Manajemen Pengguna</h1>
@@ -325,6 +313,7 @@ export default function AdminUsers() {
             </div>
           </div>
 
+          {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {[
               { label: "Total Pengguna", val: statsTotal, color: "text-primary" },
@@ -349,6 +338,7 @@ export default function AdminUsers() {
             ))}
           </div>
 
+          {/* Search + Filter */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -374,6 +364,7 @@ export default function AdminUsers() {
             </div>
           </div>
 
+          {/* Table dengan Horizontal Scroll */}
           <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <div className="overflow-x-auto w-full scrollbar-thin">
               <table className="w-full min-w-[800px]">
@@ -437,34 +428,31 @@ export default function AdminUsers() {
                             </div>
                           </td>
 
+                        {/* Kategori - Ditambahkan Map */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 px-2.5 py-1 rounded-full font-semibold">
                             {CATEGORY_MAP[user.category_status] || user.category_status || "-"}
                           </span>
                         </td>
 
+                        {/* Status */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
                             className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                              !user.is_verified
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
-                                : user.is_Active
+                              user.is_Active
                                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
                                 : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
-                            }`}
-                          >
-                            {!user.is_verified
-                              ? "Belum Verifikasi"
-                              : user.is_Active
-                              ? "Aktif"
-                              : "Suspended"}
+                            }`}>
+                            {user.is_Active ? "Aktif" : "Suspended"}
                           </span>
                         </td>
 
+                        {/* Bergabung */}
                         <td className="px-6 py-4 text-sm text-muted-foreground">
                           {formatDate(user.created_at)}
                         </td>
 
+                        {/* Aksi */}
                         <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <Button
@@ -480,26 +468,21 @@ export default function AdminUsers() {
                                 size="sm"
                                 variant="outline"
                                 className={`h-8 text-[10px] px-2 ${
-                                  !user.is_verified
-                                    ? "text-muted-foreground bg-muted/50 cursor-not-allowed opacity-50"
-                                    : user.is_Active
+                                  user.is_Active
                                     ? "text-rose-600 border-rose-200 hover:bg-rose-50"
                                     : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
                                 }`}
                                 onClick={() => toggleStatus(user)}
-                                disabled={isActioning || !user.is_verified}
-                                title={!user.is_verified ? "Akun belum diverifikasi" : ""}
+                                disabled={isActioning}
                               >
                                 {isActioning ? (
                                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : !user.is_verified ? (
-                                  <UserX className="h-3.5 w-3.5 mr-1" />
                                 ) : user.is_Active ? (
                                   <UserX className="h-3.5 w-3.5 mr-1" />
                                 ) : (
                                   <UserCheck className="h-3.5 w-3.5 mr-1" />
                                 )}
-                                {!isActioning && (!user.is_verified ? "Suspend" : user.is_Active ? "Suspend" : "Aktifkan")}
+                                {!isActioning && (user.is_Active ? "Suspend" : "Aktifkan")}
                               </Button>
                               <Button
                                 size="sm"
@@ -534,6 +517,7 @@ export default function AdminUsers() {
         </div>
       </main>
 
+      {/* Modals */}
       {deleteTarget && (
         <DeleteModal
           user={deleteTarget}

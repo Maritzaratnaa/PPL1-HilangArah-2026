@@ -197,11 +197,12 @@ export function Features() {
                 hover:shadow-lg hover:-translate-y-1
                 transition-all duration-300 ease-out group
                 ${isHC 
-                  ? 'bg-black border-2 border-[#ffff00]'
-                  : `${feature.bgLight} ${feature.borderAccent}`
+                  ? 'bg-black border-2 border-[#ffff00]' // 2. Paksa Hitam & Kuning Neon
+                  : `${feature.bgLight} ${feature.borderAccent}` // Warna pastel default
                 }
               `}
             >
+              {/* Sembunyikan pattern dekorasi saat HC agar lebih bersih/readable */}
               {!isHC && <DotGrid color={feature.accent} />}
               {!isHC && <CardPattern type={feature.pattern} accent={feature.accent} />}
 

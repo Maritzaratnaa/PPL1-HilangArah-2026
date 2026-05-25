@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
+import { Mail, Phone, Facebook, Twitter, Instagram, Linkedin, MapPin, ArrowRight } from 'lucide-react';
 import { useIsHighContrast } from "@/hooks/useTheme";
 
 export function Footer() {
@@ -27,8 +27,10 @@ export function Footer() {
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-14 pb-8">
 
+          {/* Main grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
 
+          {/* Brand column */}
           <div className="md:col-span-3">
               <div className="flex items-center gap-2 mb-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isHC ? 'bg-[#ffff00]' : 'bg-primary'}`}>
@@ -42,8 +44,9 @@ export function Footer() {
               </p>
             </div>
 
+            {/* Contact column */}
             <div className="md:flex md:flex-col md:items-end"> 
-                <div>
+                <div> {/* Wrapper agar teks tetap rata kiri di dalam kolom yang rata kanan */}
                   <h4 className={`font-bold text-sm uppercase tracking-wider mb-4 ${isHC ? 'text-[#ffff00]' : 'text-foreground'}`}>
                     Kontak
                   </h4>
@@ -61,6 +64,7 @@ export function Footer() {
               </div>
             </div>
 
+          {/* Bottom bar */}
           <div className={`pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 ${isHC ? 'border-[#ffff00]' : 'border-border'}`}>
             <p className={`text-xs ${isHC ? 'text-white' : 'text-muted-foreground'}`}>
               &copy; 2026 ARAHIN. Hak Cipta Dilindungi.
@@ -68,6 +72,7 @@ export function Footer() {
             <div className={`flex gap-4 text-xs ${isHC ? 'text-[#ffff00]' : 'text-muted-foreground'}`}>
               <a href="#" className="hover:underline transition-colors">Privasi</a>
               <a href="#" className="hover:underline transition-colors">Syarat & Ketentuan</a>
+              <a href="#" className="hover:underline transition-colors">Buku Panduan</a>
             </div>
           </div>
 
