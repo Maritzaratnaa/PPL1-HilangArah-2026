@@ -41,6 +41,21 @@ function GuideModal({ guide, onSave, onClose }: {
   const [form, setForm] = useState({ ...emptyForm, ...guide });
   const isEdit = !!guide.full_name;
 
+  const domicileOptions = [
+    { group: 'DKI JAKARTA', cities: ['Jakarta Pusat', 'Jakarta Selatan', 'Jakarta Barat', 'Jakarta Utara', 'Jakarta Timur'] },
+    { group: 'BANTEN', cities: ['Tangerang', 'Tangerang Selatan', 'Serang', 'Cilegon', 'Lebak', 'Pandeglang'] },
+    { group: 'JAWA BARAT', cities: ['Bandung', 'Bekasi', 'Depok', 'Bogor', 'Cimahi', 'Tasikmalaya', 'Cirebon', 'Sukabumi', 'Sumedang', 'Garut'] },
+    { group: 'JAWA TENGAH', cities: ['Semarang', 'Surakarta', 'Magelang', 'Pekalongan', 'Salatiga', 'Tegal', 'Banyumas', 'Cilacap'] },
+    { group: 'JAWA TIMUR', cities: ['Surabaya', 'Malang', 'Sidoarjo', 'Gresik', 'Batu', 'Kediri', 'Madiun', 'Mojokerto', 'Pasuruan', 'Probolinggo', 'Blitar'] },
+  ];
+
+  const ageOptions = [
+    '20 - 30 tahun',
+    '31 - 40 tahun',
+    '41 - 50 tahun',
+    '51 - 60 tahun',
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -59,16 +74,19 @@ function GuideModal({ guide, onSave, onClose }: {
               <Input value={form.employee_id} disabled className="h-10 bg-muted/50" />
             </div>
           )}
+
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Nama Lengkap</Label>
             <Input value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               placeholder="Masukkan nama lengkap" className="h-10" />
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-sm font-semibold mb-1.5 block">Jenis Kelamin</Label>
-              <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              <select value={form.gender}
+                onChange={(e) => setForm({ ...form, gender: e.target.value })}
                 className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
                 <option value="">Pilih...</option>
                 <option value="Laki-laki">Laki-laki</option>
@@ -76,24 +94,60 @@ function GuideModal({ guide, onSave, onClose }: {
               </select>
             </div>
             <div>
-              <Label className="text-sm font-semibold mb-1.5 block">Usia</Label>
-              <Input type="number" min={18} max={65} value={form.age || ''}
-                onChange={(e) => setForm({ ...form, age: parseInt(e.target.value) || 0 })}
-                placeholder="Usia" className="h-10" />
+              <Label className="text-sm font-semibold mb-1.5 block">Rentang Usia</Label>
+              <select
+                value={form.age ? ageOptions.find(o => {
+                  const [min, max] = o.replace(' tahun', '').split(' - ').map(Number);
+                  return form.age >= min && form.age <= (max || 99);
+                }) || '' : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) { setForm({ ...form, age: 0 }); return; }
+                  const [min, max] = val.replace(' tahun', '').split(' - ').map(Number);
+                  setForm({ ...form, age: max ? Math.round((min + max) / 2) : min });
+                }}
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
+                <option value="">Pilih rentang usia...</option>
+                {ageOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </div>
           </div>
+
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Nomor Telepon</Label>
-            <Input value={form.phone_number}
-              onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
-              placeholder="+62 812 xxxx xxxx" className="h-10" />
+            <div className="relative">
+              <Input
+                type="tel"
+                inputMode="numeric"
+                value={form.phone_number} 
+                onChange={(e) => {
+                  const onlyNums = e.target.value.replace(/\D/g, '');
+                  setForm({ ...form, phone_number: onlyNums });
+                }}
+                placeholder="+62 812 xxxx xxxx" 
+                className="h-10"
+              />
+            </div>
           </div>
+
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Domisili</Label>
-            <Input value={form.domicile}
+            <select value={form.domicile}
               onChange={(e) => setForm({ ...form, domicile: e.target.value })}
-              placeholder="Jakarta Selatan" className="h-10" />
+              className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
+              <option value="">Pilih kota domisili...</option>
+              {domicileOptions.map(group => (
+                <optgroup key={group.group} label={group.group}>
+                  {group.cities.map(city => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
+
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Detail / Keterangan</Label>
             <textarea value={form.detail}

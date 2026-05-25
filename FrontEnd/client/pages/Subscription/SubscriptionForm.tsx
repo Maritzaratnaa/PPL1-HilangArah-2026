@@ -366,9 +366,9 @@ export default function SubscriptionForm() {
                             <SelectContent style={{ fontSize: '16px' }}>
                               <SelectItem value="none" className="text-[16px] font-medium">Tidak ada preferensi</SelectItem>
                               <SelectItem value="20-30" className="text-[16px] font-medium">20 - 30 tahun</SelectItem>
-                              <SelectItem value="30-40" className="text-[16px] font-medium">30 - 40 tahun</SelectItem>
-                              <SelectItem value="40-50" className="text-[16px] font-medium">40 - 50 tahun</SelectItem>
-                              <SelectItem value="50+" className="text-[16px] font-medium">50 tahun ke atas</SelectItem>
+                              <SelectItem value="30-40" className="text-[16px] font-medium">31 - 40 tahun</SelectItem>
+                              <SelectItem value="40-50" className="text-[16px] font-medium">41 - 50 tahun</SelectItem>
+                              <SelectItem value="50+" className="text-[16px] font-medium">51 tahun ke atas</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
