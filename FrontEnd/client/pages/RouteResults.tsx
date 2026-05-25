@@ -55,44 +55,42 @@ interface RouteResult {
 
 const BASE_URL = "http://localhost:3000";
 
-// --- LOGIKA FILTER TAG KENDARAAN SUPER KETAT ---
 function getFacilityTips(category: string, facilities: Facility) {
-  const tips: { icon: string; label: string; color: string }[] = [];
+  const tips: {label: string; color: string }[] = [];
   if (!facilities) return tips;
 
   const safeCategory = (category || "").trim().toLowerCase();
 
   if (["wanita", "perempuan", "women"].includes(safeCategory)) {
     if (facilities.women_area) {
-      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+      tips.push({label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
     }
   } 
   else if (["ibu hamil", "pregnant"].includes(safeCategory)) {
     if (facilities.women_area) {
-      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
+      tips.push({label: "Area Wanita", color: "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300" });
     }
     if (facilities.priority_seat) {
-      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+      tips.push({label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
     }
   } 
   else if (["disabilitas", "disability", "tunanetra", "tuli", "pengguna kursi roda"].includes(safeCategory)) {
     if (facilities.low_entry) {
-      tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
+      tips.push({label: "Low Entry", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300" });
     }
     if (facilities.wheelchair_slot) {
-      tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
+      tips.push({label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" });
     }
   } 
   else if (["lansia", "elderly", "penyakit rentan", "vulnerable", "anak-anak", "children"].includes(safeCategory)) {
     if (facilities.priority_seat) {
-      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
+      tips.push({label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" });
     }
   }
   
   return tips;
 }
 
-// --- KOMPONEN FILTER TAG HALTE/STASIUN SUPER KETAT ---
 function StopBadges({ has_ramp, has_elevator, category }: { has_ramp?: boolean; has_elevator?: boolean; category: string }) {
   const safeCategory = (category || "").trim().toLowerCase();
   
@@ -279,7 +277,6 @@ export default function RouteResults() {
           </Link>
           <h1 className={`text-2xl md:text-3xl font-bold mb-3 ${isHC ? 'text-[#ffff00]' : 'text-white'}`}>Hasil Rekomendasi</h1>
           
-          {/* SEARCH BOX RESONSIF */}
           <div className="rounded-xl p-3 mt-4" style={searchBoxStyle}>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <div className="flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5" style={searchInputStyle}>
@@ -365,7 +362,6 @@ export default function RouteResults() {
                       )}
 
                       <div className="p-4 sm:p-6">
-                        {/* HEADER CARD RESPONSIF */}
                         <div className="flex items-start justify-between mb-4 gap-2">
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div className="flex -space-x-2 flex-shrink-0">
@@ -390,7 +386,6 @@ export default function RouteResults() {
                           </div>
                         </div>
 
-                        {/* RANGKUMAN HALTE RESPONSIF */}
                         <div className="flex items-center gap-2 mb-5 text-xs sm:text-sm font-semibold">
                           <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[40%]">
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
@@ -403,18 +398,16 @@ export default function RouteResults() {
                           </div>
                         </div>
 
-                        {/* Tips Fasilitas */}
                         {facilityTips.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-4">
                             {facilityTips.map((tip, i) => (
                               <span key={i} className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-transparent shadow-sm ${tip.color}`}>
-                                {tip.icon} {tip.label}
+                                {tip.label}
                               </span>
                             ))}
                           </div>
                         )}
 
-                        {/* BOTTOM ACTIONS RESPONSIF */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 sm:pt-5 border-t border-border gap-3">
                           <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
                             <div className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-md">
@@ -432,7 +425,6 @@ export default function RouteResults() {
                         </div>
                       </div>
 
-                      {/* Dropdown Detail Perjalanan (Hanya Naik & Turun) */}
                       {isExpanded && (
                         <div className="border-t border-border px-4 sm:px-6 py-5 sm:py-6 bg-muted/20 rounded-b-2xl">
                           {categoryAdvice && (
@@ -451,7 +443,6 @@ export default function RouteResults() {
                                 const isReversed = path.length > 1 && path[path.length - 1].stop_name === leg.origin_stop;
                                 const orderedPath = isReversed ? [...path].reverse() : path;
 
-                                // HANYA AMBIL INDEX 0 (NAIK) DAN INDEX TERAKHIR (TURUN)
                                 const displayStops = orderedPath.filter((_, sIdx) => sIdx === 0 || sIdx === orderedPath.length - 1);
 
                                 return (
