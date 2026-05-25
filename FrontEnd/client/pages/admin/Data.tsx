@@ -75,6 +75,9 @@ const emptyRoute: Route = {
 function TransModal({ trans, onSave, onClose }: { trans: Partial<Trans>; onSave: (t: Trans) => void; onClose: () => void }) {
   const [form, setForm] = useState({ ...emptyTrans, ...trans });
   const isEdit = !!trans.name;
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -119,7 +122,10 @@ function TransModal({ trans, onSave, onClose }: { trans: Partial<Trans>; onSave:
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={onClose}>Batal</Button>
-          <Button className="flex-1" onClick={() => { if (!form.name) return; onSave(form as Trans); }}>
+          <Button className="flex-1" onClick={() => {
+            if (!form.name) { toast.error("Nama transportasi wajib diisi.", customToastStyle); return; }
+            onSave(form as Trans);
+          }}>
             {isEdit ? 'Simpan' : 'Tambah'}
           </Button>
         </div>
@@ -131,6 +137,9 @@ function TransModal({ trans, onSave, onClose }: { trans: Partial<Trans>; onSave:
 function StopModal({ stop, onSave, onClose }: { stop: Partial<Stop>; onSave: (s: Stop) => void; onClose: () => void }) {
   const [form, setForm] = useState({ ...emptyStop, ...stop });
   const isEdit = !!stop.name;
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -184,7 +193,13 @@ function StopModal({ stop, onSave, onClose }: { stop: Partial<Stop>; onSave: (s:
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={onClose}>Batal</Button>
-          <Button className="flex-1" onClick={() => { if (!form.name) return; onSave(form as Stop); }}>
+          <Button className="flex-1" onClick={() => {
+            if (!form.name) { toast.error("Nama halte wajib diisi.", customToastStyle); return; }
+            if (!form.address.trim()) { toast.error("Alamat wajib diisi.", customToastStyle); return; }
+            if (!form.latitude) { toast.error("Latitude wajib diisi.", customToastStyle); return; }
+            if (!form.longitude) { toast.error("Longitude wajib diisi.", customToastStyle); return; }
+            onSave(form as Stop);
+          }}>
             {isEdit ? 'Simpan' : 'Tambah'}
           </Button>
         </div>
@@ -228,6 +243,10 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
       return { ...s, [field]: value };
     });
     setForm({ ...form, route_stops: updated });
+  };
+
+  const customToastStyle = {
+    className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
   };
 
   return (
@@ -335,7 +354,10 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={onClose}>Batal</Button>
           <Button className="flex-1" onClick={() => {
-            if (!form.route_name || !form.trans_id || !form.origin_stop_id || !form.destination_stop_id) return;
+            if (!form.route_name) { toast.error("Nama rute wajib diisi.", customToastStyle); return; }
+            if (!form.trans_id) { toast.error("Transportasi wajib dipilih.", customToastStyle); return; }
+            if (!form.origin_stop_id) { toast.error("Halte asal wajib dipilih.", customToastStyle); return; }
+            if (!form.destination_stop_id) { toast.error("Halte tujuan wajib dipilih.", customToastStyle); return; }
             onSave(form as Route);
           }}>
             {isEdit ? 'Simpan' : 'Tambah'}
