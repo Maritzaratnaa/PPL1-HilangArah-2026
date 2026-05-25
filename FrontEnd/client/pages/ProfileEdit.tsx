@@ -10,13 +10,13 @@ import { ArrowLeft, CheckCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 const BASE_URL = 'http://localhost:3000';
 
 const userCategories = [
-  { value: "disability", label: "Person with Disability" },
-  { value: "elderly", label: "Elderly (60+)" },
-  { value: "pregnant", label: "Pregnant Women" },
-  { value: "vulnerable-illness", label: "Vulnerable Illness" },
-  { value: "children", label: "Children" },
-  { value: "women", label: "Women" },
-  { value: "general", label: "General Traveler" },
+  { value: "disability", label: "Disabilitas" },
+  { value: "elderly", label: "Lansia (60+)" },
+  { value: "pregnant", label: "Wanita Hamil" },
+  { value: "vulnerable-illness", label: "Penyakit Rentan" },
+  { value: "children", label: "Anak-anak" },
+  { value: "women", label: "Wanita" },
+  { value: "general", label: "Umum" },
 ];
 
 export default function ProfileEdit() {
