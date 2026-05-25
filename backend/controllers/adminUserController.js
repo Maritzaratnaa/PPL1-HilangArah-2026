@@ -20,6 +20,7 @@ const getAllUsers = async (req, res) => {
                 u.user_id, 
                 u.email, 
                 u.username, 
+                u.is_verified,
                 u.is_Active, 
                 u.created_at,
                 p.full_name, 
