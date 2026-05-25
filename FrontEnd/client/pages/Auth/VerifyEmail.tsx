@@ -2,21 +2,25 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Loader2, MailCheck } from "lucide-react";
-import { toast } from "sonner"; 
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Menangkap email dari halaman Register sebelumnya
   const email = location.state?.email;
 
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
   const customToastStyle = {
     className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
   };
 
+  // Jika user iseng buka halaman ini tanpa lewat register, tendang ke login
   useEffect(() => {
     if (!email) {
       navigate("/login");
@@ -44,8 +48,9 @@ export default function VerifyEmail() {
       const data = await res.json();
 
       if (res.ok) {
+        // Mengubah alert bawaan menjadi toast
         toast.success("Email berhasil diverifikasi! Silakan login.", customToastStyle);
-        navigate("/login");
+        navigate("/login"); // Berhasil? Lempar ke Login!
       } else {
         setErrorMsg(data.message || "Kode OTP salah atau kadaluarsa.");
       }

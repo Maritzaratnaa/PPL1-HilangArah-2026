@@ -1,11 +1,17 @@
 const pool = require('../db');
 const autoExpireSubscriptions = require('../utils/autoExpire');
 
+// ==========================================
+// 1. GET ALL GUIDES & STATS
+// ==========================================
 const getAllGuides = async (req, res) => {
     try {
         const { search } = req.query;
 
+        // Lakukan evaluasi kilat agar data pemandu terbaru (bebas tugas) langsung akurat
         await autoExpireSubscriptions();
+
+        // Query Statistik menyesuaikan kolom is_available (1 = Tersedia, 0 = Tidak)
         const statsQuery = `
             SELECT 
                 COUNT(*) AS total_pemandu,
@@ -44,6 +50,9 @@ const getAllGuides = async (req, res) => {
     }
 };
 
+// ==========================================
+// 2. GET GUIDE DETAIL
+// ==========================================
 const getGuideDetail = async (req, res) => {
     try {
         const { employee_id } = req.params;
@@ -59,6 +68,9 @@ const getGuideDetail = async (req, res) => {
     }
 };
 
+// ==========================================
+// 3. CREATE NEW GUIDE 
+// ==========================================
 const createGuide = async (req, res) => {
     try {
         const { full_name, phone_number, domicile, gender, age, detail } = req.body;
@@ -68,7 +80,7 @@ const createGuide = async (req, res) => {
         }
 
         const randomNum = Math.floor(100 + Math.random() * 900);
-        const employee_id = `G-${randomNum}`; 
+        const employee_id = `G-${randomNum}`; // Format disesuaikan dengan screenshot: G-001
         
         const insertQuery = `
             INSERT INTO guides (employee_id, full_name, phone_number, domicile, is_available, gender, age, detail) 
@@ -84,11 +96,15 @@ const createGuide = async (req, res) => {
     }
 };
 
+// ==========================================
+// 4. TOGGLE STATUS
+// ==========================================
 const toggleGuideStatus = async (req, res) => {
     try {
         const { employee_id } = req.params;
-        const { is_available } = req.body; 
+        const { is_available } = req.body; // Menerima boolean (true/false) dari frontend
 
+        // Konversi boolean true/false menjadi angka 1/0 untuk MySQL
         const val = is_available ? 1 : 0; 
 
         const [result] = await pool.query(`UPDATE guides SET is_available = ? WHERE employee_id = ?`, [val, employee_id]);
@@ -103,7 +119,9 @@ const toggleGuideStatus = async (req, res) => {
     }
 };
 
-
+// ==========================================
+// 5. UPDATE GUIDE (Edit)
+// ==========================================
 const updateGuide = async (req, res) => {
     try {
         const { employee_id } = req.params;
@@ -124,7 +142,9 @@ const updateGuide = async (req, res) => {
     }
 };
 
-
+// ==========================================
+// 6. DELETE GUIDE
+// ==========================================
 const deleteGuide = async (req, res) => {
     try {
         const { employee_id } = req.params;
@@ -139,6 +159,7 @@ const deleteGuide = async (req, res) => {
     }
 };
 
+// 👇 PASTIKAN SEMUA FUNGSI DIEKSPOR DI SINI
 module.exports = {
     getAllGuides,
     getGuideDetail,

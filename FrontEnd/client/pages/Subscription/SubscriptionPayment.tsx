@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { Check, ShoppingCart, Loader2, RefreshCcw } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "sonner"; 
+import { toast } from "sonner"; // Tambahkan import library toast di sini
 
 export default function SubscriptionPayment() {
   const navigate = useNavigate();
@@ -13,16 +13,22 @@ export default function SubscriptionPayment() {
 
   const savedPaymentStr = localStorage.getItem("pendingPayment");
   const savedPayment = savedPaymentStr ? JSON.parse(savedPaymentStr) : null;
+
+  // Prioritaskan data dari location.state (jika baru datang dari Form), 
+  // atau pakai data dari localStorage (jika user balik lagi setelah pindah halaman)
   const subsId = location.state?.subs_id || savedPayment?.subsId;
   const plan = location.state?.plan || savedPayment?.plan || 'monthly';
   const planAmount = location.state?.amount || savedPayment?.amount || 299000;
   const planLabel = location.state?.planLabel || savedPayment?.planLabel || 'Paket Bulanan';
+
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // Jika subsId cocok dengan yang di memori, langsung isi tokennya agar tombol jadi "Lanjutkan"
   const [snapToken, setSnapToken] = useState<string | null>(
     (savedPayment && savedPayment.subsId === subsId) ? savedPayment.snapToken : null
   );
 
+  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
   const customToastStyle = {
     className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
   };
@@ -34,6 +40,7 @@ export default function SubscriptionPayment() {
     }
   }, [subsId, navigate]);
 
+  // --- FUNGSI UNTUK MENAMPILKAN POP-UP MIDTRANS ---
   const showMidtransPopup = (currentToken: string, jwtToken: string) => {
     const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -41,6 +48,8 @@ export default function SubscriptionPayment() {
       onSuccess: async function (result: any) {
         console.log("✅ Pembayaran Sukses!", result);
         toast.success("Pembayaran berhasil!", customToastStyle);
+        
+        // 👇 Hapus memori tagihan karena sudah lunas!
         localStorage.removeItem("pendingPayment");
 
         try {
@@ -78,6 +87,7 @@ export default function SubscriptionPayment() {
     });
   };
 
+  // --- FUNGSI KLIK TOMBOL BAYAR ---
   const handlePaymentConfirm = async () => {
     setIsProcessing(true);
     const jwtToken = localStorage.getItem("token");
@@ -88,6 +98,7 @@ export default function SubscriptionPayment() {
       return;
     }
 
+    // Jika token snap sudah ada di state/memori, langsung buka pop-up!
     if (snapToken) {
       console.log("💳 Membuka ulang tagihan yang tertunda...");
       showMidtransPopup(snapToken, jwtToken);
@@ -112,6 +123,7 @@ export default function SubscriptionPayment() {
       const data = await res.json();
 
       if (res.ok && data.token) {
+        // 👇 SIMPAN KE LOCAL STORAGE AGAR TIDAK HILANG SAAT PINDAH HALAMAN 👇
         localStorage.setItem("pendingPayment", JSON.stringify({
           subsId: subsId,
           plan: plan,
@@ -207,6 +219,7 @@ export default function SubscriptionPayment() {
                 <span className="text-[24px] font-bold text-primary">Rp {planAmount.toLocaleString('id-ID')}</span>
               </div>
 
+              {/* Payment Button Dinamis */}
               <Button
                 onClick={handlePaymentConfirm}
                 disabled={isProcessing}

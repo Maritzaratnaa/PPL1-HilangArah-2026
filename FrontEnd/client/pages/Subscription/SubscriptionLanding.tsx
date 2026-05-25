@@ -10,9 +10,12 @@ export default function SubscriptionLanding() {
   const navigate = useNavigate();
   const isHC = useIsHighContrast(); 
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+
+  // --- STATE UNTUK PENGECEKAN API ---
   const [hasSubs, setHasSubs] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
+  // --- LOGIKA PENGECEKAN STATUS LANGGANAN ---
   useEffect(() => {
     const checkSubscriptionStatus = async () => {
       const token = localStorage.getItem("token");
@@ -90,6 +93,7 @@ export default function SubscriptionLanding() {
     { question: "Apakah pemandu tersedia di semua kota?", answer: "Saat ini layanan pemandu tersedia di Jakarta dan sekitarnya. Kami terus memperluas jangkauan ke kota-kota lain secara bertahap." },
   ];
 
+  // --- STYLING KHUSUS HIGH CONTRAST ---
   const heroStyle = isHC
     ? { background: "#000000" }
     : { background: "linear-gradient(to bottom right, #005260, #007C8A, #009DAD)" };
@@ -153,6 +157,8 @@ export default function SubscriptionLanding() {
   return (
     <div className={`min-h-screen flex flex-col font-['Atkinson_Hyperlegible',_sans-serif] transition-colors ${isHC ? "bg-black" : "bg-white dark:bg-gray-950"}`}>
       <Navbar />
+
+      {/* HERO SECTION */}
       <section className="relative overflow-hidden pt-20 pb-28 px-6 lg:px-10" style={heroStyle}>
         {!isHC && (
           <>
@@ -179,6 +185,7 @@ export default function SubscriptionLanding() {
             </p>
             
             <div className="flex flex-wrap gap-3">
+              {/* TOMBOL 1 DIUPDATE: Ke Profil jika sudah langganan, ke Paket (scroll) jika belum */}
               <button 
                 onClick={() => {
                   if (hasSubs) {
@@ -197,6 +204,7 @@ export default function SubscriptionLanding() {
                 {isChecking ? "Mengecek..." : hasSubs ? "Lihat Status Langganan" : "Mulai Berlangganan"} <ArrowRight size={18} />
               </button>
               
+              {/* TOMBOL 2 DIUPDATE: Scroll ke Mengapa Berlangganan (benefits) */}
               <button 
                 onClick={() => document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth' })}
                 className={`px-6 py-3.5 rounded-xl font-bold transition-colors ${
@@ -210,6 +218,7 @@ export default function SubscriptionLanding() {
             </div>
           </div>
 
+          {/* Hero Visual Card */}
           <div className={`rounded-[24px] p-8 flex flex-col gap-4 ${
             isHC ? "bg-black border-2 border-[#ffff00]" : "bg-white/10 border border-white/15"
           }`}>
@@ -235,6 +244,29 @@ export default function SubscriptionLanding() {
               ))}
             </div>
             
+            <div className={`rounded-2xl p-4 flex items-center gap-3 sm:gap-4 ${
+              isHC ? "border-2 border-[#ffff00]" : "bg-white/12 border border-white/20"
+            }`}>
+              <div className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-sm ${
+                isHC ? "bg-transparent border-2 border-[#ffff00] text-[#ffff00]" : "bg-white/20 text-white"
+              }`}>
+                RS
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className={`text-sm font-bold truncate ${isHC ? "text-[#ffff00]" : "text-white"}`}>
+                  Rizky Santoso
+                </div>
+                <div className={`text-[11px] font-medium truncate ${isHC ? "text-white" : "text-white/50"}`}>
+                  Pemandu KRL Jabodetabek · ⭐ 4.9
+                </div>
+              </div>
+              <div className={`flex-shrink-0 rounded-full px-3 py-1 text-[10px] font-bold flex items-center gap-1 ${
+                isHC ? "bg-black border-2 border-[#ffff00] text-[#ffff00]" : "bg-green-500/20 border border-green-500/40 text-green-300"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isHC ? "bg-[#ffff00]" : "bg-green-400"}`} />
+                <span className="whitespace-nowrap">Aktif</span>
+              </div>
+            </div>
             <p className={`text-[11px] font-medium text-center mt-1 ${isHC ? "text-white" : "text-white/40"}`}>
               Cocokkan pemandu sesuai kebutuhan Anda
             </p>
@@ -242,11 +274,13 @@ export default function SubscriptionLanding() {
         </div>
       </section>
 
+      {/* Wave Section Divider */}
       <div
         className={`h-16 -mt-0.5 transition-colors ${isHC ? "bg-black" : "bg-[#F8FAFB] dark:bg-gray-900"}`}
         style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}
       />
 
+      {/* BENEFITS SECTION (MENGAPA BERLANGGANAN) - Ditambahkan ID="benefits" */}
       <section id="benefits" className={`py-20 px-6 lg:px-10 transition-colors ${isHC ? "bg-black" : "bg-[#F8FAFB] dark:bg-gray-900"}`}>
         <div className="max-w-5xl mx-auto">
           <div className="mb-12">
@@ -285,10 +319,12 @@ export default function SubscriptionLanding() {
         </div>
       </section>
 
+      {/* PRICING SECTION (PILIHAN PAKET) */}
       <section id="pricing" className="py-24 px-6 lg:px-10 relative overflow-hidden transition-colors" style={pricingHeroStyle}>
         {!isHC && <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />}
 
         <div className="max-w-5xl mx-auto">
+          {/* Header pricing section */}
           <div className="text-center mb-14">
             <span className={`text-xs font-bold uppercase tracking-widest ${isHC ? "text-[#ffff00]" : "text-white/60"}`}>
               Investasi Terbaik
@@ -301,6 +337,7 @@ export default function SubscriptionLanding() {
             </p>
           </div>
 
+          {/* 3 Pricing Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
             {(Object.entries(plans) as [keyof typeof plans, typeof plans[keyof typeof plans]][]).map(([key, plan]) => {
               const isActive = selectedPlan === key;
@@ -319,6 +356,7 @@ export default function SubscriptionLanding() {
                       : 'bg-white/10 border border-white/20 hover:bg-white/20'
                   }`}
                 >
+                  {/* Popular badge */}
                   {isPopular && (
                     <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
                       isHC ? 'bg-[#ffff00] text-black' : 'bg-white text-[#007C8A]'
@@ -354,6 +392,7 @@ export default function SubscriptionLanding() {
 
                   <hr className={`mb-5 ${isHC ? 'border-white/20' : isActive ? 'border-gray-100 dark:border-gray-700' : 'border-white/15'}`} />
 
+                  {/* Features */}
                   <div className="space-y-2.5 mb-6">
                     {plan.features.map((feat, i) => (
                       <div key={i} className={`flex items-start gap-2.5 text-[13px] font-medium ${
@@ -373,6 +412,7 @@ export default function SubscriptionLanding() {
                     ))}
                   </div>
 
+                  {/* CTA Button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -402,6 +442,7 @@ export default function SubscriptionLanding() {
             })}
           </div>
 
+          {/* Trust badges row */}
           <div className="flex flex-wrap justify-center gap-6">
             {[
               "Batalkan kapan saja, tanpa biaya",
@@ -426,6 +467,7 @@ export default function SubscriptionLanding() {
         </div>
       </section>
 
+      {/* FAQ SECTION */}
       <section className={`py-20 px-6 transition-colors ${isHC ? "bg-black" : "bg-[#F8FAFB] dark:bg-gray-900"}`}>
         <div className="max-w-2xl mx-auto">
           <div className="mb-10">
@@ -474,16 +516,13 @@ export default function SubscriptionLanding() {
             <p className={`text-[14px] font-medium mb-3 ${isHC ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
               Masih ada pertanyaan?
             </p>
-            <a 
-              href="mailto:arahin.support@gmail.com"
-              className={`inline-block px-6 py-2.5 rounded-lg text-[14px] font-bold transition-all focus:outline-none ${
-                isHC 
-                  ? "bg-black border-2 border-[#ffff00] text-[#ffff00] hover:bg-[#ffff00] hover:text-black" 
-                  : "border border-[#007C8A] dark:border-[#26c6da] text-[#007C8A] dark:text-[#26c6da] hover:bg-[#007C8A] dark:hover:bg-[#26c6da] hover:text-white dark:hover:text-gray-900"
-              }`}
-            >
+            <button className={`px-6 py-2.5 rounded-lg text-[14px] font-bold transition-all focus:outline-none ${
+              isHC 
+                ? "bg-black border-2 border-[#ffff00] text-[#ffff00] hover:bg-[#ffff00] hover:text-black" 
+                : "border border-[#007C8A] dark:border-[#26c6da] text-[#007C8A] dark:text-[#26c6da] hover:bg-[#007C8A] dark:hover:bg-[#26c6da] hover:text-white dark:hover:text-gray-900"
+            }`}>
               Hubungi Tim Kami
-            </a>
+            </button>
           </div>
         </div>
       </section>

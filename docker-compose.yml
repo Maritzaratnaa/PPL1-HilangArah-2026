@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # 1. BACKEND NODE.JS
   backend:
-    build: ./backend # Mengambil Dockerfile dari folder backend
+    build: ./backend  # Mengambil Dockerfile dari folder backend
     container_name: arahin_backend
     restart: always
     ports:
@@ -28,7 +28,7 @@ services:
     ports:
       - "8080:8080" # Sesuaikan dengan port yang digunakan Vite di Dockerfile
     env_file:
-      - ./FrontEnd/.env
+      - ./FrontEnd/.env 
     depends_on:
       - backend # Tunggu backend nyala dulu
     networks:

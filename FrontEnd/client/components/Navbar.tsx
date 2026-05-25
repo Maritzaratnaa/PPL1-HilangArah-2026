@@ -12,11 +12,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Komponen baru untuk mengatur Font Size dengan Plus/Minus
 function FontSizeControl() {
   const [isOpen, setIsOpen] = useState(false);
-  const [fontSize, setFontSize] = useState(16);
+  const [fontSize, setFontSize] = useState(16); // 16px adalah default browser
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Ambil data dari local storage saat pertama kali dimuat
   useEffect(() => {
     const savedSize = localStorage.getItem("globalFontSize");
     if (savedSize) {
@@ -26,6 +28,7 @@ function FontSizeControl() {
     }
   }, []);
 
+  // Menutup popup saat user klik di luar area
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -39,7 +42,9 @@ function FontSizeControl() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fungsi untuk update font size
   const updateFontSize = (newSize: number) => {
+    // Batas minimum 12px dan maksimum 24px agar layout tidak hancur
     if (newSize >= 12 && newSize <= 24) {
       setFontSize(newSize);
       document.documentElement.style.fontSize = `${newSize}px`;
@@ -49,6 +54,7 @@ function FontSizeControl() {
 
   return (
     <div className="relative" ref={dropdownRef}>
+      {/* Tombol Ikon Utama */}
       <Button
         variant="ghost"
         size="icon"
@@ -60,6 +66,7 @@ function FontSizeControl() {
         <Type className="h-5 w-5" />
       </Button>
 
+      {/* Pop-up Panel untuk Plus dan Minus */}
       {isOpen && (
         <div className="absolute right-0 mt-2 p-2 bg-background border border-border rounded-md shadow-lg z-50 flex items-center gap-2 w-max supports-[backdrop-filter]:bg-background/95 backdrop-blur">
           <Button
@@ -177,7 +184,7 @@ export function Navbar() {
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token"); // Diganti jadi "token" sesuai standar
     if (token) {
       navigate("/home");
     } else {
@@ -186,7 +193,7 @@ export function Navbar() {
   };
 
   const handleProfileClick = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token"); // Diganti jadi "token"
     if (!token) {
       navigate("/login");
     } else {
@@ -194,35 +201,41 @@ export function Navbar() {
     }
   };
 
+  // 👇 FUNGSI BARU UNTUK ROUTING SUBSCRIPTION 👇
   const handleSubscriptionClick = async () => {
     const token = localStorage.getItem("token");
     
+    // 1. Cek apakah sudah login
     if (!token) {
       navigate("/login");
       return;
     }
 
+    // 2. Cek apakah ada tagihan yang tertunda (pending payment) di memori lokal
     const pendingPayment = localStorage.getItem("pendingPayment");
     if (pendingPayment) {
       navigate("/subscription/Payment");
       return;
     }
 
-    setIsNavigating(true);
+    // 3. Jika sudah login & tidak ada tagihan, cek status langganan ke API
+    setIsNavigating(true); // Nyalakan loading (opsional)
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const res = await fetch(`${apiUrl}/api/subscription/my-subs`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      // Jika response OK berarti dia punya data langganan (Active / Pending)
       if (res.ok) {
         navigate("/subscription/Profile");
       } else {
+        // Jika 404 (tidak ketemu), berarti belum langganan sama sekali
         navigate("/subscription");
       }
     } catch (error) {
       console.error("Gagal mengecek status langganan:", error);
-      navigate("/subscription");
+      navigate("/subscription"); // Fallback ke landing page jika error
     } finally {
       setIsNavigating(false);
     }
@@ -232,6 +245,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 high-contrast:border-4">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4 md:gap-8">
+          {/* Logo */}
           <Link
             to="/"
             onClick={handleLogoClick}
@@ -243,6 +257,7 @@ export function Navbar() {
             <span className="hidden sm:inline">ARAHIN</span>
           </Link>
 
+          {/* Icon Group */}
           <div className="flex items-center gap-1 ml-auto">
             <Button
               variant="ghost"
@@ -270,7 +285,7 @@ export function Navbar() {
               className="h-10 w-10 high-contrast:border-2 high-contrast:border-primary"
               aria-label="Subscription"
               onClick={handleSubscriptionClick}
-              disabled={isNavigating}
+              disabled={isNavigating} // Matikan tombol sementara saat fetch API
             >
               {isNavigating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
             </Button>

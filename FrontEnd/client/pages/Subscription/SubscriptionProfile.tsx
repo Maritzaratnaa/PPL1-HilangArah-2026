@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useIsHighContrast } from "@/hooks/useTheme";
+import { useIsHighContrast } from "@/hooks/useTheme"; // Import hook high contrast
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +24,7 @@ import {
   UserX,
 } from "lucide-react";
 
+// Interface disesuaikan dengan response Backend
 interface BackendSubsData {
   subs_id: string;
   status: string;
@@ -41,6 +42,7 @@ export default function SubscriptionProfile() {
   const activePlanLabel = localStorage.getItem('activePlanLabel') || 'Paket Bulanan';
   const activePlanPeriod = localStorage.getItem('activePlanPeriod') || '1 Bulan';
 
+  // Tentukan harga berdasarkan label
   const getPlanPrice = (label: string) => {
     if (label.includes('Harian')) return { price: 'Rp 19.900', period: '/hari', benefits: ['1 Pemandu Pribadi Tersertifikasi', 'Pendampingan perjalanan sepanjang hari', 'Perencanaan rute aksesibel', 'Kontak darurat terintegrasi'] };
     if (label.includes('Mingguan')) return { price: 'Rp 89.000', period: '/minggu', benefits: ['1 Pemandu Pribadi Tersertifikasi', 'Pendampingan perjalanan selama 7 hari', 'Perencanaan rute aksesibel', 'Kontak darurat terintegrasi'] };
@@ -50,6 +52,7 @@ export default function SubscriptionProfile() {
   const planInfo = getPlanPrice(activePlanLabel);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
+  // State API
   const [subscriptionData, setSubscriptionData] =
     useState<BackendSubsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,6 +129,7 @@ export default function SubscriptionProfile() {
     });
   };
 
+  // --- STATE 1: LOADING ---
   if (isLoading) {
     return (
       <div className={`min-h-screen flex flex-col transition-colors ${isHC ? "bg-black" : "bg-background"}`}>
@@ -143,6 +147,7 @@ export default function SubscriptionProfile() {
     );
   }
 
+  // --- STATE 2: BELUM PUNYA LANGGANAN (Atau Error) ---
   if (!subscriptionData || errorMsg) {
     return (
       <div className={`min-h-screen flex flex-col transition-colors ${isHC ? "bg-black" : "bg-gray-50 dark:bg-gray-950"}`}>
@@ -177,6 +182,7 @@ export default function SubscriptionProfile() {
     );
   }
 
+  // --- KALKULASI DATA & STATUS ---
   const isPending = subscriptionData.status === "Pending";
   const hasGuide = subscriptionData.guide_name !== null;
 
@@ -188,6 +194,7 @@ export default function SubscriptionProfile() {
     : "-";
 
   let daysRemaining = 0;
+  // let progressPercentage = 0; (Bisa di-uncomment jika dibutuhkan)
 
   if (subscriptionData.end_date) {
     const end = new Date(subscriptionData.end_date).getTime();
@@ -213,6 +220,7 @@ export default function SubscriptionProfile() {
             </p>
           </div>
 
+          {/* JIKA STATUS MASIH PENDING */}
           {isPending && (
             <div className={`p-6 rounded-2xl mb-8 flex items-start gap-4 ${
               isHC 
@@ -232,6 +240,7 @@ export default function SubscriptionProfile() {
             </div>
           )}
 
+          {/* Guide Card */}
           <Card
             className={`shadow-md rounded-2xl p-8 mb-8 ${
               isHC 
@@ -244,6 +253,7 @@ export default function SubscriptionProfile() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Left - Avatar & Identity */}
               <div className="md:col-span-1">
                 <div className="relative mb-6">
                   <div
@@ -340,6 +350,7 @@ export default function SubscriptionProfile() {
             </div>
           </Card>
 
+          {/* Subscription Details Card */}
           <Card className={`shadow-sm rounded-2xl p-8 mb-8 ${
             isHC ? "bg-black border-2 border-[#ffff00]" : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
           }`}>
@@ -388,6 +399,7 @@ export default function SubscriptionProfile() {
             </div>
           </Card>
 
+          {/* Package Info Card */}
           <Card className={`shadow-sm rounded-2xl p-8 mb-8 ${
             isHC ? "bg-black border-2 border-[#ffff00]" : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
           }`}>
@@ -421,6 +433,7 @@ export default function SubscriptionProfile() {
               ))}
             </div>
 
+            {/* Cancel Button */}
             <Button
               onClick={() => setShowCancelModal(true)}
               variant="outline"
@@ -437,6 +450,7 @@ export default function SubscriptionProfile() {
         </div>
       </main>
 
+      {/* Cancel Confirmation Modal */}
       <AlertDialog open={showCancelModal} onOpenChange={setShowCancelModal}>
         <AlertDialogContent className={`max-w-md ${isHC ? "bg-black border-2 border-[#ffff00]" : "dark:bg-gray-900 dark:border-gray-800"}`}>
           <div className="text-center py-4">

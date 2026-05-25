@@ -9,12 +9,16 @@ const getDashboardStats = async (req, res) => {
             [recentReportsResult],
             [categoryResult]
         ] = await Promise.all([
+            // 1. Ambil Total Pengguna
             pool.query(`SELECT COUNT(*) as total FROM users WHERE role = 'Pengguna'`),
             
+            // 2. Ambil Total Berlangganan Aktif
             pool.query(`SELECT COUNT(*) as total FROM subs WHERE status = 'Active'`),
             
+            // 3. Ambil Jumlah Laporan 24 Jam Terakhir
             pool.query(`SELECT COUNT(*) as total FROM reports WHERE created_at >= NOW() - INTERVAL 1 DAY`),
             
+            // 4. Ambil 5 Laporan Terbaru (SUDAH DIPERBAIKI SESUAI TABEL)
             pool.query(`
                 SELECT 
                     r.report_id, 
@@ -28,6 +32,7 @@ const getDashboardStats = async (req, res) => {
                 LIMIT 5
             `),
 
+            // 5. Ambil Data Kategori Pengguna untuk Pie Chart
             pool.query(`
                 SELECT 
                     CASE category_status
