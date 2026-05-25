@@ -30,7 +30,7 @@ export default function Login() {
         body: JSON.stringify({ email, password }),
       });
       const json = await res.json();
-      
+
       if (res.ok) {
         localStorage.setItem("token", json.token);
         localStorage.setItem("isLoggedIn", "true");
@@ -39,6 +39,7 @@ export default function Login() {
 
         const userRole = json.user.role || json.user.category;
         localStorage.setItem('userCategory', userRole);
+        localStorage.setItem('userStatus', json.user.category || '');
 
         toast.success("Login berhasil!", customToastStyle);
 

@@ -20,7 +20,8 @@ export default function Home() {
   const [subsDays, setSubsDays] = useState(0);
   const [subsStatus, setSubsStatus] = useState("");
   const [subsEndDate, setSubsEndDate] = useState("");
-  
+  const [subsDuration, setSubsDuration] = useState("");
+
   const [hasPendingPayment, setHasPendingPayment] = useState(false);
 
   const [totalReports, setTotalReports] = useState(0);
@@ -67,15 +68,15 @@ export default function Home() {
             (r: any) => r.status === "Processed",
           ).length;
 
-          setTotalReports(activeCount); 
-          setProcessedReports(processedCount); 
+          setTotalReports(activeCount);
+          setProcessedReports(processedCount);
         }
       } catch (error) {
         console.error("Gagal mengambil data laporan:", error);
       }
     };
 
-    fetchReports(); 
+    fetchReports();
 
     const fetchSubs = async () => {
       const token = localStorage.getItem("token");
@@ -92,6 +93,7 @@ export default function Home() {
         if (res.ok && json.data) {
           setHasSubs(true);
           setSubsStatus(json.data.status);
+          setSubsDuration(json.data.duration || "");
 
           if (json.data.end_date) {
             const end = new Date(json.data.end_date).getTime();
@@ -137,65 +139,65 @@ export default function Home() {
       sub: hasPendingPayment
         ? "Lanjutkan pembayaran"
         : hasSubs
-        ? subsStatus === "Pending"
-          ? "Sedang Diproses"
-          : `${subsDays} hari tersisa`
-        : "Daftar pemandu",
+          ? subsStatus === "Pending"
+            ? "Sedang Diproses"
+            : `${subsDays} hari tersisa`
+          : "Daftar pemandu",
       bg: "bg-blue-50 dark:bg-blue-950/30",
       color: "text-blue-600",
       href: hasPendingPayment
         ? "/subscription/Payment"
         : hasSubs
-        ? "/subscription/Profile"
-        : "/subscription",
+          ? "/subscription/Profile"
+          : "/subscription",
     },
   ];
 
   const heroStyle = isHC
     ? { background: "#000000" }
     : {
-        background:
-          "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)",
-      };
+      background:
+        "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)",
+    };
   const searchBoxStyle = isHC
     ? { background: "#000000", border: "2px solid #ffff00" }
     : {
-        background: "rgba(255,255,255,0.1)",
-        border: "1.5px solid rgba(255,255,255,0.18)",
-      };
+      background: "rgba(255,255,255,0.1)",
+      border: "1.5px solid rgba(255,255,255,0.18)",
+    };
   const searchInputStyle = isHC
     ? { background: "#000000", border: "2px solid #ffff00" }
     : {
-        background: "rgba(255,255,255,0.1)",
-        border: "1.5px solid rgba(255,255,255,0.18)",
-      };
+      background: "rgba(255,255,255,0.1)",
+      border: "1.5px solid rgba(255,255,255,0.18)",
+    };
   const subCardStyle = isHC
     ? { background: "#000000", border: "2px solid #ffff00" }
     : {
-        background: "rgba(255,255,255,0.08)",
-        border: "1px solid rgba(255,255,255,0.15)",
-      };
+      background: "rgba(255,255,255,0.08)",
+      border: "1px solid rgba(255,255,255,0.15)",
+    };
   const subBadgeStyle = isHC
     ? { background: "#000000", color: "#ffff00", border: "2px solid #ffff00" }
     : {
-        background: "rgba(125,216,166,0.2)",
-        color: "#7dd8a6",
-        border: "1px solid rgba(125,216,166,0.3)",
-      };
+      background: "rgba(125,216,166,0.2)",
+      color: "#7dd8a6",
+      border: "1px solid rgba(125,216,166,0.3)",
+    };
   const subButtonStyle = isHC
     ? { background: "#000000", color: "#ffff00", border: "2px solid #ffff00" }
     : {
-        background: "rgba(255,255,255,0.15)",
-        color: "#fff",
-        border: "1px solid rgba(255,255,255,0.2)",
-      };
+      background: "rgba(255,255,255,0.15)",
+      color: "#fff",
+      border: "1px solid rgba(255,255,255,0.2)",
+    };
   const categoryChipStyle = isHC
     ? { background: "#000000", color: "#ffff00", border: "2px solid #ffff00" }
     : {
-        background: "rgba(255,255,255,0.12)",
-        color: "rgba(255,255,255,0.85)",
-        border: "1px solid rgba(255,255,255,0.2)",
-      };
+      background: "rgba(255,255,255,0.12)",
+      color: "rgba(255,255,255,0.85)",
+      border: "1px solid rgba(255,255,255,0.2)",
+    };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -251,10 +253,10 @@ export default function Home() {
                 )}
                 {hasSubs && subsStatus === "Active" && (
                   <span
-                    className="px-3 py-1 rounded-full text-xs font-semibold"
+                    className="px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5"
                     style={subBadgeStyle}
                   >
-                    ⭐ Langganan Aktif
+                    ⭐ Langganan Aktif {subsDuration && `(${subsDuration})`}
                   </span>
                 )}
               </div>
@@ -289,11 +291,10 @@ export default function Home() {
                     onClick={handleSearch}
                     disabled={!origin || !destination}
                     className={`font-bold text-sm px-5 h-10 rounded-lg transition-all disabled:opacity-50 w-full sm:w-auto
-        ${
-          isHC
-            ? "bg-[#ffff00] text-black border-2 border-[#ffff00] hover:bg-[#ffff00]/90"
-            : "bg-white hover:bg-white/90 shadow-sm"
-        }`}
+        ${isHC
+                        ? "bg-[#ffff00] text-black border-2 border-[#ffff00] hover:bg-[#ffff00]/90"
+                        : "bg-white hover:bg-white/90 shadow-sm"
+                      }`}
                     style={isHC ? {} : { color: "hsl(186 100% 27%)" }}
                   >
                     Cari Rute
@@ -343,11 +344,11 @@ export default function Home() {
                     style={
                       subsStatus === "Pending"
                         ? {
-                            ...subBadgeStyle,
-                            background: "rgba(251, 191, 36, 0.2)",
-                            color: "#fbbf24",
-                            borderColor: "rgba(251, 191, 36, 0.4)",
-                          }
+                          ...subBadgeStyle,
+                          background: "rgba(251, 191, 36, 0.2)",
+                          color: "#fbbf24",
+                          borderColor: "rgba(251, 191, 36, 0.4)",
+                        }
                         : subBadgeStyle
                     }
                   >
