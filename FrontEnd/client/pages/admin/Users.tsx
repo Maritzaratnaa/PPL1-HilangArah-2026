@@ -22,6 +22,7 @@ interface User {
   category_status: string;
   role: string;
   is_Active: boolean;
+  is_verified: boolean;
   created_at: string;
 }
 
@@ -123,7 +124,14 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
             { label: "Email", value: user.email },
             { label: "Nomor Telepon", value: user.phone_number || "-" },
             { label: "Kategori", value: CATEGORY_MAP[user.category_status] || user.category_status || "-" },
-            { label: "Status", value: user.is_Active ? "Aktif" : "Suspended" },
+            { 
+              label: "Status", 
+              value: !user.is_verified 
+                ? "Belum Verifikasi" 
+                : user.is_Active 
+                ? "Aktif" 
+                : "Suspended" 
+            },
             {
               label: "Bergabung",
               value: new Date(user.created_at).toLocaleDateString("id-ID", {
@@ -139,14 +147,23 @@ function DetailModal({ user, onClose }: { user: User; onClose: () => void }) {
             </div>
           ))}
 
-          {!user.is_Active && (
+          {/* Alert Dinamis Berdasarkan Status Verifikasi & Aktif */}
+          {!user.is_verified ? (
+            <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 flex gap-2 items-start text-amber-700 text-xs leading-relaxed dark:bg-amber-950/40 dark:border-amber-900/50 dark:text-amber-300">
+              <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong>Belum Verifikasi:</strong> Pengguna ini belum melakukan verifikasi email (OTP) sehingga tidak dapat login dan menggunakan fitur aplikasi.
+              </div>
+            </div>
+          ) : !user.is_Active ? (
             <div className="mt-4 p-3 rounded-lg bg-rose-50 border border-rose-200 flex gap-2 items-start text-rose-700 text-xs leading-relaxed dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-300">
               <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
               <div>
                 <strong>Akses Login Diblokir:</strong> Akun ini berstatus Suspended. Pengguna tidak dapat melakukan login sampai statusnya diaktifkan kembali.
               </div>
             </div>
-          )}
+          ) : null}
+
         </div>
         <Button variant="outline" className="w-full" onClick={onClose}>
           Tutup
@@ -429,11 +446,18 @@ export default function AdminUsers() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
                             className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                              user.is_Active
+                              !user.is_verified
+                                ? "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+                                : user.is_Active
                                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
                                 : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
-                            }`}>
-                            {user.is_Active ? "Aktif" : "Suspended"}
+                            }`}
+                          >
+                            {!user.is_verified
+                              ? "Belum Verifikasi"
+                              : user.is_Active
+                              ? "Aktif"
+                              : "Suspended"}
                           </span>
                         </td>
 
@@ -456,21 +480,26 @@ export default function AdminUsers() {
                                 size="sm"
                                 variant="outline"
                                 className={`h-8 text-[10px] px-2 ${
-                                  user.is_Active
+                                  !user.is_verified
+                                    ? "text-muted-foreground bg-muted/50 cursor-not-allowed opacity-50"
+                                    : user.is_Active
                                     ? "text-rose-600 border-rose-200 hover:bg-rose-50"
                                     : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
                                 }`}
                                 onClick={() => toggleStatus(user)}
-                                disabled={isActioning}
+                                disabled={isActioning || !user.is_verified}
+                                title={!user.is_verified ? "Akun belum diverifikasi" : ""}
                               >
                                 {isActioning ? (
                                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : !user.is_verified ? (
+                                  <UserX className="h-3.5 w-3.5 mr-1" />
                                 ) : user.is_Active ? (
                                   <UserX className="h-3.5 w-3.5 mr-1" />
                                 ) : (
                                   <UserCheck className="h-3.5 w-3.5 mr-1" />
                                 )}
-                                {!isActioning && (user.is_Active ? "Suspend" : "Aktifkan")}
+                                {!isActioning && (!user.is_verified ? "Suspend" : user.is_Active ? "Suspend" : "Aktifkan")}
                               </Button>
                               <Button
                                 size="sm"
