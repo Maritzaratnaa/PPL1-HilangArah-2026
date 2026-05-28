@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Menjalankan pengujian dasar... Sukses!\" && exit 0"
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -18,5 +19,8 @@
     "mysql2": "^3.19.1",
     "nodemailer": "^8.0.5",
     "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2"
   }
 }
