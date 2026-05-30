@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
+import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
 import { useNavigate } from "react-router-dom";
 import {
   CheckCircle, AlertCircle, Clock, MessageSquare, Plus, ArrowRight,
@@ -288,52 +289,30 @@ export default function Reporting() {
                     Lokasi Kejadian
                   </Label>
 
-                  <Select value={locationId} onValueChange={setLocationId}>
-                    <SelectTrigger className="h-14 border-border rounded-2xl font-medium text-[16px]">
-                      {loadingLocations ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 size={16} className="animate-spin" /> Memuat
-                          lokasi...
-                        </div>
-                      ) : (
-                        <SelectValue placeholder="Pilih halte atau kendaraan" />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl max-h-72">
-                      <SelectGroup>
-                        <SelectLabel className="bg-muted/50 px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-                          Halte / Stasiun
-                        </SelectLabel>
-                        {locationOptions
+                  {loadingLocations ? (
+                    <div className="h-14 border border-border rounded-2xl px-4 flex items-center gap-3 text-muted-foreground">
+                      <Loader2 size={18} className="animate-spin text-primary" />
+                      <span className="text-[15px]">Memuat daftar lokasi...</span>
+                    </div>
+                  ) : (
+                    <SearchableDropdown
+                      options={[
+                        ...locationOptions
                           .filter((o) => o.type === "stop")
-                          .map((opt) => (
-                            <SelectItem
-                              key={opt.id}
-                              value={opt.id}
-                              className="py-3 text-[15px]"
-                            >
-                              {opt.name}
-                            </SelectItem>
-                          ))}
-                      </SelectGroup>
-                      <SelectGroup>
-                        <SelectLabel className="bg-muted/50 px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-t mt-1">
-                          Transportasi
-                        </SelectLabel>
-                        {locationOptions
+                          .map((o) => ({ value: o.id, label: o.name, group: "Halte / Stasiun", detail: o.detail })),
+                        ...locationOptions
                           .filter((o) => o.type === "trans")
-                          .map((opt) => (
-                            <SelectItem
-                              key={opt.id}
-                              value={opt.id}
-                              className="py-3 text-[15px]"
-                            >
-                              {opt.name}
-                            </SelectItem>
-                          ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                          .map((o) => ({ value: o.id, label: o.name, group: "Transportasi", detail: o.detail })),
+                      ]}
+                      value={locationId}
+                      onChange={setLocationId}
+                      placeholder="Pilih halte atau transportasi..."
+                      searchPlaceholder="Cari lokasi..."
+                      disabled={submitting}
+                      triggerClassName="h-14 rounded-2xl text-[16px] font-medium"
+                      dropdownClassName="text-[16px]"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-3">
