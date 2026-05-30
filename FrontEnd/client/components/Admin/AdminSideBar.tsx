@@ -55,8 +55,8 @@ function EditPasswordModal({ onClose }: { onClose: () => void }) {
       setErrorMsg('Password baru dan konfirmasi tidak sama.');
       return;
     }
-    if (newPassword.length < 8) {
-      setErrorMsg('Password baru minimal 8 karakter.');
+    if (newPassword.length < 6) {
+      setErrorMsg('Password baru minimal 6 karakter.');
       return;
     }
     setLoading(true);
