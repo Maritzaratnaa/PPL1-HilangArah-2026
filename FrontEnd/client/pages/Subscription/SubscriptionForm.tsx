@@ -25,6 +25,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
+import { PrivacyModal, TermsModal } from "@/components/LegalModals";
 
 export default function SubscriptionForm() {
   const navigate = useNavigate();
@@ -45,6 +46,9 @@ export default function SubscriptionForm() {
   const [guideGenderPref, setGuideGenderPref] = useState('');
   const [guideAgePref, setGuideAgePref] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   const customToastStyle = {
     className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
@@ -159,47 +163,47 @@ export default function SubscriptionForm() {
   };
 
   const domicileOptions = [
-  { value: 'Jakarta Pusat', label: 'Jakarta Pusat', group: 'DKI JAKARTA' },
-  { value: 'Jakarta Selatan', label: 'Jakarta Selatan', group: 'DKI JAKARTA' },
-  { value: 'Jakarta Barat', label: 'Jakarta Barat', group: 'DKI JAKARTA' },
-  { value: 'Jakarta Utara', label: 'Jakarta Utara', group: 'DKI JAKARTA' },
-  { value: 'Jakarta Timur', label: 'Jakarta Timur', group: 'DKI JAKARTA' },
-  { value: 'Tangerang', label: 'Tangerang', group: 'BANTEN' },
-  { value: 'Tangerang Selatan', label: 'Tangerang Selatan', group: 'BANTEN' },
-  { value: 'Serang', label: 'Serang', group: 'BANTEN' },
-  { value: 'Cilegon', label: 'Cilegon', group: 'BANTEN' },
-  { value: 'Lebak', label: 'Lebak', group: 'BANTEN' },
-  { value: 'Pandeglang', label: 'Pandeglang', group: 'BANTEN' },
-  { value: 'Bandung', label: 'Bandung', group: 'JAWA BARAT' },
-  { value: 'Bekasi', label: 'Bekasi', group: 'JAWA BARAT' },
-  { value: 'Depok', label: 'Depok', group: 'JAWA BARAT' },
-  { value: 'Bogor', label: 'Bogor', group: 'JAWA BARAT' },
-  { value: 'Cimahi', label: 'Cimahi', group: 'JAWA BARAT' },
-  { value: 'Tasikmalaya', label: 'Tasikmalaya', group: 'JAWA BARAT' },
-  { value: 'Cirebon', label: 'Cirebon', group: 'JAWA BARAT' },
-  { value: 'Sukabumi', label: 'Sukabumi', group: 'JAWA BARAT' },
-  { value: 'Sumedang', label: 'Sumedang', group: 'JAWA BARAT' },
-  { value: 'Garut', label: 'Garut', group: 'JAWA BARAT' },
-  { value: 'Semarang', label: 'Semarang', group: 'JAWA TENGAH' },
-  { value: 'Surakarta', label: 'Surakarta (Solo)', group: 'JAWA TENGAH' },
-  { value: 'Magelang', label: 'Magelang', group: 'JAWA TENGAH' },
-  { value: 'Pekalongan', label: 'Pekalongan', group: 'JAWA TENGAH' },
-  { value: 'Salatiga', label: 'Salatiga', group: 'JAWA TENGAH' },
-  { value: 'Tegal', label: 'Tegal', group: 'JAWA TENGAH' },
-  { value: 'Banyumas', label: 'Banyumas', group: 'JAWA TENGAH' },
-  { value: 'Cilacap', label: 'Cilacap', group: 'JAWA TENGAH' },
-  { value: 'Surabaya', label: 'Surabaya', group: 'JAWA TIMUR' },
-  { value: 'Malang', label: 'Malang', group: 'JAWA TIMUR' },
-  { value: 'Sidoarjo', label: 'Sidoarjo', group: 'JAWA TIMUR' },
-  { value: 'Gresik', label: 'Gresik', group: 'JAWA TIMUR' },
-  { value: 'Batu', label: 'Batu', group: 'JAWA TIMUR' },
-  { value: 'Kediri', label: 'Kediri', group: 'JAWA TIMUR' },
-  { value: 'Madiun', label: 'Madiun', group: 'JAWA TIMUR' },
-  { value: 'Mojokerto', label: 'Mojokerto', group: 'JAWA TIMUR' },
-  { value: 'Pasuruan', label: 'Pasuruan', group: 'JAWA TIMUR' },
-  { value: 'Probolinggo', label: 'Probolinggo', group: 'JAWA TIMUR' },
-  { value: 'Blitar', label: 'Blitar', group: 'JAWA TIMUR' },
-];
+    { value: 'Jakarta Pusat', label: 'Jakarta Pusat', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Selatan', label: 'Jakarta Selatan', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Barat', label: 'Jakarta Barat', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Utara', label: 'Jakarta Utara', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Timur', label: 'Jakarta Timur', group: 'DKI JAKARTA' },
+    { value: 'Tangerang', label: 'Tangerang', group: 'BANTEN' },
+    { value: 'Tangerang Selatan', label: 'Tangerang Selatan', group: 'BANTEN' },
+    { value: 'Serang', label: 'Serang', group: 'BANTEN' },
+    { value: 'Cilegon', label: 'Cilegon', group: 'BANTEN' },
+    { value: 'Lebak', label: 'Lebak', group: 'BANTEN' },
+    { value: 'Pandeglang', label: 'Pandeglang', group: 'BANTEN' },
+    { value: 'Bandung', label: 'Bandung', group: 'JAWA BARAT' },
+    { value: 'Bekasi', label: 'Bekasi', group: 'JAWA BARAT' },
+    { value: 'Depok', label: 'Depok', group: 'JAWA BARAT' },
+    { value: 'Bogor', label: 'Bogor', group: 'JAWA BARAT' },
+    { value: 'Cimahi', label: 'Cimahi', group: 'JAWA BARAT' },
+    { value: 'Tasikmalaya', label: 'Tasikmalaya', group: 'JAWA BARAT' },
+    { value: 'Cirebon', label: 'Cirebon', group: 'JAWA BARAT' },
+    { value: 'Sukabumi', label: 'Sukabumi', group: 'JAWA BARAT' },
+    { value: 'Sumedang', label: 'Sumedang', group: 'JAWA BARAT' },
+    { value: 'Garut', label: 'Garut', group: 'JAWA BARAT' },
+    { value: 'Semarang', label: 'Semarang', group: 'JAWA TENGAH' },
+    { value: 'Surakarta', label: 'Surakarta (Solo)', group: 'JAWA TENGAH' },
+    { value: 'Magelang', label: 'Magelang', group: 'JAWA TENGAH' },
+    { value: 'Pekalongan', label: 'Pekalongan', group: 'JAWA TENGAH' },
+    { value: 'Salatiga', label: 'Salatiga', group: 'JAWA TENGAH' },
+    { value: 'Tegal', label: 'Tegal', group: 'JAWA TENGAH' },
+    { value: 'Banyumas', label: 'Banyumas', group: 'JAWA TENGAH' },
+    { value: 'Cilacap', label: 'Cilacap', group: 'JAWA TENGAH' },
+    { value: 'Surabaya', label: 'Surabaya', group: 'JAWA TIMUR' },
+    { value: 'Malang', label: 'Malang', group: 'JAWA TIMUR' },
+    { value: 'Sidoarjo', label: 'Sidoarjo', group: 'JAWA TIMUR' },
+    { value: 'Gresik', label: 'Gresik', group: 'JAWA TIMUR' },
+    { value: 'Batu', label: 'Batu', group: 'JAWA TIMUR' },
+    { value: 'Kediri', label: 'Kediri', group: 'JAWA TIMUR' },
+    { value: 'Madiun', label: 'Madiun', group: 'JAWA TIMUR' },
+    { value: 'Mojokerto', label: 'Mojokerto', group: 'JAWA TIMUR' },
+    { value: 'Pasuruan', label: 'Pasuruan', group: 'JAWA TIMUR' },
+    { value: 'Probolinggo', label: 'Probolinggo', group: 'JAWA TIMUR' },
+    { value: 'Blitar', label: 'Blitar', group: 'JAWA TIMUR' },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground font-['Atkinson_Hyperlegible',_sans-serif]">
@@ -437,11 +441,23 @@ export default function SubscriptionForm() {
                         className="font-medium text-muted-foreground text-[16px] cursor-pointer leading-relaxed"
                       >
                         Saya menyetujui{" "}
-                        <span className="text-primary font-bold underline underline-offset-4">
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsTermsOpen(true);
+                          }}
+                          className="text-primary font-bold underline underline-offset-4 hover:text-primary/80 transition-colors"
+                        >
                           Syarat & Ketentuan
                         </span>{" "}
                         serta{" "}
-                        <span className="text-primary font-bold underline underline-offset-4">
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsPrivacyOpen(true);
+                          }}
+                          className="text-primary font-bold underline underline-offset-4 hover:text-primary/80 transition-colors"
+                        >
                           Kebijakan Privasi
                         </span>{" "}
                         ARAHIN.
@@ -474,7 +490,6 @@ export default function SubscriptionForm() {
               </Card>
             </div>
 
-            {/* Summary Card */}
             <div className="lg:col-span-4 lg:sticky lg:top-10">
               <Card className="bg-card border-border rounded-[var(--radius)] p-7 shadow-sm flex flex-col">
                 <h3 className="text-[18px] font-bold text-foreground mb-6">Ringkasan Langganan</h3>
@@ -520,7 +535,11 @@ export default function SubscriptionForm() {
           </div>
         </div>
       </main>
+      
       <Footer />
+
+      <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
+      <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
     </div>
   );
 }

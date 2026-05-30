@@ -1,9 +1,16 @@
+import { useState } from 'react';
 import { Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 import { useIsHighContrast } from "@/hooks/useTheme";
+import { PrivacyModal, TermsModal } from "@/components/LegalModals";
 
 export function Footer() {
   const isHC = useIsHighContrast();
+  
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+
   return (
+    <>
       <footer className={`relative overflow-hidden border-t mt-0 ${isHC ? 'border-t-4 border-[#ffff00] bg-black' : 'border-border'}`}>
         
         {!isHC && (
@@ -29,7 +36,7 @@ export function Footer() {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
 
-          <div className="md:col-span-3">
+            <div className="md:col-span-3">
               <div className="flex items-center gap-2 mb-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isHC ? 'bg-[#ffff00]' : 'bg-primary'}`}>
                   <span className={`${isHC ? 'text-black' : 'text-white'} text-sm font-bold`}>A</span>
@@ -43,35 +50,39 @@ export function Footer() {
             </div>
 
             <div className="md:flex md:flex-col md:items-end"> 
-                <div>
-                  <h4 className={`font-bold text-sm uppercase tracking-wider mb-4 ${isHC ? 'text-[#ffff00]' : 'text-foreground'}`}>
-                    Kontak
-                  </h4>
-                  <div className="space-y-3 text-sm">
-                    <a href="mailto:support@arahin.com"
-                      className={`flex items-center gap-2.5 transition-colors group ${isHC ? 'text-white' : 'text-muted-foreground hover:text-primary'}`}>
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors
-                        ${isHC ? 'bg-black border border-[#ffff00]' : 'bg-muted group-hover:bg-primary/10'}`}>
-                        <Mail className={`h-3.5 w-3.5 ${isHC ? 'text-[#ffff00]' : ''}`} />
-                      </div>
-                      arahin.support@gmail.com
-                    </a>
-                  </div>
+              <div>
+                <h4 className={`font-bold text-sm uppercase tracking-wider mb-4 ${isHC ? 'text-[#ffff00]' : 'text-foreground'}`}>
+                  Kontak
+                </h4>
+                <div className="space-y-3 text-sm">
+                  <a href="mailto:support@arahin.com"
+                    className={`flex items-center gap-2.5 transition-colors group ${isHC ? 'text-white' : 'text-muted-foreground hover:text-primary'}`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors
+                      ${isHC ? 'bg-black border border-[#ffff00]' : 'bg-muted group-hover:bg-primary/10'}`}>
+                      <Mail className={`h-3.5 w-3.5 ${isHC ? 'text-[#ffff00]' : ''}`} />
+                    </div>
+                    arahin.support@gmail.com
+                  </a>
                 </div>
               </div>
             </div>
+          </div>
 
           <div className={`pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 ${isHC ? 'border-[#ffff00]' : 'border-border'}`}>
             <p className={`text-xs ${isHC ? 'text-white' : 'text-muted-foreground'}`}>
               &copy; 2026 ARAHIN. Hak Cipta Dilindungi.
             </p>
             <div className={`flex gap-4 text-xs ${isHC ? 'text-[#ffff00]' : 'text-muted-foreground'}`}>
-              <a href="#" className="hover:underline transition-colors">Privasi</a>
-              <a href="#" className="hover:underline transition-colors">Syarat & Ketentuan</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); setIsPrivacyOpen(true); }} className="hover:underline transition-colors">Privasi</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); setIsTermsOpen(true); }} className="hover:underline transition-colors">Syarat & Ketentuan</a>
             </div>
           </div>
 
         </div>
       </footer>
-    );
-  }
+      
+      <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
+      <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
+    </>
+  );
+}
