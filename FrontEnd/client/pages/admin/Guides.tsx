@@ -30,7 +30,6 @@ const emptyForm: Guide = {
   is_available: true,
 };
 
-// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
 const customToastStyle = {
   className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
@@ -111,16 +110,19 @@ function GuideModal({ guide, onSave, onClose }: {
               <Input value={form.employee_id} disabled className="h-10 bg-muted/50" />
             </div>
           )}
+
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Nama Lengkap</Label>
             <Input value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               placeholder="Masukkan nama lengkap" className="h-10" />
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-sm font-semibold mb-1.5 block">Jenis Kelamin</Label>
-              <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              <select value={form.gender}
+                onChange={(e) => setForm({ ...form, gender: e.target.value })}
                 className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
                 <option value="">Pilih...</option>
                 <option value="Laki-laki">Laki-laki</option>
@@ -128,18 +130,44 @@ function GuideModal({ guide, onSave, onClose }: {
               </select>
             </div>
             <div>
-              <Label className="text-sm font-semibold mb-1.5 block">Usia</Label>
-              <Input type="number" min={18} max={65} value={form.age || ''}
-                onChange={(e) => setForm({ ...form, age: parseInt(e.target.value) || 0 })}
-                placeholder="Usia" className="h-10" />
+              <Label className="text-sm font-semibold mb-1.5 block">Rentang Usia</Label>
+              <select
+                value={form.age ? ageOptions.find(o => {
+                  const [min, max] = o.replace(' tahun', '').split(' - ').map(Number);
+                  return form.age >= min && form.age <= (max || 99);
+                }) || '' : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) { setForm({ ...form, age: 0 }); return; }
+                  const [min, max] = val.replace(' tahun', '').split(' - ').map(Number);
+                  setForm({ ...form, age: max ? Math.round((min + max) / 2) : min });
+                }}
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
+                <option value="">Pilih rentang usia...</option>
+                {ageOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </div>
           </div>
+
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Nomor Telepon</Label>
-            <Input value={form.phone_number}
-              onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
-              placeholder="+62 812 xxxx xxxx" className="h-10" />
+            <div className="relative">
+              <Input
+                type="tel"
+                inputMode="numeric"
+                value={form.phone_number} 
+                onChange={(e) => {
+                  const onlyNums = e.target.value.replace(/\D/g, '');
+                  setForm({ ...form, phone_number: onlyNums });
+                }}
+                placeholder="+62 812 xxxx xxxx" 
+                className="h-10"
+              />
+            </div>
           </div>
+
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Domisili</Label>
             <SearchableDropdown
@@ -152,6 +180,7 @@ function GuideModal({ guide, onSave, onClose }: {
               dropdownClassName="text-sm"
             />
           </div>
+
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Detail / Keterangan</Label>
             <textarea value={form.detail}
@@ -258,7 +287,6 @@ export default function AdminGuides() {
 
   useEffect(() => { setCurrentPage(1); }, [search, filterAvailability, filterGender]);
 
-  // ── INTEGRASI TIDAK DIUBAH ──
   const fetchGuides = async () => {
     try {
       const res = await fetch(API_URL, {
@@ -362,8 +390,6 @@ export default function AdminGuides() {
   currentPage * ITEMS_PER_PAGE
   );
 
-  // ── END INTEGRASI ──
-
   return (
     <div className="min-h-screen flex bg-background">
       <AdminSidebar />
@@ -379,7 +405,6 @@ export default function AdminGuides() {
             </Button>
           </div>
 
-          {/* Stats - Adaptive Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {[
               { label: "Total Pemandu", val: guides.length, color: "text-primary" },
@@ -393,7 +418,6 @@ export default function AdminGuides() {
             ))}
           </div>
 
-          {/* Search + Filter */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -426,7 +450,6 @@ export default function AdminGuides() {
             </div>
           </div>
 
-          {/* Table Container with Horizontal Scroll */}
           <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <div className="overflow-x-auto w-full scrollbar-thin">
               <table className="w-full min-w-[900px]">

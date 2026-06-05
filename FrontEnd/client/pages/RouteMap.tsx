@@ -11,7 +11,6 @@ import { ArrowLeft, Loader2, MapPin } from "lucide-react";
 
 const containerStyle = { width: '100%', height: '100%' };
 
-// --- INTERFACES ---
 interface Facility {
   low_entry: boolean;
   wheelchair_slot: boolean;
@@ -51,7 +50,6 @@ interface RouteResult {
   legs: JourneyLeg[];
 }
 
-// --- HELPER FUNCTIONS ---
 function getTransportIcon(type: string) {
   const icons: Record<string, string> = {
     Bus: "🚌",
@@ -62,7 +60,6 @@ function getTransportIcon(type: string) {
   return icons[type] || "🚍";
 }
 
-// Badge Rekomendasi di Header
 function getAccessibilityBadge(facilities: Facility, category: string) {
   const safeCategory = (category || "").trim().toLowerCase();
   if (["wanita", "perempuan", "women"].includes(safeCategory)) return null;
@@ -83,48 +80,42 @@ function getAccessibilityBadge(facilities: Facility, category: string) {
   return { label: "Standar", color: "bg-muted text-muted-foreground" };
 }
 
-// LOGIKA FILTER TAG KENDARAAN SUPER KETAT
 function getFacilityTips(facilities: Facility, category: string) {
-  const tips: { icon: string; label: string; color: string }[] = [];
+  const tips: {label: string; color: string }[] = [];
   if (!facilities) return tips;
 
   const safeCategory = (category || "").trim().toLowerCase();
 
-  // 1. Kategori Wanita
   if (["wanita", "perempuan", "women"].includes(safeCategory)) {
     if (facilities.women_area) {
-      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
+      tips.push({label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
     }
   } 
-  // 2. Kategori Ibu Hamil
   else if (["ibu hamil", "pregnant"].includes(safeCategory)) {
     if (facilities.women_area) {
-      tips.push({ icon: "👩", label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
+      tips.push({label: "Area Wanita", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300" });
     }
     if (facilities.priority_seat) {
-      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
+      tips.push({label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
     }
   } 
-  // 3. Kategori Disabilitas
   else if (["disabilitas", "disability", "tunanetra", "tuli", "pengguna kursi roda"].includes(safeCategory)) {
     if (facilities.low_entry) {
-      tips.push({ icon: "🚌", label: "Low Entry", color: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300" });
+      tips.push({label: "Low Entry", color: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300" });
     }
     if (facilities.wheelchair_slot) {
-      tips.push({ icon: "♿", label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300" });
+      tips.push({label: "Slot Kursi Roda", color: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300" });
     }
   } 
-  // 4. Kategori Lansia / Penyakit Rentan / Anak-anak
   else if (["lansia", "elderly", "penyakit rentan", "vulnerable", "anak-anak", "children"].includes(safeCategory)) {
     if (facilities.priority_seat) {
-      tips.push({ icon: "🪑", label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
+      tips.push({label: "Kursi Prioritas", color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300" });
     }
   }
 
   return tips;
 }
 
-// Saran Teks Berdasarkan Kategori
 function getCategoryAdvice(category: string, transports: Transport[]): string | null {
   if (!transports || transports.length === 0) return null;
   const safeCategory = (category || "").trim().toLowerCase();
@@ -162,7 +153,6 @@ function getCategoryAdvice(category: string, transports: Transport[]): string | 
   }
 }
 
-// KOMPONEN FILTER TAG HALTE/STASIUN
 function StopBadges({ has_ramp, has_elevator, category }: { has_ramp?: boolean; has_elevator?: boolean; category: string }) {
   const safeCategory = (category || "").trim().toLowerCase();
   
@@ -194,7 +184,6 @@ function StopBadges({ has_ramp, has_elevator, category }: { has_ramp?: boolean; 
   );
 }
 
-// --- MAIN COMPONENT ---
 export default function RouteMap() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -203,9 +192,8 @@ export default function RouteMap() {
 
   const [response, setResponse] = useState<google.maps.DirectionsResult | null>(null);
 
-  // --- RESPONSIVE STATE ---
   const [isMobile, setIsMobile] = useState(false);
-  const [showPanel, setShowPanel] = useState(false); // Mengatur panel rute (bottom sheet) di mobile
+  const [showPanel, setShowPanel] = useState(false);
 
   const isMapsEnabled = import.meta.env.VITE_ENABLE_MAPS === 'true';
   const { isLoaded } = useJsApiLoader({
@@ -227,7 +215,6 @@ export default function RouteMap() {
     [response],
   );
 
-  // Panel Resize Logic (Khusus Desktop)
   const MIN_WIDTH = 280;
   const MAX_WIDTH = 640;
   const DEFAULT_WIDTH = 384;
@@ -236,10 +223,9 @@ export default function RouteMap() {
   const startX = useRef(0);
   const startWidth = useRef(DEFAULT_WIDTH);
 
-  // Deteksi ukuran layar (Mobile / Desktop)
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile(); // Cek saat pertama render
+    checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
@@ -281,7 +267,6 @@ export default function RouteMap() {
     );
   }
 
-  // Data Extraction
   const firstLeg = selectedRoute.legs[0];
   const lastLeg = selectedRoute.legs[selectedRoute.legs.length - 1];
   const firstStopName = firstLeg.origin_stop;
@@ -301,7 +286,6 @@ export default function RouteMap() {
   const accessBadge = getAccessibilityBadge(firstFacilities, filterCategory);
   const categoryAdvice = getCategoryAdvice(filterCategory, allTransports);
 
-  // Ambil data fasilitas untuk Titik Awal dan Titik Akhir
   const originStopData = firstLeg.route_path?.find(s => s.stop_name === firstStopName) || firstLeg.route_path?.[0];
   const finalStopData = lastLeg.route_path?.find(s => s.stop_name === finalStopName) || lastLeg.route_path?.[lastLeg.route_path.length - 1];
 
@@ -309,8 +293,6 @@ export default function RouteMap() {
     <div className="min-h-screen flex flex-col bg-background max-h-screen overflow-hidden font-['Atkinson_Hyperlegible',_sans-serif]">
       <main className="flex-grow flex flex-col md:flex-row relative" style={{ height: "calc(100vh - 64px)" }}>
         
-        {/* === RIGHT PANEL / BACKGROUND (AREA PETA) === */}
-        {/* Di mobile, peta memenuhi layar, di desktop ada di kanan panel rute */}
         <div 
           className="relative flex-grow overflow-hidden bg-muted/10 w-full"
           style={{ height: isMobile ? (showPanel ? "45vh" : "100%") : "100%" }}
@@ -334,7 +316,6 @@ export default function RouteMap() {
             <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
           )}
 
-          {/* TOMBOL TOGGLE (Hanya muncul di Mobile) */}
           {isMobile && (
             <button
               onClick={() => setShowPanel(!showPanel)}
@@ -345,7 +326,6 @@ export default function RouteMap() {
           )}
         </div>
 
-        {/* === LEFT PANEL (TIMELINE / BOTTOM SHEET) === */}
         <div 
           className={`bg-card border-border flex flex-col overflow-hidden shadow-xl
             ${isMobile 
@@ -355,7 +335,6 @@ export default function RouteMap() {
           style={isMobile ? { height: "60vh" } : { width: `${panelWidth}px` }}
         >
           
-          {/* Header Panel */}
           <div className="p-4 sm:p-5 border-b border-border bg-muted/20 flex-shrink-0">
             <div className="flex items-center justify-between mb-3">
               <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="font-bold text-muted-foreground -ml-2 h-8">
@@ -391,7 +370,6 @@ export default function RouteMap() {
               </div>
             </div>
 
-            {/* Titik Awal -> Tujuan Akhir Line */}
             <div className="flex items-center gap-2 mb-4 text-xs sm:text-sm">
               <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[40%]">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
@@ -404,7 +382,6 @@ export default function RouteMap() {
               </div>
             </div>
 
-            {/* Badge Rekomendasi Utama */}
             <div className="flex flex-wrap gap-1.5">
               {accessBadge && (
                 <span className={`text-[11px] sm:text-xs px-2.5 py-1 rounded-full font-bold ${accessBadge.color}`}>
@@ -414,7 +391,6 @@ export default function RouteMap() {
             </div>
           </div>
 
-          {/* Scrollable Body: TIMELINE */}
           <div className="flex-grow overflow-y-auto p-4 sm:p-5">
             {categoryAdvice && (
               <div className="mb-5 p-3 rounded-xl bg-primary/5 border border-primary/15 text-xs sm:text-sm text-primary font-semibold">
@@ -426,12 +402,9 @@ export default function RouteMap() {
               Rute Perjalanan
             </div>
             <div className="relative">
-              {/* Garis Vertikal Utama */}
               <div className="absolute left-[9px] top-3 bottom-3 w-px bg-border" />
 
               <div className="space-y-0">
-                
-                {/* 1. TITIK AWAL (Sekarang menampilkan Badge Fasilitas) */}
                 <div className="flex items-start gap-3 relative pb-4">
                   <span className="w-5 h-5 rounded-full bg-emerald-500 z-10 flex items-center justify-center mt-1 ring-4 ring-background">
                     <span className="w-2 h-2 bg-white rounded-full" />
@@ -445,7 +418,6 @@ export default function RouteMap() {
                   </div>
                 </div>
 
-                {/* 2. LOOP PER LEG */}
                 {selectedRoute.legs.map((leg, legIdx) => {
                   const path = leg.route_path || [];
                   const isReversed = path.length > 1 && path[path.length - 1].stop_name === leg.origin_stop;
@@ -455,7 +427,6 @@ export default function RouteMap() {
 
                   return (
                     <div key={legIdx}>
-                      {/* KOTAK INFO KENDARAAN */}
                       {leg.transports.map((t, tIdx) => (
                         <div key={tIdx} className="flex items-start gap-3 relative pb-6">
                           <div className="absolute left-[9px] top-0 bottom-0 w-0.5 border-l-2 border-dashed border-muted-foreground/30 ml-[-1px]"></div>
@@ -473,7 +444,7 @@ export default function RouteMap() {
                             <div className="flex flex-wrap gap-2">
                               {getFacilityTips(t.facilities, filterCategory).map((facility, i) => (
                                 <div key={i} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold shadow-sm ${facility.color}`}>
-                                  <span>{facility.icon}</span> {facility.label}
+                                  {facility.label}
                                 </div>
                               ))}
                             </div>
@@ -481,7 +452,6 @@ export default function RouteMap() {
                         </div>
                       ))}
 
-                      {/* DAFTAR HALTE YANG DILEWATI */}
                       {intermediateStops.length > 0 && (
                         <div className="relative pb-4 space-y-3">
                           {intermediateStops.map((stop, sIdx) => (
@@ -499,7 +469,6 @@ export default function RouteMap() {
                         </div>
                       )}
 
-                      {/* HALTE TRANSIT */}
                       {legIdx < selectedRoute.legs.length - 1 && (
                         <div className="flex items-start gap-3 relative pb-4 pt-2">
                           <span className="w-5 h-5 rounded-full bg-blue-500 z-10 flex items-center justify-center mt-1 ring-4 ring-background">
@@ -520,7 +489,6 @@ export default function RouteMap() {
                   );
                 })}
 
-                {/* 3. TITIK TUJUAN AKHIR */}
                 <div className="flex items-start gap-3 relative pt-1 pb-4">
                   <span className="w-5 h-5 rounded-full bg-rose-500 z-10 flex items-center justify-center mt-1 ring-4 ring-background">
                     <span className="w-2 h-2 bg-white rounded-full" />
@@ -538,7 +506,6 @@ export default function RouteMap() {
             </div>
           </div>
 
-          {/* Drag Handle - Hanya Muncul di Desktop */}
           {!isMobile && (
             <div onMouseDown={onMouseDown} className="absolute top-0 right-0 h-full w-4 flex items-center justify-center cursor-col-resize z-30 group">
               <div className="h-16 w-1.5 rounded-full bg-border group-hover:bg-primary/60 group-active:bg-primary transition-all duration-150" />

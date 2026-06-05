@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
 import { useNavigate } from "react-router-dom";
 import { Pagination } from '@/components/Admin/Pagination';
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner";
 
 interface Admin {
   user_id: string | number;
@@ -33,12 +33,10 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
-// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
 const customToastStyle = {
   className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
 
-// 1. MODIFIKASI COMPONENT AddAdminModal
 function AddAdminModal({
   loading,
   onConfirm,
@@ -49,7 +47,6 @@ function AddAdminModal({
   onCancel: () => void;
 }) {
   const [email, setEmail] = useState("");
-  // Set password default di sini, user masih bisa mengubahnya di form
   const [password, setPassword] = useState("admin123");
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -84,7 +81,7 @@ function AddAdminModal({
           <div>
             <label className="text-xs font-medium mb-1 block">Password</label>
             <Input
-              type="text" // Bisa diganti 'password' jika ingin disembunyikan
+              type="text"
               placeholder="Password default"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -204,11 +201,9 @@ export default function Admin() {
     fetchAdmins();
   }, [fetchAdmins]);
 
-  // 2. MODIFIKASI FUNGSI INTEGRASI
   const handleAssignAdmin = async (email: string, password: string) => {
     setActionLoading("add");
     try {
-      // Endpoint disesuaikan mengirim email dan password
       const res = await fetch(`${API_BASE}/admin/manage/assign`, {
         method: "POST",
         headers: getAuthHeaders(),
@@ -218,7 +213,6 @@ export default function Admin() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Gagal menambahkan admin.");
 
-      // Menggunakan fallback email jika json.data.username tidak tersedia di response
       const adminName = json.data?.username || email;
       toast.success(`Berhasil! ${adminName} sekarang adalah Admin.`, customToastStyle);
       

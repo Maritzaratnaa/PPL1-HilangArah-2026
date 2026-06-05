@@ -50,14 +50,10 @@ export default function SubscriptionForm() {
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
 
-  // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
   const customToastStyle = {
     className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
   };
 
-  // --- HANDLER VALIDASI REAL-TIME ---
-  
-  // Hanya memperbolehkan huruf, spasi, titik, dan tanda kutip tunggal
   const handleNameChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (/^[a-zA-Z\s'.-]*$/.test(val)) {
@@ -65,18 +61,15 @@ export default function SubscriptionForm() {
     }
   };
 
-  // Hanya memperbolehkan angka, dan otomatis menghapus '0' di awal karena sudah ada +62
   const handlePhoneChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/\D/g, ''); // Hapus semua karakter selain angka
+    let val = e.target.value.replace(/\D/g, '');
     if (val.startsWith('0')) {
-      val = val.substring(1); // Hilangkan angka 0 di depan
+      val = val.substring(1); 
     }
     setter(val);
   };
 
-  // --- FUNGSI INTEGRASI API & VALIDASI SUBMIT ---
   const handleProceedToPayment = async () => {
-    // 1. Validasi Kosong
     if (!fullName || !phone || !gender || !domicile || !emergencyContactName || !emergencyContactPhone) {
       toast.error("Mohon isi semua field yang wajib (*)", customToastStyle);
       return;
@@ -86,7 +79,6 @@ export default function SubscriptionForm() {
       return;
     }
 
-    // 2. Validasi Logika (Tidak boleh sama & Format)
     if (fullName.trim().toLowerCase() === emergencyContactName.trim().toLowerCase()) {
       toast.error("Nama Lengkap Anda dan Nama Kontak Darurat tidak boleh sama!", customToastStyle);
       return;
@@ -107,7 +99,6 @@ export default function SubscriptionForm() {
       return;
     }
 
-    // 3. Ambil Token JWT
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("Sesi Anda telah habis atau Anda belum login. Silakan login kembali.", customToastStyle);
@@ -121,7 +112,6 @@ export default function SubscriptionForm() {
       let selectedPlan = location.state?.plan || 'Monthly'; 
       selectedPlan = selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1).toLowerCase();
 
-      // Gabungkan +62 kembali sebelum dikirim ke backend
       const formattedPhone = `+62${phone}`;
       const formattedEmergencyPhone = `+62${emergencyContactPhone}`;
 
@@ -370,9 +360,9 @@ export default function SubscriptionForm() {
                             <SelectContent style={{ fontSize: '16px' }}>
                               <SelectItem value="none" className="text-[16px] font-medium">Tidak ada preferensi</SelectItem>
                               <SelectItem value="20-30" className="text-[16px] font-medium">20 - 30 tahun</SelectItem>
-                              <SelectItem value="30-40" className="text-[16px] font-medium">30 - 40 tahun</SelectItem>
-                              <SelectItem value="40-50" className="text-[16px] font-medium">40 - 50 tahun</SelectItem>
-                              <SelectItem value="50+" className="text-[16px] font-medium">50 tahun ke atas</SelectItem>
+                              <SelectItem value="30-40" className="text-[16px] font-medium">31 - 40 tahun</SelectItem>
+                              <SelectItem value="40-50" className="text-[16px] font-medium">41 - 50 tahun</SelectItem>
+                              <SelectItem value="50+" className="text-[16px] font-medium">51 tahun ke atas</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

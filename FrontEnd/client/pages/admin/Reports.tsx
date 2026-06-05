@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { Pagination } from '@/components/Admin/Pagination';
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner";
 
 export interface Report {
   report_id: string;
@@ -36,12 +36,16 @@ const getStatusInfo = (status: string) =>
 const getCategoryColor = (category: string) =>
   categoryConfig[category] || 'bg-slate-100 text-slate-700';
 
-// --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
+function extractLocationFromDesc(desc: string): { location: string; cleanDesc: string } {
+  const match = desc?.match(/^\[Lokasi: (.+?)\]\n?/);
+  if (match) return { location: match[1], cleanDesc: desc.replace(match[0], '') };
+  return { location: '-', cleanDesc: desc || '-' };
+}
+
 const customToastStyle = {
   className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
 };
 
-// ── DROPDOWN STATUS INLINE DI TABEL ──
 function StatusDropdown({ report, onStatusChange }: {
   report: Report;
   onStatusChange: (id: string, status: string) => void;
@@ -170,7 +174,7 @@ function DetailModal({ report, onClose, onStatusChange }: {
               { label: 'ID Laporan', value: report.report_id },
               { label: 'Pelapor', value: report.reporter_name || 'Anonim' },
               { label: 'Kategori', value: report.category || '-' },
-              { label: 'Lokasi', value: report.stop_name || '-' },
+              { label: 'Lokasi', value: report.stop_name || extractLocationFromDesc(report.description).location },
               { label: 'Tanggal', value: report.created_at || '-' },
               { label: 'Diselesaikan oleh', value: report.resolved_by || '-' },
             ].map((item) => (
@@ -182,7 +186,7 @@ function DetailModal({ report, onClose, onStatusChange }: {
           </div>
           <div className="rounded-xl border border-border p-4 mb-4">
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Deskripsi Laporan</div>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{report.description || '-'}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{extractLocationFromDesc(report.description).cleanDesc}</p>
           </div>
           <Button variant="outline" className="w-full" onClick={onClose}>Tutup</Button>
         </div>
@@ -222,10 +226,8 @@ export default function AdminReports() {
   const [detailTarget, setDetailTarget] = useState<Report | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Report | null>(null);
 
-  // --- API SETTINGS ---
   const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-  // ── INTEGRASI SAMA PERSIS DENGAN KODE ASLI ──
   useEffect(() => {
     const fetchReports = async () => {
       setLoading(true);
@@ -288,7 +290,6 @@ export default function AdminReports() {
       toast.error("Terjadi kesalahan jaringan.", customToastStyle);
     }
   };
-  // ── END INTEGRASI ──
 
   const filtered = reports.filter(r => {
     const reporterName = r.reporter_name || '';
@@ -383,12 +384,15 @@ export default function AdminReports() {
                             {report.category || '-'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">{report.stop_name || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                          {report.stop_name || extractLocationFromDesc(report.description).location}
+                        </td>
                         <td className="px-6 py-4">
-                          <p className="text-sm text-muted-foreground truncate max-w-[200px]">{report.description}</p>
+                          <p className="text-sm text-muted-foreground truncate max-w-[200px]">
+                            {extractLocationFromDesc(report.description).cleanDesc}
+                          </p>
                         </td>
 
-                        {/* STATUS DROPDOWN INLINE — mengganti badge statis */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <StatusDropdown report={report} onStatusChange={handleStatusChange} />
                         </td>
