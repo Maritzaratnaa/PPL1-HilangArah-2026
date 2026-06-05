@@ -16,8 +16,20 @@ const adminGuideRoutes = require('./routes/adminGuideRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
 
 const app = express();
-app.use(cors( {
-    origin: "http://localhost:8080",
+const allowedOrigins = [
+    "http://localhost:8080",
+    "https://frontend-arahin-r4j0dc1xa-maritzas-projects-0fb1535c.vercel.app" // URL Vercel kamu
+];
+
+app.use(cors({
+    // 2. Cek apakah alamat pengirim ada di dalam daftar allowedOrigins
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Blocked by CORS Policy ARAHIN'));
+        }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
