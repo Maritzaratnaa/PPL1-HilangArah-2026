@@ -16,7 +16,7 @@ const sendResetEmail = async (emailTo, resetToken) => {
         const resetLink = `http://localhost:8080/reset-password?token=${resetToken}`;
 
         const mailOptions = {
-            from: '"ARAHIN Support" <no-reply@arahin.com>',
+            from: '"ARAHIN Support" <${process.env.EMAIL_USER}>',
             to: emailTo,
             subject: 'Reset Password ARAHIN',
             html: `

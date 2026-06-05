@@ -16,7 +16,7 @@ const sendEmail = async (emailTo, otpCode) => {
         });
 
         const mailOptions = {
-            from: '"ARAHIN Support" <no-reply@arahin.com>',
+            from: '"ARAHIN Support" <${process.env.EMAIL_USER}>',
             to: emailTo,
             subject: 'Kode Verifikasi Email ARAHIN',
             html: `
