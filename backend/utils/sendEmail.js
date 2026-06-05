@@ -9,10 +9,10 @@ const sendEmail = async (emailTo, otpCode) => {
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                rejectUnauthorized: false // Baris penyelamat agar Render tidak menolak sertifikat SSL Gmail
             }
-        },
-        tls: {
-            rejectUnauthorized: false // Baris penyelamat agar Render tidak menolak sertifikat SSL Gmail
         });
 
         const mailOptions = {
