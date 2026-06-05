@@ -79,7 +79,7 @@ const searchRoutes = async (req, res) => {
                 
                 o_rs.stop_order AS r_start, d_rs.stop_order AS r_end
             FROM routes r
-            JOIN trans t ON r.trans_id = t.trans_id
+            JOIN trans t ON TRIM(r.trans_id) = TRIM(t.trans_id)
             JOIN route_stops o_rs ON r.route_id = o_rs.route_id
             JOIN stops os ON o_rs.stop_id = os.stop_id
             JOIN route_stops d_rs ON r.route_id = d_rs.route_id
@@ -131,7 +131,7 @@ const searchRoutes = async (req, res) => {
             FROM route_stops o_rs
             JOIN stops os ON o_rs.stop_id = os.stop_id
             JOIN routes r1 ON o_rs.route_id = r1.route_id
-            JOIN trans t1 ON r1.trans_id = t1.trans_id
+            JOIN trans t1 ON TRIM(r1.trans_id) = TRIM(t1.trans_id)
             
             JOIN route_stops t_rs1 ON r1.route_id = t_rs1.route_id
             JOIN stops ts1 ON t_rs1.stop_id = ts1.stop_id
@@ -139,7 +139,7 @@ const searchRoutes = async (req, res) => {
             JOIN stops ts2 ON ts1.hub_id = ts2.hub_id AND ts1.hub_id IS NOT NULL
             JOIN route_stops t_rs2 ON ts2.stop_id = t_rs2.stop_id AND t_rs2.route_id != r1.route_id
             JOIN routes r2 ON t_rs2.route_id = r2.route_id
-            JOIN trans t2 ON r2.trans_id = t2.trans_id
+            JOIN trans t2 ON TRIM(r2.trans_id) = TRIM(t2.trans_id)
             
             JOIN route_stops d_rs ON r2.route_id = d_rs.route_id
             JOIN stops ds ON d_rs.stop_id = ds.stop_id
@@ -202,7 +202,7 @@ const searchRoutes = async (req, res) => {
             FROM route_stops o_rs
             JOIN stops os ON o_rs.stop_id = os.stop_id
             JOIN routes r1 ON o_rs.route_id = r1.route_id
-            JOIN trans t1 ON r1.trans_id = t1.trans_id
+            JOIN trans t1 ON TRIM(r1.trans_id) = TRIM(t1.trans_id)
             
             -- Transit 1
             JOIN route_stops t1_rs_out ON r1.route_id = t1_rs_out.route_id
@@ -210,7 +210,7 @@ const searchRoutes = async (req, res) => {
             JOIN stops ts1_in ON ts1_out.hub_id = ts1_in.hub_id AND ts1_out.hub_id IS NOT NULL
             JOIN route_stops t2_rs_in ON ts1_in.stop_id = t2_rs_in.stop_id AND t2_rs_in.route_id != r1.route_id
             JOIN routes r2 ON t2_rs_in.route_id = r2.route_id
-            JOIN trans t2 ON r2.trans_id = t2.trans_id
+            JOIN trans t2 ON TRIM(r2.trans_id) = TRIM(t2.trans_id)
 
             -- Transit 2
             JOIN route_stops t2_rs_out ON r2.route_id = t2_rs_out.route_id AND t2_rs_out.stop_order != t2_rs_in.stop_order
@@ -218,7 +218,7 @@ const searchRoutes = async (req, res) => {
             JOIN stops ts2_in ON ts2_out.hub_id = ts2_in.hub_id AND ts2_out.hub_id IS NOT NULL
             JOIN route_stops t3_rs_in ON ts2_in.stop_id = t3_rs_in.stop_id AND t3_rs_in.route_id != r2.route_id AND t3_rs_in.route_id != r1.route_id
             JOIN routes r3 ON t3_rs_in.route_id = r3.route_id
-            JOIN trans t3 ON r3.trans_id = t3.trans_id
+            JOIN trans t3 ON TRIM(r3.trans_id) = TRIM(t3.trans_id)
 
             -- Tujuan
             JOIN route_stops d_rs ON r3.route_id = d_rs.route_id

@@ -12,7 +12,6 @@ const {
 
 const { verifyToken, isAdmin } = require('../middleware/authMiddleware'); 
 
-// 👇 PERBAIKAN: Gunakan verifyToken, bukan authMiddleware
 router.get('/', verifyToken, isAdmin, getAllGuides);
 router.post('/', verifyToken, isAdmin, createGuide);
 router.get('/:employee_id', verifyToken, isAdmin, getGuideDetail);

@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const pool = require('../db'); 
+const pool = require('../db');
 const sendEmail = require('../utils/sendEmail');
 const sendResetEmail = require('../utils/sendResetEmail');
 
@@ -30,11 +30,10 @@ const register = async (req, res) => {
         const user_id = crypto.randomUUID();
         const hashedPassword = await bcrypt.hash(password, 10);
         const role = 'Pengguna';
-        
-        // BIKIN KODE OTP 6 DIGIT
+
+        // Kode OTP
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // UPDATE QUERY INSERT: Masukkan otp_code ke database
         await connection.query(
             'INSERT INTO users (user_id, email, username, password, role, otp_code) VALUES (?, ?, ?, ?, ?, ?)',
             [user_id, email, username, hashedPassword, role, otpCode]
@@ -51,17 +50,15 @@ const register = async (req, res) => {
 
         await connection.commit();
 
-        // Kirim Email OTP (Gagal karena SMTP diblokir ISP lokal)
         sendEmail(email, otpCode).catch(console.error);
 
         console.log("\n=========================================");
         console.log(`[DEV TEST] Kode OTP untuk ${email}: ${otpCode}`);
         console.log("=========================================\n");
 
-        // Kirim email ke frontend
-        res.status(201).json({ 
+        res.status(201).json({
             message: "Registrasi berhasil! Silakan cek email Anda untuk kode OTP.",
-            email: email 
+            email: email
         });
 
     } catch (error) {
@@ -83,12 +80,12 @@ const verifyEmail = async (req, res) => {
         }
 
         const [users] = await pool.query('SELECT otp_code FROM users WHERE email = ?', [email]);
-        
+
         if (users.length === 0) {
             return res.status(404).json({ message: "Pengguna tidak ditemukan." });
         }
 
-        // Cek kecocokan OTP
+        // Cek OTP
         if (users[0].otp_code !== otp) {
             return res.status(400).json({ message: "Kode OTP salah atau tidak valid." });
         }
@@ -119,7 +116,7 @@ const login = async (req, res) => {
             WHERE u.email = ?
         `;
         const [users] = await pool.query(query, [email]);
-        
+
         if (users.length === 0) {
             return res.status(401).json({ message: "Email atau password salah!" });
         }
@@ -128,16 +125,16 @@ const login = async (req, res) => {
 
         // Cek verifikasi akun
         if (user.is_verified === 0) {
-            return res.status(403).json({ 
+            return res.status(403).json({
                 message: "Email belum diverifikasi. Silakan cek email Anda untuk kode OTP atau daftar ulang.",
                 is_verified: false,
                 email: user.email
             });
         }
 
-        if (user.is_Active === 0) { 
-            return res.status(403).json({ 
-                message: "Akun Anda telah disuspend karena melanggar ketentuan. Silakan hubungi admin ARAHIN." 
+        if (user.is_Active === 0) {
+            return res.status(403).json({
+                message: "Akun Anda telah disuspend karena melanggar ketentuan. Silakan hubungi admin ARAHIN."
             });
         }
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -151,8 +148,8 @@ const login = async (req, res) => {
             { expiresIn: '24h' }
         );
 
-        res.status(200).json({ 
-            message: "Login berhasil!", 
+        res.status(200).json({
+            message: "Login berhasil!",
             token: token,
             user: {
                 id: user.user_id,
@@ -184,15 +181,14 @@ const forgotPassword = async (req, res) => {
         }
 
         const user = users[0];
-        
-        // Buat token reset password yang berlaku 15 menit
+
+        // Token Reset Password
         const resetToken = jwt.sign(
             { user_id: user.user_id, email: user.email },
             process.env.JWT_SECRET,
             { expiresIn: '15m' }
         );
 
-        // Kirim email (tanpa await agar tidak memblokir response jika SMTP lambat/error)
         sendResetEmail(user.email, resetToken).catch(console.error);
 
         console.log("\n=========================================");
