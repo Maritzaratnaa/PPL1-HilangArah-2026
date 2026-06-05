@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const userCategories = [
   { value: "disability", label: "Person with Disability" },

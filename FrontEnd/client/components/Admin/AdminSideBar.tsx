@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const navItems = [
   { label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" />, href: '/admin/dashboard' },
