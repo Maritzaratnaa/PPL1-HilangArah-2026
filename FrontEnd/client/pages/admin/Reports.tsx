@@ -223,7 +223,7 @@ export default function AdminReports() {
   const [deleteTarget, setDeleteTarget] = useState<Report | null>(null);
 
   // --- API SETTINGS ---
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   // ── INTEGRASI SAMA PERSIS DENGAN KODE ASLI ──
   useEffect(() => {

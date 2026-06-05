@@ -42,7 +42,7 @@ export default function SubscriptionPayment() {
 
   // --- FUNGSI UNTUK MENAMPILKAN POP-UP MIDTRANS ---
   const showMidtransPopup = (currentToken: string, jwtToken: string) => {
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
 
     (window as any).snap.pay(currentToken, {
       onSuccess: async function (result: any) {
@@ -106,7 +106,7 @@ export default function SubscriptionPayment() {
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
 
       const res = await fetch(`${apiUrl}/api/subscription/payment-token`, {
         method: "POST",

@@ -7,7 +7,7 @@ import { Pagination } from '@/components/Admin/Pagination';
 import { toast } from "sonner";
 import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 interface Sub {
   subs_id: string;
