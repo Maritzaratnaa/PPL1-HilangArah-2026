@@ -28,12 +28,13 @@ const sendEmail = async (emailTo, otpCode) => {
             })
         });
 
-        if (error) {
-            console.error("❌ Gagal mengirim via Resend:", error);
-            return;
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log("📧 [Brevo API] Email OTP berhasil dikirim ke:", emailTo);
+        } else {
+            console.error("❌ Gagal mengirim via Brevo:", result); 
         }
-
-        console.log("📧 [Resend API] Email OTP berhasil dikirim ke:", emailTo, "ID:", data.id);
     } catch (error) {
         console.error("❌ Gagal mengirim email:", error);
     }
