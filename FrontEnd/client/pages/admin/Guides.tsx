@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 import { Pagination } from '@/components/Admin/Pagination';
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner";
+import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
 
 interface Guide {
   employee_id: string;
@@ -41,6 +42,56 @@ function GuideModal({ guide, onSave, onClose }: {
 }) {
   const [form, setForm] = useState({ ...emptyForm, ...guide });
   const isEdit = !!guide.full_name;
+
+  const domicileOptions = [
+    { value: 'Jakarta Pusat', label: 'Jakarta Pusat', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Selatan', label: 'Jakarta Selatan', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Barat', label: 'Jakarta Barat', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Utara', label: 'Jakarta Utara', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Timur', label: 'Jakarta Timur', group: 'DKI JAKARTA' },
+    { value: 'Tangerang', label: 'Tangerang', group: 'BANTEN' },
+    { value: 'Tangerang Selatan', label: 'Tangerang Selatan', group: 'BANTEN' },
+    { value: 'Serang', label: 'Serang', group: 'BANTEN' },
+    { value: 'Cilegon', label: 'Cilegon', group: 'BANTEN' },
+    { value: 'Lebak', label: 'Lebak', group: 'BANTEN' },
+    { value: 'Pandeglang', label: 'Pandeglang', group: 'BANTEN' },
+    { value: 'Bandung', label: 'Bandung', group: 'JAWA BARAT' },
+    { value: 'Bekasi', label: 'Bekasi', group: 'JAWA BARAT' },
+    { value: 'Depok', label: 'Depok', group: 'JAWA BARAT' },
+    { value: 'Bogor', label: 'Bogor', group: 'JAWA BARAT' },
+    { value: 'Cimahi', label: 'Cimahi', group: 'JAWA BARAT' },
+    { value: 'Tasikmalaya', label: 'Tasikmalaya', group: 'JAWA BARAT' },
+    { value: 'Cirebon', label: 'Cirebon', group: 'JAWA BARAT' },
+    { value: 'Sukabumi', label: 'Sukabumi', group: 'JAWA BARAT' },
+    { value: 'Sumedang', label: 'Sumedang', group: 'JAWA BARAT' },
+    { value: 'Garut', label: 'Garut', group: 'JAWA BARAT' },
+    { value: 'Semarang', label: 'Semarang', group: 'JAWA TENGAH' },
+    { value: 'Surakarta', label: 'Surakarta (Solo)', group: 'JAWA TENGAH' },
+    { value: 'Magelang', label: 'Magelang', group: 'JAWA TENGAH' },
+    { value: 'Pekalongan', label: 'Pekalongan', group: 'JAWA TENGAH' },
+    { value: 'Salatiga', label: 'Salatiga', group: 'JAWA TENGAH' },
+    { value: 'Tegal', label: 'Tegal', group: 'JAWA TENGAH' },
+    { value: 'Banyumas', label: 'Banyumas', group: 'JAWA TENGAH' },
+    { value: 'Cilacap', label: 'Cilacap', group: 'JAWA TENGAH' },
+    { value: 'Surabaya', label: 'Surabaya', group: 'JAWA TIMUR' },
+    { value: 'Malang', label: 'Malang', group: 'JAWA TIMUR' },
+    { value: 'Sidoarjo', label: 'Sidoarjo', group: 'JAWA TIMUR' },
+    { value: 'Gresik', label: 'Gresik', group: 'JAWA TIMUR' },
+    { value: 'Batu', label: 'Batu', group: 'JAWA TIMUR' },
+    { value: 'Kediri', label: 'Kediri', group: 'JAWA TIMUR' },
+    { value: 'Madiun', label: 'Madiun', group: 'JAWA TIMUR' },
+    { value: 'Mojokerto', label: 'Mojokerto', group: 'JAWA TIMUR' },
+    { value: 'Pasuruan', label: 'Pasuruan', group: 'JAWA TIMUR' },
+    { value: 'Probolinggo', label: 'Probolinggo', group: 'JAWA TIMUR' },
+    { value: 'Blitar', label: 'Blitar', group: 'JAWA TIMUR' },
+  ];
+
+  const ageOptions = [
+    '20 - 30 tahun',
+    '31 - 40 tahun',
+    '41 - 50 tahun',
+    '51 - 60 tahun',
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -91,9 +142,15 @@ function GuideModal({ guide, onSave, onClose }: {
           </div>
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Domisili</Label>
-            <Input value={form.domicile}
-              onChange={(e) => setForm({ ...form, domicile: e.target.value })}
-              placeholder="Jakarta Selatan" className="h-10" />
+            <SearchableDropdown
+              options={domicileOptions}
+              value={form.domicile}
+              onChange={(val) => setForm({ ...form, domicile: val })}
+              placeholder="Pilih kota domisili..."
+              searchPlaceholder="Cari kota..."
+              triggerClassName="h-10 rounded-lg text-sm"
+              dropdownClassName="text-sm"
+            />
           </div>
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Detail / Keterangan</Label>

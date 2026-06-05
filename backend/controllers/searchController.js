@@ -54,6 +54,15 @@ const searchRoutes = async (req, res) => {
         const searchOrigin = `%${origin}%`;
         const searchDest = `%${destination}%`;
 
+        // Cek halte
+        const [originCheck] = await pool.query('SELECT stop_id FROM stops WHERE name LIKE ? LIMIT 1', [searchOrigin]);
+        const [destCheck] = await pool.query('SELECT stop_id FROM stops WHERE name LIKE ? LIMIT 1', [searchDest]);
+
+        if (originCheck.length === 0 || destCheck.length === 0) {
+            console.log(`[DEBUG] Halte asal atau tujuan tidak ditemukan di database.`);
+            return res.status(404).json({ message: "Rute tidak ditemukan. Pastikan nama halte benar." });
+        }
+
         console.log(`[DEBUG] MENCARI RUTE: "${origin}" ➔ "${destination}"`);
 
         // Rute Langsung

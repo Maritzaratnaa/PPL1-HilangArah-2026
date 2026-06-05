@@ -4,6 +4,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^4.1.7"
   }
 }

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminSidebar } from "@/components/Admin/AdminSideBar";
 import { Pagination } from '@/components/Admin/Pagination';
-import { toast } from "sonner"; // Tambahkan import library toast di sini
+import { toast } from "sonner";
+import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -82,6 +83,39 @@ function DetailModal({ sub, onClose, onStatusChange, onDelete, onSuccess }: {
   const [assignEmployeeId, setAssignEmployeeId] = useState('');
   const [assigningGuide, setAssigningGuide] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  interface GuideOption {
+  employee_id: string;
+  full_name: string;
+  domicile: string;
+}
+
+const [availableGuides, setAvailableGuides] = useState<GuideOption[]>([]);
+const [loadingGuides, setLoadingGuides] = useState(false);
+
+useEffect(() => {
+  const fetchAvailableGuides = async () => {
+    setLoadingGuides(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${BASE_URL}/api/admin/guides`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (res.ok) {
+        const available = (json.data?.list || []).filter(
+          (g: any) => g.is_available === true || g.is_available === 1
+        );
+        setAvailableGuides(available);
+      }
+    } catch {
+      console.error('Gagal fetch pemandu');
+    } finally {
+      setLoadingGuides(false);
+    }
+  };
+  fetchAvailableGuides();
+}, []);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -217,16 +251,40 @@ function DetailModal({ sub, onClose, onStatusChange, onDelete, onSuccess }: {
               )}
 
               <div className="rounded-xl border border-border p-4 bg-muted/10">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Tugaskan Pemandu</div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Input value={assignEmployeeId} onChange={(e) => setAssignEmployeeId(e.target.value)}
-                    placeholder="Employee ID..."
-                    className="h-9 text-xs flex-1" />
-                  <Button size="sm" className="h-9 text-xs sm:w-24" disabled={assigningGuide || !assignEmployeeId.trim()}
-                    onClick={handleAssignGuide}>
-                    {assigningGuide ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Tugaskan'}
-                  </Button>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                  Tugaskan Pemandu
                 </div>
+                {loadingGuides ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memuat daftar pemandu...
+                  </div>
+                ) : availableGuides.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Tidak ada pemandu yang tersedia saat ini.</p>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <SearchableDropdown
+                      options={availableGuides.map(g => ({
+                        value: g.employee_id,
+                        label: g.full_name,
+                        detail: `ID: ${g.employee_id} · ${g.domicile || ''}`,
+                      }))}
+                      value={assignEmployeeId}
+                      onChange={setAssignEmployeeId}
+                      placeholder="Pilih pemandu tersedia..."
+                      searchPlaceholder="Cari nama atau ID pemandu..."
+                      className="flex-1"
+                      triggerClassName="h-9 text-xs"
+                      dropdownClassName="text-xs"
+                    />
+                    <Button
+                      size="sm"
+                      className="h-9 text-xs sm:w-24 flex-shrink-0"
+                      disabled={assigningGuide || !assignEmployeeId.trim()}
+                      onClick={handleAssignGuide}>
+                      {assigningGuide ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Tugaskan'}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {errorMsg && (

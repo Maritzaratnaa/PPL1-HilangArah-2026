@@ -4,11 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -20,6 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
+import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
 import { useNavigate } from "react-router-dom";
 import {
   CheckCircle,
@@ -296,6 +293,35 @@ export default function Reporting() {
                   <Label className="text-[15px] font-bold text-foreground ml-1">
                     Deskripsi Masalah
                   </Label>
+
+                  {loadingLocations ? (
+                    <div className="h-14 border border-border rounded-2xl px-4 flex items-center gap-3 text-muted-foreground">
+                      <Loader2 size={18} className="animate-spin text-primary" />
+                      <span className="text-[15px]">Memuat daftar lokasi...</span>
+                    </div>
+                  ) : (
+                    <SearchableDropdown
+                      options={[
+                        ...locationOptions
+                          .filter((o) => o.type === "stop")
+                          .map((o) => ({ value: o.id, label: o.name, group: "Halte / Stasiun", detail: o.detail })),
+                        ...locationOptions
+                          .filter((o) => o.type === "trans")
+                          .map((o) => ({ value: o.id, label: o.name, group: "Transportasi", detail: o.detail })),
+                      ]}
+                      value={locationId}
+                      onChange={setLocationId}
+                      placeholder="Pilih halte atau transportasi..."
+                      searchPlaceholder="Cari lokasi..."
+                      disabled={submitting}
+                      triggerClassName="h-14 rounded-2xl text-[16px] font-medium"
+                      dropdownClassName="text-[16px]"
+                    />
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-[15px] font-bold text-foreground ml-1">Deskripsi Masalah</Label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}

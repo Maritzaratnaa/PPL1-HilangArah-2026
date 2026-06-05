@@ -52,6 +52,10 @@ function AddAdminModal({
   // Set password default di sini, user masih bisa mengubahnya di form
   const [password, setPassword] = useState("admin123");
 
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isPasswordValid = password.length >= 6;
+  const isFormValid = isEmailValid && isPasswordValid;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={!loading ? onCancel : undefined} />
@@ -69,7 +73,13 @@ function AddAdminModal({
               placeholder="Contoh: admin@domain.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className={!isEmailValid && email.length > 0 ? "border-rose-500 focus-visible:ring-rose-500" : ""}
             />
+            {!isEmailValid && email.length > 0 && (
+              <p className="text-[10px] text-rose-500 mt-1">
+                Format email tidak valid (harus mengandung @ dan domain).
+              </p>
+            )}
           </div>
           <div>
             <label className="text-xs font-medium mb-1 block">Password</label>
@@ -78,7 +88,13 @@ function AddAdminModal({
               placeholder="Password default"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className={!isPasswordValid && password.length > 0 ? "border-rose-500 focus-visible:ring-rose-500" : ""}
             />
+            {!isPasswordValid && password.length > 0 && (
+              <p className="text-[10px] text-rose-500 mt-1">
+                Password minimal 6 karakter.
+              </p>
+            )}
           </div>
         </div>
 
@@ -89,7 +105,7 @@ function AddAdminModal({
           <Button
             className="flex-1 order-1 sm:order-2"
             onClick={() => onConfirm(email, password)}
-            disabled={loading || !email.trim() || !password.trim()}
+            disabled={loading || !isFormValid}
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
             {loading ? "Memproses..." : "Tambah Admin"}

@@ -7,9 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -26,6 +24,8 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
+import { PrivacyModal, TermsModal } from "@/components/LegalModals";
 
 export default function SubscriptionForm() {
   const navigate = useNavigate();
@@ -46,6 +46,9 @@ export default function SubscriptionForm() {
   const [guideGenderPref, setGuideGenderPref] = useState('');
   const [guideAgePref, setGuideAgePref] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   // --- KUSTOMISASI GAYA TOAST SAMA DENGAN BUTTON & FONT DIPERBESAR ---
   const customToastStyle = {
@@ -169,6 +172,49 @@ export default function SubscriptionForm() {
     }
   };
 
+  const domicileOptions = [
+    { value: 'Jakarta Pusat', label: 'Jakarta Pusat', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Selatan', label: 'Jakarta Selatan', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Barat', label: 'Jakarta Barat', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Utara', label: 'Jakarta Utara', group: 'DKI JAKARTA' },
+    { value: 'Jakarta Timur', label: 'Jakarta Timur', group: 'DKI JAKARTA' },
+    { value: 'Tangerang', label: 'Tangerang', group: 'BANTEN' },
+    { value: 'Tangerang Selatan', label: 'Tangerang Selatan', group: 'BANTEN' },
+    { value: 'Serang', label: 'Serang', group: 'BANTEN' },
+    { value: 'Cilegon', label: 'Cilegon', group: 'BANTEN' },
+    { value: 'Lebak', label: 'Lebak', group: 'BANTEN' },
+    { value: 'Pandeglang', label: 'Pandeglang', group: 'BANTEN' },
+    { value: 'Bandung', label: 'Bandung', group: 'JAWA BARAT' },
+    { value: 'Bekasi', label: 'Bekasi', group: 'JAWA BARAT' },
+    { value: 'Depok', label: 'Depok', group: 'JAWA BARAT' },
+    { value: 'Bogor', label: 'Bogor', group: 'JAWA BARAT' },
+    { value: 'Cimahi', label: 'Cimahi', group: 'JAWA BARAT' },
+    { value: 'Tasikmalaya', label: 'Tasikmalaya', group: 'JAWA BARAT' },
+    { value: 'Cirebon', label: 'Cirebon', group: 'JAWA BARAT' },
+    { value: 'Sukabumi', label: 'Sukabumi', group: 'JAWA BARAT' },
+    { value: 'Sumedang', label: 'Sumedang', group: 'JAWA BARAT' },
+    { value: 'Garut', label: 'Garut', group: 'JAWA BARAT' },
+    { value: 'Semarang', label: 'Semarang', group: 'JAWA TENGAH' },
+    { value: 'Surakarta', label: 'Surakarta (Solo)', group: 'JAWA TENGAH' },
+    { value: 'Magelang', label: 'Magelang', group: 'JAWA TENGAH' },
+    { value: 'Pekalongan', label: 'Pekalongan', group: 'JAWA TENGAH' },
+    { value: 'Salatiga', label: 'Salatiga', group: 'JAWA TENGAH' },
+    { value: 'Tegal', label: 'Tegal', group: 'JAWA TENGAH' },
+    { value: 'Banyumas', label: 'Banyumas', group: 'JAWA TENGAH' },
+    { value: 'Cilacap', label: 'Cilacap', group: 'JAWA TENGAH' },
+    { value: 'Surabaya', label: 'Surabaya', group: 'JAWA TIMUR' },
+    { value: 'Malang', label: 'Malang', group: 'JAWA TIMUR' },
+    { value: 'Sidoarjo', label: 'Sidoarjo', group: 'JAWA TIMUR' },
+    { value: 'Gresik', label: 'Gresik', group: 'JAWA TIMUR' },
+    { value: 'Batu', label: 'Batu', group: 'JAWA TIMUR' },
+    { value: 'Kediri', label: 'Kediri', group: 'JAWA TIMUR' },
+    { value: 'Madiun', label: 'Madiun', group: 'JAWA TIMUR' },
+    { value: 'Mojokerto', label: 'Mojokerto', group: 'JAWA TIMUR' },
+    { value: 'Pasuruan', label: 'Pasuruan', group: 'JAWA TIMUR' },
+    { value: 'Probolinggo', label: 'Probolinggo', group: 'JAWA TIMUR' },
+    { value: 'Blitar', label: 'Blitar', group: 'JAWA TIMUR' },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground font-['Atkinson_Hyperlegible',_sans-serif]">
       <Navbar />
@@ -273,68 +319,16 @@ export default function SubscriptionForm() {
                       </div>
                       <div className="space-y-2">
                         <Label className="font-bold text-[15px]">Domisili (Kota/Kabupaten) *</Label>
-                        <Select onValueChange={setDomicile} disabled={isSubmitting}>
-                          <SelectTrigger className="h-12 rounded-xl border-input font-medium text-[16px]" style={{ fontSize: '16px' }}>
-                            <SelectValue placeholder="Pilih Domisili" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[400px]" style={{ fontSize: '16px' }}>
-                            <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest">DKI JAKARTA</SelectLabel>
-                              <SelectItem value="Jakarta Pusat" className="text-[16px] font-medium">Jakarta Pusat</SelectItem>
-                              <SelectItem value="Jakarta Selatan" className="text-[16px] font-medium">Jakarta Selatan</SelectItem>
-                              <SelectItem value="Jakarta Barat" className="text-[16px] font-medium">Jakarta Barat</SelectItem>
-                              <SelectItem value="Jakarta Utara" className="text-[16px] font-medium">Jakarta Utara</SelectItem>
-                              <SelectItem value="Jakarta Timur" className="text-[16px] font-medium">Jakarta Timur</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest border-t">JAWA BARAT</SelectLabel>
-                              <SelectItem value="Bandung" className="text-[16px] font-medium">Bandung</SelectItem>
-                              <SelectItem value="Bekasi" className="text-[16px] font-medium">Bekasi</SelectItem>
-                              <SelectItem value="Depok" className="text-[16px] font-medium">Depok</SelectItem>
-                              <SelectItem value="Bogor" className="text-[16px] font-medium">Bogor</SelectItem>
-                              <SelectItem value="Cimahi" className="text-[16px] font-medium">Cimahi</SelectItem>
-                              <SelectItem value="Tasikmalaya" className="text-[16px] font-medium">Tasikmalaya</SelectItem>
-                              <SelectItem value="Cirebon" className="text-[16px] font-medium">Cirebon</SelectItem>
-                              <SelectItem value="Sukabumi" className="text-[16px] font-medium">Sukabumi</SelectItem>
-                              <SelectItem value="Sumedang" className="text-[16px] font-medium">Sumedang</SelectItem>
-                              <SelectItem value="Garut" className="text-[16px] font-medium">Garut</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest border-t">BANTEN</SelectLabel>
-                              <SelectItem value="Tangerang" className="text-[16px] font-medium">Tangerang</SelectItem>
-                              <SelectItem value="Tangerang Selatan" className="text-[16px] font-medium">Tangerang Selatan</SelectItem>
-                              <SelectItem value="Serang" className="text-[16px] font-medium">Serang</SelectItem>
-                              <SelectItem value="Cilegon" className="text-[16px] font-medium">Cilegon</SelectItem>
-                              <SelectItem value="Lebak" className="text-[16px] font-medium">Lebak</SelectItem>
-                              <SelectItem value="Pandeglang" className="text-[16px] font-medium">Pandeglang</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest border-t">JAWA TENGAH</SelectLabel>
-                              <SelectItem value="Semarang" className="text-[16px] font-medium">Semarang</SelectItem>
-                              <SelectItem value="Surakarta" className="text-[16px] font-medium">Surakarta (Solo)</SelectItem>
-                              <SelectItem value="Magelang" className="text-[16px] font-medium">Magelang</SelectItem>
-                              <SelectItem value="Pekalongan" className="text-[16px] font-medium">Pekalongan</SelectItem>
-                              <SelectItem value="Salatiga" className="text-[16px] font-medium">Salatiga</SelectItem>
-                              <SelectItem value="Tegal" className="text-[16px] font-medium">Tegal</SelectItem>
-                              <SelectItem value="Banyumas" className="text-[16px] font-medium">Banyumas</SelectItem>
-                              <SelectItem value="Cilacap" className="text-[16px] font-medium">Cilacap</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel className="text-primary font-extrabold bg-muted/50 py-2 px-3 text-[16px] tracking-widest border-t">JAWA TIMUR</SelectLabel>
-                              <SelectItem value="Surabaya" className="text-[16px] font-medium">Surabaya</SelectItem>
-                              <SelectItem value="Malang" className="text-[16px] font-medium">Malang</SelectItem>
-                              <SelectItem value="Sidoarjo" className="text-[16px] font-medium">Sidoarjo</SelectItem>
-                              <SelectItem value="Gresik" className="text-[16px] font-medium">Gresik</SelectItem>
-                              <SelectItem value="Batu" className="text-[16px] font-medium">Batu</SelectItem>
-                              <SelectItem value="Kediri" className="text-[16px] font-medium">Kediri</SelectItem>
-                              <SelectItem value="Madiun" className="text-[16px] font-medium">Madiun</SelectItem>
-                              <SelectItem value="Mojokerto" className="text-[16px] font-medium">Mojokerto</SelectItem>
-                              <SelectItem value="Pasuruan" className="text-[16px] font-medium">Pasuruan</SelectItem>
-                              <SelectItem value="Probolinggo" className="text-[16px] font-medium">Probolinggo</SelectItem>
-                              <SelectItem value="Blitar" className="text-[16px] font-medium">Blitar</SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
+                        <SearchableDropdown
+                          options={domicileOptions}
+                          value={domicile}
+                          onChange={setDomicile}
+                          placeholder="Pilih Domisili"
+                          searchPlaceholder="Cari kota..."
+                          disabled={isSubmitting}
+                          triggerClassName="h-12 rounded-xl text-[16px] font-medium"
+                          dropdownClassName="text-[16px]"
+                        />
                       </div>
                     </div>
                   </section>
@@ -457,11 +451,23 @@ export default function SubscriptionForm() {
                         className="font-medium text-muted-foreground text-[16px] cursor-pointer leading-relaxed"
                       >
                         Saya menyetujui{" "}
-                        <span className="text-primary font-bold underline underline-offset-4">
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsTermsOpen(true);
+                          }}
+                          className="text-primary font-bold underline underline-offset-4 hover:text-primary/80 transition-colors"
+                        >
                           Syarat & Ketentuan
                         </span>{" "}
                         serta{" "}
-                        <span className="text-primary font-bold underline underline-offset-4">
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsPrivacyOpen(true);
+                          }}
+                          className="text-primary font-bold underline underline-offset-4 hover:text-primary/80 transition-colors"
+                        >
                           Kebijakan Privasi
                         </span>{" "}
                         ARAHIN.
@@ -494,7 +500,6 @@ export default function SubscriptionForm() {
               </Card>
             </div>
 
-            {/* Summary Card */}
             <div className="lg:col-span-4 lg:sticky lg:top-10">
               <Card className="bg-card border-border rounded-[var(--radius)] p-7 shadow-sm flex flex-col">
                 <h3 className="text-[18px] font-bold text-foreground mb-6">Ringkasan Langganan</h3>
@@ -540,7 +545,11 @@ export default function SubscriptionForm() {
           </div>
         </div>
       </main>
+      
       <Footer />
+
+      <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
+      <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { preview } from 'vite';
 import { Pagination } from '@/components/Admin/Pagination';
 import { th } from 'zod/v4/locales';
 import { toast } from 'sonner';
+import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
 
 type Trans = {
   trans_id: string;
@@ -206,6 +207,12 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
   const [form, setForm] = useState<Route>({ ...emptyRoute, ...route });
   const isEdit = !!route.route_name;
 
+  const stopsOptions = stopsList.map(s => ({
+  value: s.stop_id,
+  label: s.name,
+  detail: s.address || '',
+}));
+
   const addRouteStop = () => {
     const nextOrder = form.route_stops.length + 1;
     setForm({
@@ -263,27 +270,35 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
           {/* Halte Asal */}
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Halte Asal</Label>
-            <select value={form.origin_stop_id} onChange={(e) => {
-              const stop = stopsList.find(s => s.stop_id === e.target.value);
-              setForm({ ...form, origin_stop_id: e.target.value, origin_stop_name: stop?.name || '' });
-            }} className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
-              <option value="">Pilih halte asal...</option>
-              {stopsList.map(s => <option key={s.stop_id} value={s.stop_id}>{s.name}</option>)}
-            </select>
+            <SearchableDropdown
+              options={stopsOptions}
+              value={form.origin_stop_id}
+              onChange={(val) => {
+                const stop = stopsList.find(s => s.stop_id === val);
+                setForm({ ...form, origin_stop_id: val, origin_stop_name: stop?.name || '' });
+              }}
+              placeholder="Pilih halte asal..."
+              searchPlaceholder="Cari halte..."
+              triggerClassName="h-10 rounded-lg text-sm"
+              dropdownClassName="text-sm"
+            />
           </div>
 
           {/* Halte Tujuan */}
           <div>
             <Label className="text-sm font-semibold mb-1.5 block">Halte Tujuan</Label>
-            <select value={form.destination_stop_id} onChange={(e) => {
-              const stop = stopsList.find(s => s.stop_id === e.target.value);
-              setForm({ ...form, destination_stop_id: e.target.value, dest_stop_name: stop?.name || '' });
-            }} className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm">
-              <option value="">Pilih halte tujuan...</option>
-              {stopsList.filter(s => s.stop_id !== form.origin_stop_id).map(s =>
-                <option key={s.stop_id} value={s.stop_id}>{s.name}</option>
-              )}
-            </select>
+            <SearchableDropdown
+              options={stopsOptions.filter(s => s.value !== form.origin_stop_id)}
+              value={form.destination_stop_id}
+              onChange={(val) => {
+                const stop = stopsList.find(s => s.stop_id === val);
+                setForm({ ...form, destination_stop_id: val, dest_stop_name: stop?.name || '' });
+              }}
+              placeholder="Pilih halte tujuan..."
+              searchPlaceholder="Cari halte..."
+              triggerClassName="h-10 rounded-lg text-sm"
+              dropdownClassName="text-sm"
+            />
           </div>
 
           {/* Route Stops */}
@@ -310,13 +325,16 @@ function RouteModal({ route, transList, stopsList, onSave, onClose }: {
                     {rs.stop_order}
                   </div>
 
-                  {/* Pilih Halte */}
-                  <select value={rs.stop_id}
-                    onChange={(e) => updateRouteStop(idx, 'stop_id', e.target.value)}
-                    className="flex-1 h-8 px-2 rounded-md border border-border bg-background text-xs">
-                    <option value="">Pilih halte...</option>
-                    {stopsList.map(s => <option key={s.stop_id} value={s.stop_id}>{s.name}</option>)}
-                  </select>
+                  <SearchableDropdown
+                    options={stopsOptions}
+                    value={rs.stop_id}
+                    onChange={(val) => updateRouteStop(idx, 'stop_id', val)}
+                    placeholder="Pilih halte..."
+                    searchPlaceholder="Cari halte..."
+                    className="flex-1"
+                    triggerClassName="h-8 rounded-lg text-sm"
+                    dropdownClassName="text-sm"
+                  />
 
                   {/* Est Time */}
                   <div className="flex items-center gap-1 flex-shrink-0">
