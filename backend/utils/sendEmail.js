@@ -11,8 +11,10 @@ const sendEmail = async (emailTo, otpCode) => {
                 pass: process.env.EMAIL_PASS
             },
             tls: {
-                rejectUnauthorized: false // Baris penyelamat agar Render tidak menolak sertifikat SSL Gmail
-            }
+                rejectUnauthorized: false,
+                family: 4 
+            },
+            connectionTimeout: 10000
         });
 
         const mailOptions = {

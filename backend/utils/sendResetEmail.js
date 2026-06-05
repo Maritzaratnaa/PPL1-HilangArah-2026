@@ -9,10 +9,14 @@ const sendResetEmail = async (emailTo, resetToken) => {
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
-            }
+            },
+            tls: {
+                rejectUnauthorized: false,
+                family: 4 
+            },
+            connectionTimeout: 10000
         });
 
-        // Gunakan port 8080 untuk frontend (sesuai docker-compose)
         const resetLink = `http://localhost:8080/reset-password?token=${resetToken}`;
 
         const mailOptions = {
