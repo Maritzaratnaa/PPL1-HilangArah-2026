@@ -44,8 +44,9 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch('http://localhost:3000/api/admin/dashboard-stats', {
-          headers: { Authorization: `Bearer ${token}` }
+        const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const res = await fetch(`${BASE_URL}/api/admin/dashboard-stats`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
         
         const json = await res.json();
