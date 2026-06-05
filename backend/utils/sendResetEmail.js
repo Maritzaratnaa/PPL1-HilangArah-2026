@@ -1,47 +1,45 @@
-const nodemailer = require('nodemailer');
-
 const sendResetEmail = async (emailTo, resetToken) => {
     try {
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
-            family: 4, 
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': process.env.BREVO_API_KEY,
+                'content-type': 'application/json'
             },
-            tls: {
-                rejectUnauthorized: false
-            },
-            connectionTimeout: 10000
+            body: JSON.stringify({
+                sender: { 
+                    name: "ARAHIN Support", 
+                    email: "arahin.support@gmail.com" 
+                },
+                to: [{ email: emailTo }],
+                subject: "Reset Password Akun ARAHIN",
+                htmlContent: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                        <h2 style="color: #007C8A; text-align: center;">Reset Password ARAHIN</h2>
+                        <p>Halo,</p>
+                        <p>Kami menerima permintaan untuk mereset password akun Anda. Silakan klik tautan di bawah ini untuk membuat password baru:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="https://frontend-arahin-ht8qd5oc7-maritzas-projects-0fb1535c.vercel.app/#/reset-password?token=${resetToken}" 
+                               style="background-color: #007C8A; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                               Reset Password
+                            </a>
+                        </div>
+                        <p style="font-size: 12px; color: #888;">Tautan ini berlaku selama 15 menit. Jika Anda tidak meminta ini, abaikan email ini.</p>
+                    </div>
+                `
+            })
         });
 
-        const resetLink = `http://localhost:8080/reset-password?token=${resetToken}`;
-
-        const mailOptions = {
-            from: '"ARAHIN Support" <${process.env.EMAIL_USER}>',
-            to: emailTo,
-            subject: 'Reset Password ARAHIN',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                    <h2 style="color: #007C8A; text-align: center;">Reset Password ARAHIN</h2>
-                    <p>Halo,</p>
-                    <p>Kami menerima permintaan untuk mengatur ulang password Anda. Silakan klik tombol di bawah ini untuk membuat password baru:</p>
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="${resetLink}" style="background-color: #007C8A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Atur Ulang Password</a>
-                    </div>
-                    <p>Atau salin dan tempel tautan berikut di browser Anda:</p>
-                    <p style="word-break: break-all; color: #007C8A;">${resetLink}</p>
-                    <p style="margin-top: 20px; font-size: 12px; color: #888; text-align: center;">Tautan ini akan kedaluwarsa dalam 15 menit. Jika Anda tidak meminta reset password, abaikan email ini.</p>
-                </div>
-            `
-        };
-
-        await transporter.sendMail(mailOptions);
-        console.log("📧 Email Reset Password berhasil dikirim ke:", emailTo);
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log("📧 [Brevo API] Email Reset Password berhasil dikirim ke:", emailTo);
+        } else {
+            console.error("❌ Gagal mengirim reset password via Brevo:", result);
+        }
     } catch (error) {
-        console.error("❌ Gagal mengirim email reset:", error);
+        console.error("❌ Terjadi eror pada fungsi sendResetEmail:", error);
     }
 };
 

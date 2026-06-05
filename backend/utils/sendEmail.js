@@ -1,6 +1,3 @@
-const { Resend } = require('resend');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 const sendEmail = async (emailTo, otpCode) => {
     try {
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
