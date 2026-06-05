@@ -18,7 +18,7 @@ const adminUserRoutes = require('./routes/adminUserRoutes');
 const app = express();
 const allowedOrigins = [
     "http://localhost:8080",
-    "https://frontend-arahin-r4j0dc1xa-maritzas-projects-0fb1535c.vercel.app" // URL Vercel kamu
+    "https://frontend-arahin-r4j0dc1xa-maritzas-projects-0fb1535c.vercel.app" 
 ];
 
 app.use(cors({
