@@ -17,6 +17,7 @@ import {
 
 import { AdminSidebar } from '@/components/Admin/AdminSideBar';
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const RADIAN = Math.PI / 180;
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
   if (percent < 0.05) return null;
@@ -44,7 +45,6 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
         const res = await fetch(`${BASE_URL}/api/admin/dashboard-stats`, {
           headers: { Authorization: `Bearer ${token}` },
         });
