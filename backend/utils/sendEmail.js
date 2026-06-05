@@ -1,24 +1,10 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
+const resend = new Resend(process.env.RESEND_API_KEY);
 const sendEmail = async (emailTo, otpCode) => {
     try {
-        const transporter = nodemailer.createTransport({
-            host: '74.125.200.108',
-            port: 465,
-            secure: true,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            },
-            tls: {
-                rejectUnauthorized: false,
-                servername: 'smtp.gmail.com'
-            },
-            connectionTimeout: 20000
-        });
-
-        const mailOptions = {
-            from: '"ARAHIN Support" <${process.env.EMAIL_USER}>',
+        const { data, error } = await resend.emails.send({
+            from: 'ARAHIN Support <onboarding@resend.dev>',
             to: emailTo,
             subject: 'Kode Verifikasi Email ARAHIN',
             html: `
@@ -32,10 +18,14 @@ const sendEmail = async (emailTo, otpCode) => {
                     <p style="margin-top: 20px; font-size: 12px; color: #888; text-align: center;">Kode ini rahasia. Jangan berikan kepada siapapun.</p>
                 </div>
             `
-        };
+        });
 
-        await transporter.sendMail(mailOptions);
-        console.log("📧 Email OTP berhasil dikirim ke:", emailTo);
+        if (error) {
+            console.error("❌ Gagal mengirim via Resend:", error);
+            return;
+        }
+
+        console.log("📧 [Resend API] Email OTP berhasil dikirim ke:", emailTo, "ID:", data.id);
     } catch (error) {
         console.error("❌ Gagal mengirim email:", error);
     }
