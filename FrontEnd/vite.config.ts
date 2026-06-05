@@ -1,4 +1,5 @@
 import { defineConfig, Plugin } from "vite";
+import vercel from 'vite-plugin-vercel';
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { createServer } from "./server";
@@ -17,7 +18,13 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: "dist/spa",
   },
-  plugins: [react(), expressPlugin()],
+  plugins: [react(), expressPlugin(),vercel()],
+  vercel: {
+    // 3. Masukkan aturan rewrite langsung di sini!
+    rewrites: [
+      { source: '/(.*)', destination: '/index.html' }
+    ]
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client"),
