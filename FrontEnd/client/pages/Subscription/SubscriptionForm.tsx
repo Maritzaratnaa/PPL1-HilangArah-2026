@@ -115,7 +115,7 @@ export default function SubscriptionForm() {
       const formattedPhone = `+62${phone}`;
       const formattedEmergencyPhone = `+62${emergencyContactPhone}`;
 
-      const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const res = await fetch(`${apiUrl}/api/subscription`, {
         method: "POST",
         headers: {

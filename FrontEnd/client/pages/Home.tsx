@@ -53,7 +53,7 @@ export default function Home() {
       if (!token) return;
 
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
         const res = await fetch(`${apiUrl}/api/reports/my-reports`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -83,7 +83,7 @@ export default function Home() {
       if (!token) return;
 
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
         const res = await fetch(`${apiUrl}/api/subscription/my-subs`, {
           headers: { Authorization: `Bearer ${token}` },
         });

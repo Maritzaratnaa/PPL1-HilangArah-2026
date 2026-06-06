@@ -34,7 +34,7 @@ export default function VerifyEmail() {
     setErrorMsg("");
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const res = await fetch(`${apiUrl}/api/auth/verify-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
