@@ -91,7 +91,7 @@ export default function Profile() {
         return;
       }
       try {
-        const res = await fetch(`${BASE_URL}/profile`, {
+        const res = await fetch(`${BASE_URL}/api/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
