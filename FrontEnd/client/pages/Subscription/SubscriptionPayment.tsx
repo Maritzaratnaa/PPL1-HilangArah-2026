@@ -78,7 +78,7 @@ export default function SubscriptionPayment() {
     });
   };
 
-  const handlePaymentConfirm = async () => {
+ const handlePaymentConfirm = async () => {
     setIsProcessing(true);
     const jwtToken = localStorage.getItem("token");
 
@@ -88,7 +88,8 @@ export default function SubscriptionPayment() {
       return;
     }
 
-    if (snapToken) {
+    // TAMBAHAN: Jangan buka popup jika itu token bypass
+    if (snapToken && snapToken !== "TESTER_BYPASS_TOKEN") {
       console.log("💳 Membuka ulang tagihan yang tertunda...");
       showMidtransPopup(snapToken, jwtToken);
       return;
@@ -111,17 +112,44 @@ export default function SubscriptionPayment() {
 
       const data = await res.json();
 
-      if (res.ok && data.token) {
-        localStorage.setItem("pendingPayment", JSON.stringify({
-          subsId: subsId,
-          plan: plan,
-          amount: planAmount,
-          planLabel: planLabel,
-          snapToken: data.token
-        }));
+      if (res.ok) {
+        // 👇 TAMBAHAN: LOGIKA BYPASS KHUSUS TESTER 👇
+        if (data.is_tester) {
+          toast.success("Mendeteksi akun Tester! Mengaktifkan paket otomatis...", customToastStyle);
+          
+          const activateRes = await fetch(`${apiUrl}/api/subscription/activate`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify({ subs_id: subsId }),
+          });
 
-        setSnapToken(data.token);
-        showMidtransPopup(data.token, jwtToken);
+          if (activateRes.ok) {
+            toast.success("Akun testing berhasil diaktifkan!", customToastStyle);
+            localStorage.removeItem("pendingPayment");
+            navigate("/subscription/Payment-Confirmation", { state: { subs_id: subsId } });
+          } else {
+            toast.error("Gagal mengaktifkan otomatis akun tester.", customToastStyle);
+            setIsProcessing(false);
+          }
+          return;
+        }
+
+        // 👇 ALUR NORMAL USER (Tetap sama seperti kodemu) 👇
+        if (data.token) {
+          localStorage.setItem("pendingPayment", JSON.stringify({
+            subsId: subsId,
+            plan: plan,
+            amount: planAmount,
+            planLabel: planLabel,
+            snapToken: data.token
+          }));
+
+          setSnapToken(data.token);
+          showMidtransPopup(data.token, jwtToken);
+        }
       } else {
         toast.error(data.message || "Gagal mendapatkan token pembayaran.", customToastStyle);
         setIsProcessing(false);
@@ -212,12 +240,12 @@ export default function SubscriptionPayment() {
                 disabled={isProcessing}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-auto min-h-[56px] py-3 px-4 rounded-2xl font-bold text-[18px] transition-all active:scale-[0.98] mb-6"
               >
-                {isProcessing ? (
+               {isProcessing ? (
                   <div className="flex items-center justify-center flex-wrap gap-2">
                     <Loader2 className="h-5 w-5 animate-spin shrink-0" />
                     <span className="text-center">Memproses...</span>
                   </div>
-                ) : snapToken ? (
+                ) : snapToken && snapToken !== "TESTER_BYPASS_TOKEN" ? ( // <--- JADI SEPERTI INI (
                   <div className="flex items-center justify-center flex-wrap gap-2 leading-tight">
                     <RefreshCcw className="h-5 w-5 shrink-0" />
                     <span className="text-center">Lanjutkan / Cek Pembayaran</span>
