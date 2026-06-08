@@ -56,6 +56,14 @@ const getMyReports = async (req, res) => {
     try {
         const reporterId = req.user.user_id;
         
+        const subscriptionQuery = `
+            SELECT subs_id FROM subscriptions 
+            WHERE user_id = ? AND status = 'Active' 
+            LIMIT 1
+        `;
+        const [subscriptionRows] = await pool.query(subscriptionQuery, [reporterId]);
+        const isPremiumUser = subscriptionRows.length > 0;
+
         const query = `
             SELECT 
                 r.report_id,
@@ -77,6 +85,7 @@ const getMyReports = async (req, res) => {
 
         res.status(200).json({
             message: "Riwayat laporan berhasil diambil.",
+            is_premium: isPremiumUser, 
             data: rows
         });
     } catch (error) {
