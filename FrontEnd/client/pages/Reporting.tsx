@@ -293,7 +293,11 @@ export default function Reporting() {
                                 {cat.icon}
                               </span>
                               <span className="font-medium">
-                                {cat.label} {isDisabled && "🔒"}
+                                {cat.label} {isDisabled && (
+                                  <span className="text-[13px] font-normal text-muted-foreground ml-2">
+                                    (Khusus Langganan)
+                                  </span>
+                                )}
                               </span>
                             </div>
                           </SelectItem>
