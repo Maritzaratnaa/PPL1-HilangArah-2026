@@ -57,7 +57,7 @@ const getMyReports = async (req, res) => {
         const reporterId = req.user.user_id;
         
         const subscriptionQuery = `
-            SELECT subs_id FROM subscriptions 
+            SELECT subs_id FROM subs
             WHERE user_id = ? AND status = 'Active' 
             LIMIT 1
         `;
