@@ -192,11 +192,10 @@ const getPaymentToken = async (req, res) => {
         const { subs_id, amount } = req.body;
         const user = req.user; // Didapat dari middleware auth (JWT)
 
-        // 👇 DAFTARKAN EMAIL AKUN TESTING DI SINI 👇
-        const EMAIL_TESTER = "tester.arahin@gmail.com"; 
+        const EMAIL_TESTER = ["tester.arahin@gmail.com", "tester.arahin1@gmail.com"]; 
 
         // LOGIKA BYPASS UNTUK TESTER
-        if (user.email === EMAIL_TESTER) {
+        if (EMAIL_TESTER.includes(user.email)) {
             console.log(`🚀 [Bypass Payment] Akun tester ${user.email} terdeteksi.`);
             return res.status(200).json({ 
                 token: "TESTER_BYPASS_TOKEN", 
