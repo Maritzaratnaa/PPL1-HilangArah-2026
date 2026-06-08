@@ -118,6 +118,8 @@ export default function Reporting() {
         setDescription("");
         setTimeout(() => setSuccessMessage(false), 4000);
         fetchReports();
+      } else if (res.status === 403) {
+        alert(json.message || "Fitur ini hanya tersedia untuk pengguna premium.");
       } else {
         alert(json.message);
       }

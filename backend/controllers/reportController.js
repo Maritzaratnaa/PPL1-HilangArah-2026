@@ -10,6 +10,22 @@ const createReport = async (req, res) => {
             return res.status(400).json({ message: "Kategori dan deskripsi laporan wajib diisi." });
         }
 
+        if (category === "Pemandu") {
+            
+            const subscriptionQuery = `
+                SELECT subs_id FROM subscriptions 
+                WHERE user_id = ? AND status = 'Active' 
+                LIMIT 1
+            `;
+            const [subscriptionRows] = await pool.query(subscriptionQuery, [reporterId]);
+
+            if (subscriptionRows.length === 0) {
+                return res.status(403).json({ 
+                    message: "Kategori laporan 'Pemandu' hanya tersedia untuk pengguna yang sedang berlangganan." 
+                });
+            }
+        }
+
         const reportId = crypto.randomUUID();
 
         const query = `
