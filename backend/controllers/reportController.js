@@ -13,7 +13,7 @@ const createReport = async (req, res) => {
         if (category === "Pemandu") {
             
             const subscriptionQuery = `
-                SELECT subs_id FROM subscriptions 
+                SELECT subs_id FROM subs 
                 WHERE user_id = ? AND status = 'Active' 
                 LIMIT 1
             `;
