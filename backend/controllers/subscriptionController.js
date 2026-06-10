@@ -212,7 +212,9 @@ const getPaymentToken = async (req, res) => {
             "customer_details": {
                 "first_name": user.full_name || user.username || "User",
                 "email": user.email || "user@example.com"
-            }
+            },
+            // 👇 INI BAGIAN YANG DITAMBAHKAN AGAR LANGSUNG KE DEBIT/KREDIT 👇
+            "enabled_payments": ["credit_card"]
         };
 
         const transaction = await snap.createTransaction(parameter);
