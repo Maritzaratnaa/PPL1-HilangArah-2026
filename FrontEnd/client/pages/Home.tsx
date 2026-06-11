@@ -27,6 +27,16 @@ export default function Home() {
   const [totalReports, setTotalReports] = useState(0);
   const [processedReports, setProcessedReports] = useState(0);
 
+  const statusMap: Record<string, { label: string; style: string }> = {
+    "Elderly": { label: "Lansia (60+)", style: "bg-yellow-100/20 text-yellow-300 border-yellow-300/50" },
+    "Disability": { label: "Disabilitas", style: "bg-blue-100/20 text-blue-300 border-blue-300/50" },
+    "Pregnant": { label: "Wanita Hamil", style: "bg-pink-100/20 text-pink-300 border-pink-300/50" },
+    "Vulnerable": { label: "Penyakit Rentan", style: "bg-indigo-100/20 text-indigo-300 border-indigo-300/50" },
+    "Child": { label: "Anak-anak", style: "bg-orange-100/20 text-orange-300 border-orange-300/50" },
+    "Woman": { label: "Wanita", style: "bg-rose-100/20 text-rose-300 border-rose-300/50" },
+    "General": { label: "Umum", style: "bg-slate-100/20 text-slate-300 border-slate-300/50" },
+  };
+
   useEffect(() => {
     const name = localStorage.getItem("userName") || "Pengguna";
     const category = localStorage.getItem("userCategory") || "";
@@ -117,6 +127,34 @@ export default function Home() {
     fetchSubs();
   }, []);
 
+  // --- LOGIKA DEBUG & AUTO-FIX ---
+  // Fungsi ini akan mencari key di statusMap tanpa peduli huruf besar/kecil atau spasi ekstra
+  const getMappedStatus = (categoryString: string) => {
+    if (!categoryString) return null;
+    
+    const cleanString = categoryString.trim().toLowerCase();
+    
+    // Cari key yang cocok
+    const foundKey = Object.keys(statusMap).find(
+      (key) => key.toLowerCase() === cleanString
+    );
+
+    return foundKey ? statusMap[foundKey] : null;
+  };
+
+  const statusData = getMappedStatus(userCategory);
+
+  // Print ke Console Browser
+  console.log("=== DEBUG KATEGORI PENGGUNA ===");
+  console.log(`1. Nilai asli dari localStorage (userCategory) : "${userCategory}"`);
+  console.log(`2. Tipe datanya                                : ${typeof userCategory}`);
+  console.log(`3. Apakah berhasil di-map?                     : ${statusData ? "YA" : "TIDAK"}`);
+  if (statusData) {
+    console.log(`4. Hasil Label yang akan tampil                : "${statusData.label}"`);
+  }
+  console.log("===============================");
+  // --------------------------------
+
   const handleSearch = () => {
     if (!origin || !destination) return;
     navigate(
@@ -191,13 +229,6 @@ export default function Home() {
       color: "#fff",
       border: "1px solid rgba(255,255,255,0.2)",
     };
-  const categoryChipStyle = isHC
-    ? { background: "#000000", color: "#ffff00", border: "2px solid #ffff00" }
-    : {
-      background: "rgba(255,255,255,0.12)",
-      color: "rgba(255,255,255,0.85)",
-      border: "1px solid rgba(255,255,255,0.2)",
-    };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -242,18 +273,33 @@ export default function Home() {
                 Mau ke mana hari ini? Temukan rute aksesibel untuk perjalanan
                 Anda.
               </p>
-              <div className="flex flex-wrap gap-2 mb-8">
+
+              <div className="flex flex-wrap items-center gap-3 mb-8">
+                <div className={`px-4 py-1.5 rounded-full border text-sm font-medium backdrop-blur-sm ${
+                  isHC 
+                  ? "bg-black text-[#ffff00] border-[#ffff00]" 
+                  : "border-white/20 bg-white/10 text-white"
+                }`}>
+                  Pengguna
+                </div>
+
+                {/* 👇 IMPLEMENTASI RENDER DARI DATA YANG SUDAH DI-FIX 👇 */}
                 {userCategory && (
-                  <span
-                    className="px-3 py-1 rounded-full text-xs font-semibold"
-                    style={categoryChipStyle}
+                  <div
+                    className={`flex items-center justify-center px-4 py-1.5 rounded-full border text-sm font-medium backdrop-blur-sm ${
+                      isHC
+                      ? "bg-black text-[#ffff00] border-[#ffff00]"
+                      : statusData?.style || "bg-white/10 text-white border-white/20"
+                    }`}
                   >
-                    {userCategory}
-                  </span>
+                    <span>{statusData?.label || userCategory}</span>
+                  </div>
                 )}
+                {/* 👆 ================================================ 👆 */}
+                
                 {hasSubs && subsStatus === "Active" && (
                   <span
-                    className="px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5"
                     style={subBadgeStyle}
                   >
                     ⭐ Langganan Aktif {subsDuration && `(${subsDuration})`}
