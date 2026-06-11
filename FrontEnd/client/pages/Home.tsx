@@ -27,14 +27,15 @@ export default function Home() {
   const [totalReports, setTotalReports] = useState(0);
   const [processedReports, setProcessedReports] = useState(0);
 
+  // Mapping yang 100% Sesuai dengan ENUM Database
   const statusMap: Record<string, { label: string; style: string }> = {
-    "Elderly": { label: "Lansia (60+)", style: "bg-yellow-100/20 text-yellow-300 border-yellow-300/50" },
-    "Disability": { label: "Disabilitas", style: "bg-blue-100/20 text-blue-300 border-blue-300/50" },
-    "Pregnant": { label: "Wanita Hamil", style: "bg-pink-100/20 text-pink-300 border-pink-300/50" },
-    "Vulnerable": { label: "Penyakit Rentan", style: "bg-indigo-100/20 text-indigo-300 border-indigo-300/50" },
-    "Child": { label: "Anak-anak", style: "bg-orange-100/20 text-orange-300 border-orange-300/50" },
-    "Woman": { label: "Wanita", style: "bg-rose-100/20 text-rose-300 border-rose-300/50" },
-    "General": { label: "Umum", style: "bg-slate-100/20 text-slate-300 border-slate-300/50" },
+    "elderly": { label: "Lansia (60+)", style: "bg-yellow-100/20 text-yellow-300 border-yellow-300/50" },
+    "disability": { label: "Disabilitas", style: "bg-blue-100/20 text-blue-300 border-blue-300/50" },
+    "pregnant": { label: "Wanita Hamil", style: "bg-pink-100/20 text-pink-300 border-pink-300/50" },
+    "vulnerable-illness": { label: "Penyakit Rentan", style: "bg-indigo-100/20 text-indigo-300 border-indigo-300/50" },
+    "children": { label: "Anak-anak", style: "bg-orange-100/20 text-orange-300 border-orange-300/50" },
+    "women": { label: "Wanita", style: "bg-rose-100/20 text-rose-300 border-rose-300/50" },
+    "general": { label: "Umum", style: "bg-slate-100/20 text-slate-300 border-slate-300/50" },
   };
 
   useEffect(() => {
@@ -126,34 +127,6 @@ export default function Home() {
 
     fetchSubs();
   }, []);
-
-  // --- LOGIKA DEBUG & AUTO-FIX ---
-  // Fungsi ini akan mencari key di statusMap tanpa peduli huruf besar/kecil atau spasi ekstra
-  const getMappedStatus = (categoryString: string) => {
-    if (!categoryString) return null;
-    
-    const cleanString = categoryString.trim().toLowerCase();
-    
-    // Cari key yang cocok
-    const foundKey = Object.keys(statusMap).find(
-      (key) => key.toLowerCase() === cleanString
-    );
-
-    return foundKey ? statusMap[foundKey] : null;
-  };
-
-  const statusData = getMappedStatus(userCategory);
-
-  // Print ke Console Browser
-  console.log("=== DEBUG KATEGORI PENGGUNA ===");
-  console.log(`1. Nilai asli dari localStorage (userCategory) : "${userCategory}"`);
-  console.log(`2. Tipe datanya                                : ${typeof userCategory}`);
-  console.log(`3. Apakah berhasil di-map?                     : ${statusData ? "YA" : "TIDAK"}`);
-  if (statusData) {
-    console.log(`4. Hasil Label yang akan tampil                : "${statusData.label}"`);
-  }
-  console.log("===============================");
-  // --------------------------------
 
   const handleSearch = () => {
     if (!origin || !destination) return;
@@ -283,19 +256,18 @@ export default function Home() {
                   Pengguna
                 </div>
 
-                {/* 👇 IMPLEMENTASI RENDER DARI DATA YANG SUDAH DI-FIX 👇 */}
-                {userCategory && (
+                {/* 👇 FIX: Mencegah duplikat "Pengguna" dan memastikan huruf kecil cocok dengan ENUM 👇 */}
+                {userCategory && userCategory.toLowerCase() !== "pengguna" && (
                   <div
                     className={`flex items-center justify-center px-4 py-1.5 rounded-full border text-sm font-medium backdrop-blur-sm ${
                       isHC
                       ? "bg-black text-[#ffff00] border-[#ffff00]"
-                      : statusData?.style || "bg-white/10 text-white border-white/20"
+                      : statusMap[userCategory.toLowerCase()]?.style || "bg-white/10 text-white border-white/20"
                     }`}
                   >
-                    <span>{statusData?.label || userCategory}</span>
+                    <span>{statusMap[userCategory.toLowerCase()]?.label || userCategory}</span>
                   </div>
                 )}
-                {/* 👆 ================================================ 👆 */}
                 
                 {hasSubs && subsStatus === "Active" && (
                   <span
