@@ -47,7 +47,7 @@ export default function Home() {
     "general": { label: "Umum", style: "bg-slate-100/20 text-slate-300 border-slate-300/50" },
   };
 
-  // --- EFFECT BARU: MENGHENTIKAN DROPDOWN JIKA KLIK DI LUAR BAR ---
+  // MENGHENTIKAN DROPDOWN JIKA KLIK DI LUAR BAR ---
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (originRef.current && !originRef.current.contains(event.target as Node)) {
@@ -61,6 +61,7 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // (ORIGIN) 
   useEffect(() => {
     if (origin.trim().length < 2) {
       setOriginSuggestions([]);
@@ -87,7 +88,7 @@ export default function Home() {
     return () => clearTimeout(delayDebounceFn);
   }, [origin]);
 
-  // --- EFFECT BARU: FETCH SUGGESTIONS DENGAN DEBOUNCE (DESTINATION) ---
+  // (DESTINATION) 
   useEffect(() => {
     if (destination.trim().length < 2) {
       setDestSuggestions([]);
@@ -114,7 +115,6 @@ export default function Home() {
     return () => clearTimeout(delayDebounceFn);
   }, [destination]);
 
-  // Efek bawaan component kamu sebelumnya (Data User, Reports, Subs)
   useEffect(() => {
     const name = localStorage.getItem("userName") || "Pengguna";
     const category = localStorage.getItem("userCategory") || "";
@@ -257,7 +257,6 @@ export default function Home() {
                 )}
               </div>
 
-              {/* === KOTAK PENCARIAN (SUDAH DIMODIFIKASI AUTOCOMPLETE) === */}
               <div className="rounded-xl p-3 mb-0" style={searchBoxStyle}>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   
@@ -279,7 +278,7 @@ export default function Home() {
 
                     {/* Dropdown Hasil Asal */}
                     {showOriginSuggestions && origin.trim().length >= 2 && (
-                      <div className="absolute left-0 right-0 mt-2 bg-popover text-popover-foreground rounded-xl shadow-xl border border-border z-50 max-h-60 overflow-y-auto overflow-x-hidden p-1.5 animate-in fade-in-50 slide-in-from-top-1 duration-200">
+                      <div className="absolute left-0 right-0 mt-2 bg-popover text-popover-foreground rounded-xl shadow-xl border border-border z-[100] max-h-60 overflow-y-auto overflow-x-hidden p-1.5 animate-in fade-in-50 slide-in-from-top-1 duration-200 isolation-auto">
                         {isOriginLoading ? (
                           <div className="text-xs text-muted-foreground p-3 text-center">Mencari halte...</div>
                         ) : originSuggestions.length > 0 ? (
@@ -323,8 +322,8 @@ export default function Home() {
 
                     {/* Dropdown Hasil Tujuan */}
                     {showDestSuggestions && destination.trim().length >= 2 && (
-                      <div className="absolute left-0 right-0 mt-2 bg-popover text-popover-foreground rounded-xl shadow-xl border border-border z-50 max-h-60 overflow-y-auto overflow-x-hidden p-1.5 animate-in fade-in-50 slide-in-from-top-1 duration-200">
-                        {isDestLoading ? (
+                      <div className="absolute left-0 right-0 mt-2 bg-popover text-popover-foreground rounded-xl shadow-xl border border-border z-[100] max-h-60 overflow-y-auto overflow-x-hidden p-1.5 animate-in fade-in-50 slide-in-from-top-1 duration-200 isolation-auto">                        
+                          {isDestLoading ? (
                           <div className="text-xs text-muted-foreground p-3 text-center">Mencari halte...</div>
                         ) : destSuggestions.length > 0 ? (
                           destSuggestions.map((stop) => (
