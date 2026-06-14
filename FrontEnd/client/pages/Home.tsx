@@ -61,7 +61,6 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // --- EFFECT BARU: FETCH SUGGESTIONS DENGAN DEBOUNCE (ORIGIN) ---
   useEffect(() => {
     if (origin.trim().length < 2) {
       setOriginSuggestions([]);
@@ -73,7 +72,7 @@ export default function Home() {
       try {
         const token = localStorage.getItem("token");
         const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-        const res = await fetch(`${apiUrl}/api/routes/suggestions?keyword=${encodeURIComponent(origin)}`, {
+        const res = await fetch(`${apiUrl}/api/search-routes/suggestions?keyword=${encodeURIComponent(origin)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -83,7 +82,7 @@ export default function Home() {
       } finally {
         setIsOriginLoading(false);
       }
-    }, 400); // Tunggu 400ms setelah user berhenti mengetik
+    }, 400); 
 
     return () => clearTimeout(delayDebounceFn);
   }, [origin]);
@@ -100,7 +99,7 @@ export default function Home() {
       try {
         const token = localStorage.getItem("token");
         const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-        const res = await fetch(`${apiUrl}/api/routes/suggestions?keyword=${encodeURIComponent(destination)}`, {
+        const res = await fetch(`${apiUrl}/api/search-routes/suggestions?keyword=${encodeURIComponent(destination)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

@@ -269,7 +269,6 @@ const getStopSuggestions = async (req, res) => {
     try {
         const { keyword } = req.query;
 
-        // Jika keyword kosong atau kurang dari 2 karakter, kembalikan array kosong agar menghemat query
         if (!keyword || keyword.trim().length < 2) {
             return res.status(200).json([]);
         }
