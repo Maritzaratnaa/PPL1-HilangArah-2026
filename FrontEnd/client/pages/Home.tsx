@@ -219,15 +219,15 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      <section className="relative overflow-hidden" style={heroStyle}>
+      <section className="relative" style={heroStyle}>
         {!isHC && (
-          <>
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full -translate-y-1/2 translate-x-1/2" style={{ background: "rgba(255,255,255,0.05)" }} aria-hidden="true" />
-            <div className="absolute bottom-0 left-1/4 w-32 h-32 rounded-full translate-y-1/2" style={{ background: "rgba(255,255,255,0.03)" }} aria-hidden="true" />
-          </>
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full -translate-y-1/2 translate-x-1/2" style={{ background: "rgba(255,255,255,0.05)" }} />
+            <div className="absolute bottom-0 left-1/4 w-32 h-32 rounded-full translate-y-1/2" style={{ background: "rgba(255,255,255,0.03)" }} />
+          </div>
         )}
 
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 pb-0">
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 pb-24 z-10">
           <div className="grid lg:grid-cols-[1fr_260px] gap-8 items-end">
             <div>
               <p className={`text-sm font-semibold mb-1 ${isHC ? "text-[#ffff00]" : "text-white/60"}`}>{currentDate}</p>
@@ -257,7 +257,7 @@ export default function Home() {
                 )}
               </div>
 
-              <div className="rounded-xl p-3 mb-0" style={searchBoxStyle}>
+              <div className="rounded-xl p-3 mb-0 relative z-20" style={searchBoxStyle}>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   
                   {/* INPUT HALTE ASAL */}
@@ -399,9 +399,11 @@ export default function Home() {
           </div>
         </div>
 
-        <svg viewBox="0 0 1440 48" fill="none" className="w-full -mb-1 mt-6" aria-hidden="true">
-          <path d="M0 24 Q180 0 360 24 Q540 48 720 24 Q900 0 1080 24 Q1260 48 1440 24 L1440 48 L0 48Z" className="fill-background" />
-        </svg>
+        <div className="absolute bottom-0 left-0 right-0 overflow-hidden pointer-events-none h-12">
+          <svg viewBox="0 0 1440 48" fill="none" className="w-full h-full" aria-hidden="true" preserveAspectRatio="none">
+            <path d="M0 24 Q180 0 360 24 Q540 48 720 24 Q900 0 1080 24 Q1260 48 1440 24 L1440 48 L0 48Z" className="fill-background" />
+          </svg>
+        </div>
       </section>
 
       {/* Sisa section bawah (Ringkasan & Akses Cepat) dipertahankan sesuai kode aslimu */}
