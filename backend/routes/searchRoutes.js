@@ -4,5 +4,6 @@ const searchController = require('../controllers/searchController');
 const {verifyToken} = require('../middleware/authMiddleware');
 
 router.get('/', verifyToken, searchController.searchRoutes);
+router.get('/suggestions', authMiddleware, getStopSuggestions);
 
 module.exports = router;

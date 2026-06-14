@@ -264,4 +264,33 @@ const searchRoutes = async (req, res) => {
     }
 };
 
-module.exports = { searchRoutes };
+// Get Suggestions untuk Autocomplete Halte
+const getStopSuggestions = async (req, res) => {
+    try {
+        const { keyword } = req.query;
+
+        // Jika keyword kosong atau kurang dari 2 karakter, kembalikan array kosong agar menghemat query
+        if (!keyword || keyword.trim().length < 2) {
+            return res.status(200).json([]);
+        }
+
+        const searchKeyword = `%${keyword}%`;
+        const query = `
+            SELECT stop_id, name 
+            FROM stops 
+            WHERE name LIKE ? 
+            LIMIT 5
+        `;
+        
+        const [rows] = await pool.query(query, [searchKeyword]);
+        return res.status(200).json(rows);
+    } catch (error) {
+        console.error("Error Get Stop Suggestions:", error);
+        return res.status(500).json({ message: "Gagal mengambil saran halte." });
+    }
+};
+
+module.exports = {
+    searchRoutes,
+    getStopSuggestions
+};
