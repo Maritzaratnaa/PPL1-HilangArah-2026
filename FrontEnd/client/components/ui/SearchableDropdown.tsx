@@ -28,34 +28,19 @@ export function SearchableDropdown({
   const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const justOpenedRef = useRef(false);
 
   const selected = options.find(o => o.value === value);
 
-  const isIOS = typeof navigator !== 'undefined' &&
-    /iPad|iPhone|iPod/.test(navigator.userAgent);
-
   useEffect(() => {
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (justOpenedRef.current) return;
+    const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setIsOpen(false);
         setSearch('');
       }
     };
     document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler, { passive: true });
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('touchstart', handler);
-    };
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
-
-  useEffect(() => {
-    if (isOpen && !isIOS) {
-      setTimeout(() => inputRef.current?.focus(), 0);
-    }
-  }, [isOpen, isIOS]);
 
   const filtered = options.filter(o =>
     o.label.toLowerCase().includes(search.toLowerCase()) ||
@@ -72,38 +57,36 @@ export function SearchableDropdown({
 
   const close = () => { setIsOpen(false); setSearch(''); };
   const handleSelect = (val: string) => { onChange(val); close(); };
-
-  const handleClear = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange('');
     setSearch('');
   };
 
-  const openDropdown = () => {
-    justOpenedRef.current = true;
-    setTimeout(() => { justOpenedRef.current = false; }, 300);
-
-    setIsOpen(true);
-    setSearch('');
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTriggerTouch = (e: React.TouchEvent) => {
+    if (disabled) return;
     e.preventDefault();
-    if (disabled || isOpen) return;
-    openDropdown();
-    inputRef.current?.focus();
+    if (!isOpen) {
+      setIsOpen(true);
+      setSearch('');
+      inputRef.current?.focus();
+    }
   };
 
-  const handleClick = () => {
-    if (disabled || isIOS || isOpen) return;
-    openDropdown();
+  const handleTriggerClick = () => {
+    if (disabled) return;
+    if (!isOpen) {
+      setIsOpen(true);
+      setSearch('');
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
   };
 
   return (
     <div className={`relative ${className}`} ref={ref}>
       <div
-        onClick={handleClick}
-        onTouchEnd={handleTouchEnd}
+        onClick={handleTriggerClick}
+        onTouchEnd={handleTriggerTouch}
         className={`w-full h-10 px-3 rounded-lg border bg-background flex items-center gap-2 transition-colors
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${isOpen
@@ -111,24 +94,25 @@ export function SearchableDropdown({
             : 'border-border hover:border-primary/50'
           } ${triggerClassName}`}
       >
-        {isOpen ? (
-          <input
-            ref={inputRef}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={searchPlaceholder || placeholder}
-            type="search"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground min-w-0"
-            // Cegah semua touch event bubble ke luar
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
+        <input
+          ref={inputRef}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={isOpen ? (searchPlaceholder || placeholder) : ''}
+          type="search"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          readOnly={!isOpen}
+          tabIndex={isOpen ? 0 : -1}
+          className={`flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground min-w-0
+            ${isOpen ? 'block' : 'hidden'}`}
+          onClick={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        />
+
+        {!isOpen && (
           <span className={`flex-1 truncate ${selected ? 'text-foreground' : 'text-muted-foreground'}`}>
             {selected ? selected.label : placeholder}
           </span>
@@ -138,7 +122,6 @@ export function SearchableDropdown({
           {value && !isOpen && (
             <span
               onClick={handleClear}
-              onTouchEnd={isIOS ? handleClear : undefined}
               className="text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer">
               <X className="h-3 w-3" />
             </span>
@@ -153,13 +136,14 @@ export function SearchableDropdown({
         <>
           <div
             className="fixed inset-0 z-40"
-            onClick={close}
-            onTouchStart={close}
+            onMouseDown={close}
+            onTouchEnd={(e) => { e.preventDefault(); close(); }}
           />
           <div className="absolute left-0 top-full mt-1 w-full min-w-[200px] bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
             <div
               className={`max-h-52 overflow-y-auto ${dropdownClassName}`}
               style={{ WebkitOverflowScrolling: 'touch' }}
+              onTouchEnd={(e) => e.stopPropagation()}
             >
               {filtered.length === 0 ? (
                 <div className="py-4 text-center text-xs text-muted-foreground">Tidak ditemukan.</div>
@@ -175,8 +159,8 @@ export function SearchableDropdown({
                       <button
                         key={opt.value}
                         type="button"
-                        onClick={() => !isIOS && handleSelect(opt.value)}
-                        onTouchEnd={(e) => { e.preventDefault(); handleSelect(opt.value); }}
+                        onMouseDown={(e) => { e.preventDefault(); handleSelect(opt.value); }}
+                        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); handleSelect(opt.value); }}
                         className={`w-full text-left px-3 py-2.5 transition-colors border-b border-border/30 last:border-0
                           ${value === opt.value
                             ? 'bg-primary/10 text-primary font-semibold'
