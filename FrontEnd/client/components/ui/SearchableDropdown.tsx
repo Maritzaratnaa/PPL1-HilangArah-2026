@@ -28,6 +28,7 @@ export function SearchableDropdown({
   const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const justOpenedRef = useRef(false);
 
   const selected = options.find(o => o.value === value);
 
@@ -36,13 +37,14 @@ export function SearchableDropdown({
 
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
+      if (justOpenedRef.current) return;
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setIsOpen(false);
         setSearch('');
       }
     };
     document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler);
+    document.addEventListener('touchstart', handler, { passive: true });
     return () => {
       document.removeEventListener('mousedown', handler);
       document.removeEventListener('touchstart', handler);
@@ -77,22 +79,24 @@ export function SearchableDropdown({
     setSearch('');
   };
 
+  const openDropdown = () => {
+    justOpenedRef.current = true;
+    setTimeout(() => { justOpenedRef.current = false; }, 300);
+
+    setIsOpen(true);
+    setSearch('');
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
-    if (disabled) return;
-    if (!isOpen) {
-      setIsOpen(true);
-      setSearch('');
-      inputRef.current?.focus();
-    }
+    if (disabled || isOpen) return;
+    openDropdown();
+    inputRef.current?.focus();
   };
 
   const handleClick = () => {
-    if (disabled || isIOS) return;
-    if (!isOpen) {
-      setIsOpen(true);
-      setSearch('');
-    }
+    if (disabled || isIOS || isOpen) return;
+    openDropdown();
   };
 
   return (
@@ -119,9 +123,10 @@ export function SearchableDropdown({
             autoCapitalize="off"
             spellCheck={false}
             className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground min-w-0"
-            onClick={(e) => e.stopPropagation()}
+            // Cegah semua touch event bubble ke luar
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           />
         ) : (
           <span className={`flex-1 truncate ${selected ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -146,7 +151,11 @@ export function SearchableDropdown({
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={close} onTouchStart={close} />
+          <div
+            className="fixed inset-0 z-40"
+            onClick={close}
+            onTouchStart={close}
+          />
           <div className="absolute left-0 top-full mt-1 w-full min-w-[200px] bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
             <div
               className={`max-h-52 overflow-y-auto ${dropdownClassName}`}
