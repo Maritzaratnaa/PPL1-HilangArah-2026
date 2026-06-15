@@ -56,89 +56,74 @@ export function SearchableDropdown({
   }, {});
 
   const close = () => { setIsOpen(false); setSearch(''); };
-  const handleSelect = (val: string) => { onChange(val); close(); };
+
+  const handleSelect = (val: string) => {
+    onChange(val);
+    setIsOpen(false);
+    setSearch('');
+    inputRef.current?.blur();
+  };
+
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange('');
     setSearch('');
+    inputRef.current?.focus();
   };
 
-  const handleTriggerTouch = (e: React.TouchEvent) => {
-    if (disabled) return;
-    e.preventDefault();
-    if (!isOpen) {
+  const handleInputFocus = () => {
+    if (!disabled) {
       setIsOpen(true);
       setSearch('');
-      inputRef.current?.focus();
     }
   };
 
-  const handleTriggerClick = () => {
-    if (disabled) return;
-    if (!isOpen) {
-      setIsOpen(true);
-      setSearch('');
-      setTimeout(() => inputRef.current?.focus(), 0);
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    if (!isOpen) setIsOpen(true);
   };
+
+  const inputDisplayValue = isOpen ? search : (selected ? selected.label : '');
 
   return (
     <div className={`relative ${className}`} ref={ref}>
-      <div
-        onClick={handleTriggerClick}
-        onTouchEnd={handleTriggerTouch}
-        className={`w-full h-10 px-3 rounded-lg border bg-background flex items-center gap-2 transition-colors
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-          ${isOpen
-            ? 'border-primary ring-1 ring-primary/20'
-            : 'border-border hover:border-primary/50'
-          } ${triggerClassName}`}
+      <div className={`w-full px-3 rounded-lg border bg-background flex items-center gap-2 transition-colors
+        ${disabled ? 'opacity-50' : ''}
+        ${isOpen
+          ? 'border-primary ring-1 ring-primary/20'
+          : 'border-border hover:border-primary/50'
+        } ${triggerClassName}`}
       >
         <input
           ref={inputRef}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={isOpen ? (searchPlaceholder || placeholder) : ''}
-          type="search"
+          value={inputDisplayValue}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          placeholder={isOpen ? (searchPlaceholder || 'Cari...') : placeholder}
+          disabled={disabled}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          readOnly={!isOpen}
-          tabIndex={isOpen ? 0 : -1}
-          className={`flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground min-w-0
-            ${isOpen ? 'block' : 'hidden'}`}
-          onClick={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
+          className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground min-w-0 h-full py-0"
         />
 
-        {!isOpen && (
-          <span className={`flex-1 truncate ${selected ? 'text-foreground' : 'text-muted-foreground'}`}>
-            {selected ? selected.label : placeholder}
-          </span>
-        )}
-
         <div className="flex items-center gap-1 flex-shrink-0">
-          {value && !isOpen && (
-            <span
-              onClick={handleClear}
-              className="text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer">
+          {value && (
+            <span onClick={handleClear} className="text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer">
               <X className="h-3 w-3" />
             </span>
           )}
           <ChevronDown
             className={`h-4 w-4 text-muted-foreground transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+            onClick={() => { if (!disabled) { isOpen ? close() : inputRef.current?.focus(); } }}
           />
         </div>
       </div>
 
       {isOpen && (
         <>
-          <div
-            className="fixed inset-0 z-40"
-            onMouseDown={close}
-            onTouchEnd={(e) => { e.preventDefault(); close(); }}
-          />
+          <div className="fixed inset-0 z-40" onMouseDown={close} onTouchEnd={(e) => { e.preventDefault(); close(); }} />
           <div className="absolute left-0 top-full mt-1 w-full min-w-[200px] bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
             <div
               className={`max-h-52 overflow-y-auto ${dropdownClassName}`}
