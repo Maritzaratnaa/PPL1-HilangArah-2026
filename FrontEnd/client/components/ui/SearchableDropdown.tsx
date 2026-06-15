@@ -31,59 +31,75 @@ export function SearchableDropdown({
 
   const selected = options.find(o => o.value === value);
 
+  const isIOS = typeof navigator !== 'undefined' &&
+    /iPad|iPhone|iPod/.test(navigator.userAgent);
+
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setIsOpen(false);
         setSearch('');
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isIOS) {
       setTimeout(() => inputRef.current?.focus(), 0);
     }
-  }, [isOpen]);
+  }, [isOpen, isIOS]);
 
   const filtered = options.filter(o =>
     o.label.toLowerCase().includes(search.toLowerCase()) ||
     (o.detail || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  // Group options — preserve insertion order
   const groupOrder: string[] = [];
   const groups = filtered.reduce<Record<string, Option[]>>((acc, opt) => {
     const g = opt.group || '__none__';
-    if (!acc[g]) {
-      acc[g] = [];
-      groupOrder.push(g);
-    }
+    if (!acc[g]) { acc[g] = []; groupOrder.push(g); }
     acc[g].push(opt);
     return acc;
   }, {});
 
-  const open = () => { if (!disabled) { setIsOpen(true); setSearch(''); } };
   const close = () => { setIsOpen(false); setSearch(''); };
+  const handleSelect = (val: string) => { onChange(val); close(); };
 
-  const handleSelect = (val: string) => {
-    onChange(val);
-    close();
-  };
-
-  const handleClear = (e: React.MouseEvent) => {
+  const handleClear = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     onChange('');
     setSearch('');
   };
 
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (disabled) return;
+    if (!isOpen) {
+      setIsOpen(true);
+      setSearch('');
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleClick = () => {
+    if (disabled || isIOS) return;
+    if (!isOpen) {
+      setIsOpen(true);
+      setSearch('');
+    }
+  };
+
   return (
     <div className={`relative ${className}`} ref={ref}>
-      {/* Trigger */}
       <div
-        onClick={open}
+        onClick={handleClick}
+        onTouchEnd={handleTouchEnd}
         className={`w-full h-10 px-3 rounded-lg border bg-background flex items-center gap-2 transition-colors
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${isOpen
@@ -97,8 +113,15 @@ export function SearchableDropdown({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={searchPlaceholder || placeholder}
-            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+            type="search"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground min-w-0"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
           />
         ) : (
           <span className={`flex-1 truncate ${selected ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -110,6 +133,7 @@ export function SearchableDropdown({
           {value && !isOpen && (
             <span
               onClick={handleClear}
+              onTouchEnd={isIOS ? handleClear : undefined}
               className="text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer">
               <X className="h-3 w-3" />
             </span>
@@ -120,18 +144,19 @@ export function SearchableDropdown({
         </div>
       </div>
 
-      {/* Dropdown panel */}
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={close} />
+          <div className="fixed inset-0 z-40" onClick={close} onTouchStart={close} />
           <div className="absolute left-0 top-full mt-1 w-full min-w-[200px] bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-            <div className={`max-h-52 overflow-y-auto ${dropdownClassName}`}>
+            <div
+              className={`max-h-52 overflow-y-auto ${dropdownClassName}`}
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               {filtered.length === 0 ? (
                 <div className="py-4 text-center text-xs text-muted-foreground">Tidak ditemukan.</div>
               ) : (
                 groupOrder.map((group) => (
                   <div key={group}>
-                    {/* Group header — tidak pakai sticky */}
                     {group !== '__none__' && (
                       <div className="px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-muted/40 border-y border-border/40">
                         {group}
@@ -141,7 +166,8 @@ export function SearchableDropdown({
                       <button
                         key={opt.value}
                         type="button"
-                        onClick={() => handleSelect(opt.value)}
+                        onClick={() => !isIOS && handleSelect(opt.value)}
+                        onTouchEnd={(e) => { e.preventDefault(); handleSelect(opt.value); }}
                         className={`w-full text-left px-3 py-2.5 transition-colors border-b border-border/30 last:border-0
                           ${value === opt.value
                             ? 'bg-primary/10 text-primary font-semibold'
