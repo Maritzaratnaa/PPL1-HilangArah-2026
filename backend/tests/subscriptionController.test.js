@@ -261,13 +261,27 @@ describe('subscriptionController', () => {
                 customer_details: {
                     first_name: 'Alice',
                     email: 'alice@test.com'
-                }
+                },
+                enabled_payments: ['credit_card']
             });
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith({
                 token: 'midtrans-token-xyz'
             });
             spy.mockRestore();
+        });
+
+        it('bypass pembayaran jika email adalah akun tester', async () => {
+            req.body = { subs_id: 's1', amount: 50000 };
+            req.user = { email: 'tester.arahin@gmail.com' }; // Tester email bypass check
+
+            await getPaymentToken(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                token: "TESTER_BYPASS_TOKEN", 
+                is_tester: true 
+            });
         });
 
         it('handle error transaksi midtrans dan mengembalikan status 500', async () => {

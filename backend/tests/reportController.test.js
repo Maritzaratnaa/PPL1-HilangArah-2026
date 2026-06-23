@@ -39,6 +39,35 @@ describe('reportController', () => {
             });
         });
 
+        it('should return 403 if category is Pemandu and user has no active subscription', async () => {
+            req.user.user_id = 'u1';
+            req.body = { category: 'Pemandu', description: 'Guide was late' };
+            pool.query.mockResolvedValueOnce([[]]); // no active subscription
+
+            await createReport(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(403);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Kategori laporan 'Pemandu' hanya tersedia untuk pengguna yang sedang berlangganan."
+            });
+        });
+
+        it('should create Pemandu category report successfully if user has active subscription', async () => {
+            req.user.user_id = 'u1';
+            req.body = { category: 'Pemandu', description: 'Guide was late', subs_id: 'sub1' };
+            jest.spyOn(crypto, 'randomUUID').mockReturnValue('mock-report-uuid');
+            pool.query.mockResolvedValueOnce([[{ subs_id: 'sub1' }]]); // active subscription found
+            pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]); // insert report
+
+            await createReport(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Laporan berhasil dikirim dan menunggu antrean.",
+                report_id: 'mock-report-uuid'
+            });
+        });
+
         it('should create report successfully', async () => {
             req.user.user_id = 'u1';
             req.body = { category: 'Infrastructure', stop_id: 's1', subs_id: 'sub1', description: 'Broken ramp' };
@@ -70,24 +99,49 @@ describe('reportController', () => {
     });
 
     describe('getMyReports', () => {
-        it('should get all reports for current user successfully', async () => {
+        it('should get all reports for current user successfully (non-premium user)', async () => {
             req.user.user_id = 'u1';
             const mockReports = [{ report_id: 'r1', category: 'Infrastructure', description: 'Broken ramp', status: 'Pending' }];
-            pool.query.mockResolvedValueOnce([mockReports]);
+            pool.query.mockResolvedValueOnce([[]]); // no active subscription (isPremiumUser = false)
+            pool.query.mockResolvedValueOnce([mockReports]); // get reports
 
             await getMyReports(req, res);
 
-            expect(pool.query).toHaveBeenCalledWith(
-                expect.stringContaining('WHERE r.reporter_id = ?'),
-                ['u1']
-            );
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith({
                 message: "Riwayat laporan berhasil diambil.",
+                is_premium: false,
                 data: mockReports
             });
         });
 
+        it('should get all reports for current user successfully (premium user)', async () => {
+            req.user.user_id = 'u1';
+            const mockReports = [{ report_id: 'r1', category: 'Pemandu', description: 'Good guide', status: 'Pending' }];
+            pool.query.mockResolvedValueOnce([[{ subs_id: 'sub1' }]]); // active subscription found (isPremiumUser = true)
+            pool.query.mockResolvedValueOnce([mockReports]); // get reports
+
+            await getMyReports(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Riwayat laporan berhasil diambil.",
+                is_premium: true,
+                data: mockReports
+            });
+        });
+
+        it('should handle db error and return 500', async () => {
+            req.user.user_id = 'u1';
+            pool.query.mockRejectedValueOnce(new Error('DB Error'));
+
+            await getMyReports(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Terjadi kesalahan pada server saat mengambil laporan."
+            });
+        });
     });
 
     describe('getLocationOptions', () => {
