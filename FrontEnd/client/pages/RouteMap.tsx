@@ -7,7 +7,18 @@ import {
   DirectionsRenderer,
 } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Loader2, 
+  MapPin, 
+  RefreshCw, 
+  ChevronDown, 
+  ChevronUp, 
+  Clock, 
+  Users, 
+  Cloud, 
+  Car 
+} from "lucide-react";
 
 const containerStyle = { width: '100%', height: '100%' };
 
@@ -48,6 +59,15 @@ interface RouteResult {
   total_estimated_time: number;
   is_recommended: boolean;
   legs: JourneyLeg[];
+}
+
+interface RealTimeInfo {
+  status_lalu_lintas: string;
+  eta_kedatangan_menit: number;
+  waktu_tempuh_menit: number;
+  cuaca: string;
+  kursi_umum_terisi: number;
+  kursi_prioritas_terisi: number;
 }
 
 function getTransportIcon(type: string) {
@@ -194,6 +214,11 @@ export default function RouteMap() {
 
   const [isMobile, setIsMobile] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
+  
+  // States for New Features
+  const [realTimeInfo, setRealTimeInfo] = useState<Record<number, RealTimeInfo>>({});
+  const [isRefreshing, setIsRefreshing] = useState<Record<number, boolean>>({});
+  const [expandedStops, setExpandedStops] = useState<Record<number, boolean>>({});
 
   const isMapsEnabled = import.meta.env.VITE_ENABLE_MAPS === 'true';
   const { isLoaded } = useJsApiLoader({
@@ -222,6 +247,38 @@ export default function RouteMap() {
   const isDragging = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(DEFAULT_WIDTH);
+
+  // Mock Generator for Realtime Data
+  const generateMockData = (): RealTimeInfo => ({
+    status_lalu_lintas: ["Lancar", "Padat Merayap", "Macet"][Math.floor(Math.random() * 3)],
+    eta_kedatangan_menit: Math.floor(Math.random() * 10) + 2,
+    waktu_tempuh_menit: Math.floor(Math.random() * 25) + 10,
+    cuaca: ["Cerah", "Berawan", "Hujan Ringan"][Math.floor(Math.random() * 3)],
+    kursi_umum_terisi: Math.floor(Math.random() * 40) + 60, // 60-100%
+    kursi_prioritas_terisi: Math.floor(Math.random() * 50) + 20, // 20-70%
+  });
+
+  useEffect(() => {
+    if (selectedRoute?.legs) {
+      const initialData: Record<number, RealTimeInfo> = {};
+      selectedRoute.legs.forEach((_, idx) => {
+        initialData[idx] = generateMockData();
+      });
+      setRealTimeInfo(initialData);
+    }
+  }, [selectedRoute]);
+
+  const handleRefreshRealtime = (legIdx: number) => {
+    setIsRefreshing(prev => ({ ...prev, [legIdx]: true }));
+    setTimeout(() => {
+      setRealTimeInfo(prev => ({ ...prev, [legIdx]: generateMockData() }));
+      setIsRefreshing(prev => ({ ...prev, [legIdx]: false }));
+    }, 800); // Simulate network request delay
+  };
+
+  const toggleStops = (legIdx: number) => {
+    setExpandedStops(prev => ({ ...prev, [legIdx]: !prev[legIdx] }));
+  };
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -424,11 +481,12 @@ export default function RouteMap() {
                   const orderedPath = isReversed ? [...path].reverse() : path;
                   const intermediateStops = orderedPath.slice(1, -1);
                   const transitStopData = leg.route_path?.find(s => s.stop_name === leg.destination_stop) || orderedPath[orderedPath.length - 1];
+                  const info = realTimeInfo[legIdx]; // Data real-time untuk rute ini
 
                   return (
                     <div key={legIdx}>
                       {leg.transports.map((t, tIdx) => (
-                        <div key={tIdx} className="flex items-start gap-3 relative pb-6">
+                        <div key={tIdx} className="flex items-start gap-3 relative pb-4">
                           <div className="absolute left-[9px] top-0 bottom-0 w-0.5 border-l-2 border-dashed border-muted-foreground/30 ml-[-1px]"></div>
                           
                           <div className="bg-card rounded-2xl p-4 border shadow-sm flex-1 ml-6 relative overflow-hidden">
@@ -448,29 +506,103 @@ export default function RouteMap() {
                                 </div>
                               ))}
                             </div>
+
+                            {/* --- INFORMASI PERJALANAN REAL-TIME MULAI DI SINI --- */}
+                            {info && (
+                              <div className="mt-4 pt-4 border-t border-border/50">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                    Info Real-time
+                                  </span>
+                                  <button
+                                    onClick={() => handleRefreshRealtime(legIdx)}
+                                    disabled={isRefreshing[legIdx]}
+                                    className="flex items-center gap-1.5 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-md transition-colors"
+                                  >
+                                    <RefreshCw className={`w-3 h-3 ${isRefreshing[legIdx] ? "animate-spin" : ""}`} />
+                                    Perbarui
+                                  </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="bg-muted/40 p-2 rounded-lg flex items-start gap-2">
+                                    <Clock className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                                    <div className="flex flex-col">
+                                      <span className="text-[9px] font-bold text-muted-foreground uppercase">Waktu & ETA</span>
+                                      <span className="text-xs font-semibold">{info.waktu_tempuh_menit} mnt (ETA {info.eta_kedatangan_menit}m)</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-muted/40 p-2 rounded-lg flex items-start gap-2">
+                                    <Car className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
+                                    <div className="flex flex-col">
+                                      <span className="text-[9px] font-bold text-muted-foreground uppercase">Lalu Lintas</span>
+                                      <span className="text-xs font-semibold">{info.status_lalu_lintas}</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-muted/40 p-2 rounded-lg flex items-start gap-2">
+                                    <Users className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                                    <div className="flex flex-col">
+                                      <span className="text-[9px] font-bold text-muted-foreground uppercase">Kursi (Umum/Prio)</span>
+                                      <span className="text-xs font-semibold">{info.kursi_umum_terisi}% / {info.kursi_prioritas_terisi}%</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-muted/40 p-2 rounded-lg flex items-start gap-2">
+                                    <Cloud className="w-3.5 h-3.5 text-sky-500 mt-0.5 flex-shrink-0" />
+                                    <div className="flex flex-col">
+                                      <span className="text-[9px] font-bold text-muted-foreground uppercase">Cuaca</span>
+                                      <span className="text-xs font-semibold">{info.cuaca}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {/* --- INFORMASI REAL-TIME SELESAI --- */}
                           </div>
                         </div>
                       ))}
 
+                      {/* --- DROPDOWN DETAIL RUTE / HALTE MULAI DI SINI --- */}
                       {intermediateStops.length > 0 && (
-                        <div className="relative pb-4 space-y-3">
-                          {intermediateStops.map((stop, sIdx) => (
-                            <div key={sIdx} className="flex items-start gap-3 relative">
-                              <span className="w-5 h-5 z-10 flex items-center justify-center mt-0.5 bg-background">
-                                <span className="w-2 h-2 bg-muted-foreground/40 rounded-full" />
-                              </span>
-                              <div className="flex-1 mt-0.5">
-                                <div className="text-xs font-semibold text-muted-foreground/80 leading-tight">
-                                  {stop.stop_name}
+                        <div className="relative pb-5">
+                          <div className="ml-9 relative z-10">
+                            <button
+                              onClick={() => toggleStops(legIdx)}
+                              className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground bg-background border border-border px-3.5 py-1.5 rounded-full transition-colors shadow-sm"
+                            >
+                              {expandedStops[legIdx] ? (
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              ) : (
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              )}
+                              {intermediateStops.length} Halte Dilewati (Detail)
+                            </button>
+                          </div>
+
+                          {expandedStops[legIdx] && (
+                            <div className="space-y-3 pt-4">
+                              {intermediateStops.map((stop, sIdx) => (
+                                <div key={sIdx} className="flex items-start gap-3 relative">
+                                  <span className="w-5 h-5 z-10 flex items-center justify-center mt-0.5 bg-background">
+                                    <span className="w-2 h-2 bg-muted-foreground/40 rounded-full" />
+                                  </span>
+                                  <div className="flex-1 mt-0.5">
+                                    <div className="text-xs font-semibold text-muted-foreground/80 leading-tight">
+                                      {stop.stop_name}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
                         </div>
                       )}
+                      {/* --- DROPDOWN DETAIL RUTE SELESAI --- */}
 
                       {legIdx < selectedRoute.legs.length - 1 && (
-                        <div className="flex items-start gap-3 relative pb-4 pt-2">
+                        <div className="flex items-start gap-3 relative pb-4 pt-1">
                           <span className="w-5 h-5 rounded-full bg-blue-500 z-10 flex items-center justify-center mt-1 ring-4 ring-background">
                             <span className="w-2 h-2 bg-white rounded-full" />
                           </span>
