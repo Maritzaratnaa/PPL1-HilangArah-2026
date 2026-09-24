@@ -1,6 +1,5 @@
 const pool = require('../db');
 
-// ── Haversine: hitung jarak km antara 2 koordinat ──
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -12,7 +11,6 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// ── Hitung fare per leg berdasarkan tipe transport ──
 function calculateLegFare(transType, farePerKm, boardingFee, baseFare, fareType, originLat, originLng, destLat, destLng) {
   if (fareType === 'flat') return baseFare || 0;
 
@@ -22,18 +20,15 @@ function calculateLegFare(transType, farePerKm, boardingFee, baseFare, fareType,
   );
 
   if (transType === 'MRT') {
-    // 1500 boarding + 850/km
     return Math.round((boardingFee || 1500) + ((farePerKm || 850) * distanceKm));
   }
   if (transType === 'LRT') {
-    // 5000 untuk km pertama, +700/km berikutnya
     if (distanceKm <= 1) return boardingFee || 5000;
     return Math.round((boardingFee || 5000) + ((farePerKm || 700) * (distanceKm - 1)));
   }
   return 0;
 }
 
-// ── Cek fasilitas kendaraan sesuai user ──
 const checkRecommendation = (userCategory, transports) => {
   if (transports.length === 0) return false;
   const safeCat = (userCategory || '').trim().toLowerCase();
@@ -76,11 +71,9 @@ const fetchRoutePath = async (routeId, order1, order2) => {
   return rows;
 };
 
-// Ganti fungsi sortRoutes lama dengan ini
 function markAndSortRoutes(results) {
   if (results.length === 0) return results;
   
-  // Sort: recommended dulu, lalu by waktu tercepat, lalu by biaya termurah
   results.sort((a, b) => {
     if (a.is_recommended && !b.is_recommended) return -1;
     if (!a.is_recommended && b.is_recommended) return 1;
@@ -90,7 +83,6 @@ function markAndSortRoutes(results) {
     return (a.total_cost || 0) - (b.total_cost || 0);
   });
 
-  // Tandai hanya index 0 sebagai "rute terbaik"
   return results.map((r, idx) => ({
     ...r,
     is_best: idx === 0
@@ -121,7 +113,6 @@ const searchRoutes = async (req, res) => {
 
     console.log(`[DEBUG] MENCARI RUTE: "${origin}" ➔ "${destination}"`);
 
-    // ── Rute Langsung ──
     console.time("[WAKTU] Eksekusi Query Direct");
     const directQuery = `
       SELECT 
@@ -180,7 +171,6 @@ const searchRoutes = async (req, res) => {
 
     console.log(`Rute Langsung tidak ditemukan. Melanjutkan ke pencarian Transit 1x...`);
 
-    // ── Rute Transit 1x ──
     console.time("[WAKTU] Eksekusi Query Transit 1x");
     const transitQuery = `
       SELECT 
@@ -261,7 +251,6 @@ const searchRoutes = async (req, res) => {
 
     console.log(`Rute Transit 1x tidak ditemukan. Mencoba rute Transit 2x...`);
 
-    // ── Rute Transit 2x ──
     console.time("[WAKTU] Eksekusi Query Transit 2x");
     const transit2xQuery = `
       SELECT 
@@ -373,7 +362,6 @@ const searchRoutes = async (req, res) => {
   }
 };
 
-// Get Suggestions untuk Autocomplete Halte
 const getStopSuggestions = async (req, res) => {
   try {
     const { keyword } = req.query;
