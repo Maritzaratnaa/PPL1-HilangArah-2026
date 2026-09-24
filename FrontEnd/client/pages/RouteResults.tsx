@@ -43,10 +43,10 @@ interface JourneyLeg {
 interface RouteResult {
   route_type: "direct" | "transit";
   total_estimated_time: number;
-  total_cost?: number;        // ← dari backend
+  total_cost?: number;     
   total_stops_passed?: number;
   is_recommended: boolean;
-  is_best?: boolean;  // ← tambah ini
+  is_best?: boolean; 
   legs: JourneyLeg[];
 }
 
@@ -57,7 +57,6 @@ function formatCost(cost?: number): string {
   return `Rp ${cost.toLocaleString('id-ID')}`;
 }
 
-// getFacilityTips, StopBadges, getCategoryAdvice — sama persis tidak berubah
 function getFacilityTips(category: string, facilities: Facility) {
   const tips: { label: string; color: string }[] = [];
   if (!facilities) return tips;
@@ -182,7 +181,6 @@ export default function RouteResults() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      {/* Hero */}
       <section className="relative overflow-hidden"
         style={{ background: isHC ? "#000" : "linear-gradient(135deg, hsl(186 100% 27%) 0%, hsl(186 100% 18%) 100%)" }}>
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 relative z-10">
@@ -229,7 +227,6 @@ export default function RouteResults() {
             </div>
           ) : (
             <>
-              {/* Summary bar */}
               <div className="flex items-center gap-2 mb-6">
                 <span className="text-sm font-semibold">{routes.length} opsi perjalanan</span>
                 <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold">
@@ -237,7 +234,6 @@ export default function RouteResults() {
                 </span>
               </div>
 
-              {/* Route cards */}
               <div className="space-y-4">
                 {routes.map((route, routeIndex) => {
                   const allTransports = route.legs.flatMap(leg => leg.transports);
@@ -260,7 +256,6 @@ export default function RouteResults() {
                       isBest ? 'border-primary/40 ring-1 ring-primary/20' : 'border-border'
                     }`}>
 
-                      {/* ── BADGE RUTE TERBAIK ── */}
                       {isBest && (
                         <div className={`px-5 py-2 flex items-center gap-2 text-xs font-bold ${
                           isHC ? 'bg-[#ffff00] text-black' : 'bg-primary text-primary-foreground'
@@ -282,7 +277,6 @@ export default function RouteResults() {
                         </div>
                       )}
 
-                      {/* Banner transit */}
                       {route.route_type === "transit" && (
                         <div className="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 text-xs px-5 py-1.5 font-bold flex items-center gap-2 border-t border-indigo-100 dark:border-indigo-900">
                           🔄 Rute Transit ({route.legs.length - 1}x pindah kendaraan)
@@ -290,7 +284,6 @@ export default function RouteResults() {
                       )}
 
                       <div className="p-4 sm:p-6">
-                        {/* Top row */}
                         <div className="flex items-start justify-between mb-4 gap-2">
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div className="flex -space-x-2 flex-shrink-0">
@@ -310,7 +303,6 @@ export default function RouteResults() {
                             </div>
                           </div>
 
-                          {/* Durasi + Biaya */}
                           <div className="text-right flex-shrink-0">
                             <div className="text-xl sm:text-2xl font-bold text-primary">
                               {route.total_estimated_time} <span className="text-sm font-semibold">mnt</span>
@@ -323,7 +315,6 @@ export default function RouteResults() {
                           </div>
                         </div>
 
-                        {/* Journey line */}
                         <div className="flex items-center gap-2 mb-4 text-xs sm:text-sm font-semibold">
                           <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[40%]">
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
@@ -336,7 +327,6 @@ export default function RouteResults() {
                           </div>
                         </div>
 
-                        {/* Facility tips */}
                         {facilityTips.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-4">
                             {facilityTips.map((tip, i) => (
@@ -347,7 +337,6 @@ export default function RouteResults() {
                           </div>
                         )}
 
-                        {/* Bottom row */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 border-t border-border gap-3">
                           <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground flex-wrap">
                             <div className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-md">
@@ -370,7 +359,6 @@ export default function RouteResults() {
                         </div>
                       </div>
 
-                      {/* Expanded detail — tidak berubah */}
                       {isExpanded && (
                         <div className="border-t border-border px-4 sm:px-6 py-5 sm:py-6 bg-muted/20 rounded-b-2xl">
                           {categoryAdvice && (

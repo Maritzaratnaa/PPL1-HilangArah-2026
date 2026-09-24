@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react"; // Tambah useRef
+import { useState, useEffect, useRef } from "react"; 
 import { Navbar } from "@/components/Navbar";
-import { AlertCircle, Star, MapPin } from "lucide-react"; // Tambah MapPin untuk estetika list
+import { AlertCircle, Star, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsHighContrast } from "@/hooks/useTheme";
 
@@ -16,7 +16,6 @@ export default function Home() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
 
-  // --- STATE BARU UNTUK AUTOCOMPLETE ---
   const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
   const [destSuggestions, setDestSuggestions] = useState<any[]>([]);
   const [isOriginLoading, setIsOriginLoading] = useState(false);
@@ -26,7 +25,6 @@ export default function Home() {
 
   const originRef = useRef<HTMLDivElement>(null);
   const destRef = useRef<HTMLDivElement>(null);
-  // -------------------------------------
 
   const [hasSubs, setHasSubs] = useState(false);
   const [subsDays, setSubsDays] = useState(0);
@@ -47,7 +45,6 @@ export default function Home() {
     "general": { label: "Umum", style: "bg-slate-100/20 text-slate-300 border-slate-300/50" },
   };
 
-  // MENGHENTIKAN DROPDOWN JIKA KLIK DI LUAR BAR ---
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (originRef.current && !originRef.current.contains(event.target as Node)) {
@@ -61,7 +58,6 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // (ORIGIN) 
   useEffect(() => {
     if (origin.trim().length < 2) {
       setOriginSuggestions([]);
@@ -88,7 +84,6 @@ export default function Home() {
     return () => clearTimeout(delayDebounceFn);
   }, [origin]);
 
-  // (DESTINATION) 
   useEffect(() => {
     if (destination.trim().length < 2) {
       setDestSuggestions([]);
@@ -260,7 +255,6 @@ export default function Home() {
               <div className="rounded-xl p-3 mb-0 relative z-20" style={searchBoxStyle}>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   
-                  {/* INPUT HALTE ASAL */}
                   <div ref={originRef} className="relative flex-1">
                     <div className="flex items-center gap-2 rounded-lg px-3 py-2.5" style={searchInputStyle}>
                       <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
@@ -276,7 +270,6 @@ export default function Home() {
                       />
                     </div>
 
-                    {/* Dropdown Hasil Asal */}
                     {showOriginSuggestions && origin.trim().length >= 2 && (
                       <div className="absolute left-0 right-0 mt-2 bg-popover text-popover-foreground rounded-xl shadow-xl border border-border z-[100] max-h-60 overflow-y-auto overflow-x-hidden p-1.5 animate-in fade-in-50 slide-in-from-top-1 duration-200 isolation-auto">
                         {isOriginLoading ? (
@@ -304,7 +297,6 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* INPUT HALTE TUJUAN */}
                   <div ref={destRef} className="relative flex-1">
                     <div className="flex items-center gap-2 rounded-lg px-3 py-2.5" style={searchInputStyle}>
                       <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
@@ -320,7 +312,6 @@ export default function Home() {
                       />
                     </div>
 
-                    {/* Dropdown Hasil Tujuan */}
                     {showDestSuggestions && destination.trim().length >= 2 && (
                       <div className="absolute left-0 right-0 mt-2 bg-popover text-popover-foreground rounded-xl shadow-xl border border-border z-[100] max-h-60 overflow-y-auto overflow-x-hidden p-1.5 animate-in fade-in-50 slide-in-from-top-1 duration-200 isolation-auto">                        
                           {isDestLoading ? (
@@ -360,7 +351,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Bagian kode langganan dll tetap sama ke bawah... */}
             <div className="rounded-xl p-5 mb-0 self-end" style={subCardStyle}>
               {hasPendingPayment ? (
                 <>
@@ -406,7 +396,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Sisa section bawah (Ringkasan & Akses Cepat) dipertahankan sesuai kode aslimu */}
       <section className="bg-muted/50 py-10 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-lg font-bold mb-5">Ringkasan Saya</h2>
