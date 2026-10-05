@@ -34,6 +34,7 @@ export function Footer() {
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-14 pb-8">
 
+          {/* Main grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
 
             <div className="md:col-span-3">
@@ -49,6 +50,7 @@ export function Footer() {
               </p>
             </div>
 
+            {/* Contact column */}
             <div className="md:flex md:flex-col md:items-end"> 
               <div>
                 <h4 className={`font-bold text-sm uppercase tracking-wider mb-4 ${isHC ? 'text-[#ffff00]' : 'text-foreground'}`}>
@@ -68,6 +70,7 @@ export function Footer() {
             </div>
           </div>
 
+          {/* Bottom bar */}
           <div className={`pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 ${isHC ? 'border-[#ffff00]' : 'border-border'}`}>
             <p className={`text-xs ${isHC ? 'text-white' : 'text-muted-foreground'}`}>
               &copy; 2026 ARAHIN. Hak Cipta Dilindungi.

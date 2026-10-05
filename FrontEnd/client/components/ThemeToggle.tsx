@@ -14,6 +14,7 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
+    // Get theme from localStorage or system preference
     const stored = localStorage.getItem('theme') as Theme | null;
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
@@ -25,6 +26,7 @@ export function ThemeToggle() {
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
     
+    // Remove all theme classes
     root.classList.remove('light', 'dark', 'high-contrast');
     
     if (newTheme === 'dark') {
@@ -32,6 +34,7 @@ export function ThemeToggle() {
     } else if (newTheme === 'high-contrast') {
       root.classList.add('high-contrast');
     }
+    // light is default, no class needed
 
     localStorage.setItem('theme', newTheme);
   };

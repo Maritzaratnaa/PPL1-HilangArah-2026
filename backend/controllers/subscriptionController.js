@@ -190,25 +190,38 @@ const snap = new midtransClient.Snap({
 const getPaymentToken = async (req, res) => {
     try {
         const { subs_id, amount } = req.body;
-        const user = req.user;
+        const user = req.user; // Didapat dari middleware auth (JWT)
 
+        const EMAIL_TESTER = ["tester.arahin@gmail.com", "tester.arahin1@gmail.com"]; 
+
+        // LOGIKA BYPASS UNTUK TESTER
+        if (EMAIL_TESTER.includes(user.email)) {
+            console.log(`🚀 [Bypass Payment] Akun tester ${user.email} terdeteksi.`);
+            return res.status(200).json({ 
+                token: "TESTER_BYPASS_TOKEN", 
+                is_tester: true 
+            });
+        }
+
+        // ALUR NORMAL MIDTRANS
         let parameter = {
             "transaction_details": {
                 "order_id": subs_id,
                 "gross_amount": amount
             },
             "customer_details": {
-                "first_name": user.full_name || "User",
+                "first_name": user.full_name || user.username || "User",
                 "email": user.email || "user@example.com"
-            }
+            },
+            // 👇 INI BAGIAN YANG DITAMBAHKAN AGAR LANGSUNG KE DEBIT/KREDIT 👇
+            "enabled_payments": ["credit_card"]
         };
 
         const transaction = await snap.createTransaction(parameter);
-
         res.status(200).json({ token: transaction.token });
 
     } catch (error) {
-        console.error("Midtrans Error:", error);
+        console.error("❌ Midtrans Error:", error);
         res.status(500).json({ message: "Gagal membuat token pembayaran" });
     }
 };

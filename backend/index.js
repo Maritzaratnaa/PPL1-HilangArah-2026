@@ -16,8 +16,9 @@ const adminGuideRoutes = require('./routes/adminGuideRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
 
 const app = express();
-app.use(cors( {
-    origin: "http://localhost:8080",
+
+app.use(cors({
+    origin: "*", 
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));

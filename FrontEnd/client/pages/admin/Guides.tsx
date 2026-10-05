@@ -279,7 +279,8 @@ export default function AdminGuides() {
   const [filterAvailability, setFilterAvailability] = useState("All");
   const [filterGender, setFilterGender] = useState("All");
 
-  const API_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/guides` : "http://localhost:3000/api/admin/guides";
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const API_URL = `${BASE_URL}/api/admin/guides`;
   const token = localStorage.getItem("token");
 
   const [currentPage, setCurrentPage] = useState(1);

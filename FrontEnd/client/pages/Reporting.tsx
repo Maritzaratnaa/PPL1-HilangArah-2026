@@ -70,6 +70,7 @@ export default function Reporting() {
   const [loading, setLoading]         = useState(true);
   const [submitting, setSubmitting]   = useState(false);
   const [errorMsg, setErrorMsg]       = useState("");
+  const [isPremium, setIsPremium] = useState<boolean>(false);
 
   const [locationOptions, setLocationOptions]   = useState<LocationOption[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
@@ -90,8 +91,12 @@ export default function Reporting() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
-      if (res.ok) setReports(json.data ?? []);
-      else setErrorMsg(json.message);
+      if (res.ok) {
+        setReports(json.data ?? []);
+        setIsPremium(json.is_premium ?? false);
+      } else {
+        setErrorMsg(json.message);
+      }
     } catch {
       setErrorMsg("Gagal menghubungi server.");
     } finally {
@@ -118,6 +123,8 @@ export default function Reporting() {
         setDescription("");
         setTimeout(() => setSuccessMessage(false), 4000);
         fetchReports();
+      } else if (res.status === 403) {
+        alert(json.message || "Fitur ini hanya tersedia untuk pengguna premium.");
       } else {
         alert(json.message);
       }
@@ -270,16 +277,32 @@ export default function Reporting() {
                       <SelectValue placeholder="Pilih kategori kendala" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl">
-                      {reportCategories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value} className="py-3 flex items-center">
-                          <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[20px]">
-                              {cat.icon}
-                            </span>
-                            <span>{cat.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {reportCategories.map((cat) => {
+                        const isCategoryPremium = cat.value === "Pemandu";
+                        const isDisabled = isCategoryPremium && !isPremium;
+
+                        return (
+                          <SelectItem 
+                            key={cat.value} 
+                            value={cat.value} 
+                            disabled={isDisabled}
+                            className="py-3 flex items-center justify-between data-[disabled]:opacity-50 data-[disabled]:pointer-events-none"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-[20px]">
+                                {cat.icon}
+                              </span>
+                              <span className="font-medium">
+                                {cat.label} {isDisabled && (
+                                  <span className="text-[13px] font-normal text-muted-foreground ml-2">
+                                    (Khusus Langganan)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>

@@ -1,176 +1,118 @@
-﻿CREATE TABLE "guides" (
-    "employee_id" varchar(50) NOT NULL,
-    "full_name" varchar(255) NOT NULL,
-    "phone_number" varchar(20) DEFAULT NULL,
-    "domicile" varchar(50) DEFAULT NULL,
-    "is_available" tinyint(1) DEFAULT '1',
-    "gender" enum('Laki-laki', 'Perempuan') DEFAULT NULL,
-    "age" int DEFAULT NULL,
-    "detail" text,
-    PRIMARY KEY ("employee_id")
+-- Active: 1773420604143@@127.0.0.1@3306
+CREATE TABLE users (
+    user_id CHAR(36) PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('Admin', 'Pengguna') NOT NULL,
+    is_Active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE "payments" (
-    "payment_id" char(36) NOT NULL,
-    "subs_id" char(36) DEFAULT NULL,
-    "user_id" char(36) DEFAULT NULL,
-    "amount" decimal(10, 2) DEFAULT NULL,
-    "payment_proof" varchar(255) DEFAULT NULL,
-    "status" enum(
-        'Pending',
-        'Verified',
-        'Rejected'
-    ) DEFAULT 'Pending',
-    "verified_by" char(36) DEFAULT NULL,
-    "created_at" timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY ("payment_id"),
-    KEY "subs_id" ("subs_id"),
-    KEY "user_id" ("user_id"),
-    KEY "verified_by" ("verified_by"),
-    CONSTRAINT "payments_ibfk_1" FOREIGN KEY ("subs_id") REFERENCES "subs" ("subs_id"),
-    CONSTRAINT "payments_ibfk_2" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id"),
-    CONSTRAINT "payments_ibfk_3" FOREIGN KEY ("verified_by") REFERENCES "users" ("user_id")
+CREATE TABLE profiles (
+    profile_id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) UNIQUE,
+    full_name VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(20),
+    category_status ENUM('disability', 'elderly', 'pregnant', 'vulnerable-illness', 'children', 'women', 'general'),
+    font_size_pref ENUM ('Small', 'Medium', 'Large') DEFAULT 'Medium',
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-CREATE TABLE "profiles" (
-    "profile_id" char(36) NOT NULL,
-    "user_id" char(36) DEFAULT NULL,
-    "full_name" varchar(255) NOT NULL,
-    "phone_number" varchar(20) DEFAULT NULL,
-    "category_status" enum(
-        'disability',
-        'elderly',
-        'pregnant',
-        'vulnerable-illness',
-        'children',
-        'women',
-        'general'
-    ) DEFAULT NULL,
-    "font_size_pref" enum('Small', 'Medium', 'Large') DEFAULT 'Medium',
-    PRIMARY KEY ("profile_id"),
-    UNIQUE KEY "user_id" ("user_id"),
-    CONSTRAINT "profiles_ibfk_1" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON DELETE CASCADE
+CREATE TABLE guides (
+    employee_id VARCHAR(50) PRIMARY KEY,
+    full_name VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(20),
+    domicile VARCHAR(50),
+    is_available BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE "reports" (
-    "report_id" char(36) NOT NULL,
-    "reporter_id" char(36) DEFAULT NULL,
-    "category" enum('Fasilitas', 'Pemandu') DEFAULT NULL,
-    "stop_id" char(36) DEFAULT NULL,
-    "subs_id" char(36) DEFAULT NULL,
-    "description" text,
-    "status" enum(
-        'Pending',
-        'Processed',
-        'Resolved'
-    ) DEFAULT 'Pending',
-    "resolved_by" char(36) DEFAULT NULL,
-    "created_at" timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY ("report_id"),
-    KEY "reporter_id" ("reporter_id"),
-    KEY "stop_id" ("stop_id"),
-    KEY "subs_id" ("subs_id"),
-    KEY "resolved_by" ("resolved_by"),
-    CONSTRAINT "reports_ibfk_1" FOREIGN KEY ("reporter_id") REFERENCES "users" ("user_id"),
-    CONSTRAINT "reports_ibfk_2" FOREIGN KEY ("stop_id") REFERENCES "stops" ("stop_id"),
-    CONSTRAINT "reports_ibfk_3" FOREIGN KEY ("subs_id") REFERENCES "subs" ("subs_id"),
-    CONSTRAINT "reports_ibfk_4" FOREIGN KEY ("resolved_by") REFERENCES "users" ("user_id")
+CREATE TABLE subs (
+    subs_id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36),
+    employee_id VARCHAR(50),
+    phone_number VARCHAR(20),
+    emergency_contact_name VARCHAR(255),
+    emergency_contact_phone VARCHAR(20),
+    domicile VARCHAR(50),
+    specific_needs TEXT,
+    status ENUM('Pending', 'Active', 'Expired') DEFAULT 'Pending',
+    start_date DATE,
+    end_date DATE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (employee_id) REFERENCES guides(employee_id)
 );
 
-CREATE TABLE "route_stops" (
-    "route_stop_id" int NOT NULL AUTO_INCREMENT,
-    "route_id" char(36) DEFAULT NULL,
-    "stop_id" char(36) DEFAULT NULL,
-    "stop_order" int DEFAULT NULL,
-    "est_time_minutes" int DEFAULT NULL,
-    PRIMARY KEY ("route_stop_id"),
-    KEY "route_id" ("route_id"),
-    KEY "stop_id" ("stop_id"),
-    CONSTRAINT "route_stops_ibfk_1" FOREIGN KEY ("route_id") REFERENCES "routes" ("route_id"),
-    CONSTRAINT "route_stops_ibfk_2" FOREIGN KEY ("stop_id") REFERENCES "stops" ("stop_id")
+CREATE TABLE payments (
+    payment_id CHAR(36) PRIMARY KEY,
+    subs_id CHAR(36),
+    user_id CHAR(36),
+    amount DECIMAL(10,2),
+    payment_proof VARCHAR(255),
+    status ENUM('Pending', 'Verified', 'Rejected') DEFAULT 'Pending',
+    verified_by CHAR(36) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subs_id) REFERENCES subs(subs_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (verified_by) REFERENCES users(user_id)
 );
 
-CREATE TABLE "routes" (
-    "route_id" char(36) NOT NULL,
-    "route_name" varchar(255) DEFAULT NULL,
-    "origin_stop_id" char(36) DEFAULT NULL,
-    "destination_stop_id" char(36) DEFAULT NULL,
-    "is_active" tinyint(1) DEFAULT '1',
-    "trans_id" varchar(50) DEFAULT NULL,
-    PRIMARY KEY ("route_id"),
-    KEY "origin_stop_id" ("origin_stop_id"),
-    KEY "destination_stop_id" ("destination_stop_id"),
-    KEY "fk_route_transport" ("trans_id"),
-    CONSTRAINT "fk_route_transport" FOREIGN KEY ("trans_id") REFERENCES "trans" ("trans_id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "routes_ibfk_2" FOREIGN KEY ("origin_stop_id") REFERENCES "stops" ("stop_id"),
-    CONSTRAINT "routes_ibfk_3" FOREIGN KEY ("destination_stop_id") REFERENCES "stops" ("stop_id")
+CREATE TABLE trans (
+    trans_id CHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type ENUM('Bus', 'Train', 'LRT', 'MRT'),
+    is_low_entry BOOLEAN DEFAULT FALSE,
+    has_wheelchair_slot BOOLEAN DEFAULT FALSE,
+    has_priority_seat BOOLEAN DEFAULT FALSE,
+    has_women_area BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE "stops" (
-    "stop_id" char(36) NOT NULL,
-    "name" varchar(255) NOT NULL,
-    "address" text,
-    "latitude" decimal(10, 8) DEFAULT NULL,
-    "longitude" decimal(11, 8) DEFAULT NULL,
-    "has_ramp" tinyint(1) DEFAULT '0',
-    "has_elevator" tinyint(1) DEFAULT '0',
-    "is_active" tinyint(1) DEFAULT '1',
-    "hub_id" varchar(50) DEFAULT NULL,
-    PRIMARY KEY ("stop_id"),
-    KEY "idx_stops_name" ("name")
+CREATE TABLE stops (
+    stop_id CHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address TEXT,
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8),
+    has_ramp BOOLEAN DEFAULT FALSE,
+    has_elevator BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE "subs" (
-    "subs_id" char(36) NOT NULL,
-    "user_id" char(36) DEFAULT NULL,
-    "employee_id" varchar(50) DEFAULT NULL,
-    "phone_number" varchar(20) DEFAULT NULL,
-    "emergency_contact_name" varchar(255) DEFAULT NULL,
-    "emergency_contact_phone" varchar(20) DEFAULT NULL,
-    "domicile" varchar(50) DEFAULT NULL,
-    "specific_needs" text,
-    "status" enum(
-        'Pending',
-        'Active',
-        'Expired'
-    ) DEFAULT 'Pending',
-    "start_date" date DEFAULT NULL,
-    "end_date" date DEFAULT NULL,
-    "duration" enum(
-        'Daily',
-        'Weekly',
-        'Monthly',
-        'Yearly'
-    ) NOT NULL DEFAULT 'Monthly',
-    PRIMARY KEY ("subs_id"),
-    KEY "user_id" ("user_id"),
-    KEY "employee_id" ("employee_id"),
-    CONSTRAINT "subs_ibfk_1" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id"),
-    CONSTRAINT "subs_ibfk_2" FOREIGN KEY ("employee_id") REFERENCES "guides" ("employee_id")
+CREATE TABLE routes (
+    route_id CHAR(36) PRIMARY KEY,
+    trans_id CHAR(36),
+    route_name VARCHAR(255),
+    origin_stop_id CHAR(36),
+    destination_stop_id CHAR(36),
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (trans_id) REFERENCES trans(trans_id),
+    FOREIGN KEY (origin_stop_id) REFERENCES stops(stop_id),
+    FOREIGN KEY (destination_stop_id) REFERENCES stops(stop_id)
 );
 
-CREATE TABLE "trans" (
-    "trans_id" char(36) NOT NULL,
-    "name" varchar(255) NOT NULL,
-    "type" enum('Bus', 'Train', 'LRT', 'MRT') DEFAULT NULL,
-    "is_low_entry" tinyint(1) DEFAULT '0',
-    "has_wheelchair_slot" tinyint(1) DEFAULT '0',
-    "has_priority_seat" tinyint(1) DEFAULT '0',
-    "has_women_area" tinyint(1) DEFAULT '0',
-    "is_active" tinyint(1) DEFAULT '1',
-    PRIMARY KEY ("trans_id")
+CREATE TABLE route_stops (
+    route_stop_id CHAR(36) PRIMARY KEY,
+    route_id CHAR(36),
+    stop_id CHAR(36),
+    stop_order INT,
+    est_time_minutes INT,
+    FOREIGN KEY (route_id) REFERENCES routes(route_id),
+    FOREIGN KEY (stop_id) REFERENCES stops(stop_id)
 );
 
-CREATE TABLE "users" (
-    "user_id" char(36) NOT NULL,
-    "email" varchar(255) NOT NULL,
-    "username" varchar(100) NOT NULL,
-    "password" varchar(255) NOT NULL,
-    "role" enum('Admin', 'Pengguna') NOT NULL,
-    "is_Active" tinyint(1) DEFAULT '1',
-    "created_at" timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-    "is_verified" tinyint(1) DEFAULT '0',
-    "otp_code" varchar(6) DEFAULT NULL,
-    PRIMARY KEY ("user_id"),
-    UNIQUE KEY "email" ("email")
+CREATE TABLE reports (
+    report_id CHAR(36) PRIMARY KEY,
+    reporter_id CHAR(36),
+    category ENUM('Fasilitas', 'Pemandu'),
+    stop_id CHAR(36),
+    subs_id CHAR(36),
+    description TEXT,
+    status ENUM('Pending', 'Processed', 'Resolved') DEFAULT 'Pending',
+    resolved_by CHAR(36),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reporter_id) REFERENCES users(user_id),
+    FOREIGN KEY (stop_id) REFERENCES stops(stop_id),
+    FOREIGN KEY (subs_id) REFERENCES subs(subs_id),
+    FOREIGN KEY (resolved_by) REFERENCES users(user_id)
 );

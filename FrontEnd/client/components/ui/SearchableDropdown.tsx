@@ -42,96 +42,99 @@ export function SearchableDropdown({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 0);
-    }
-  }, [isOpen]);
-
   const filtered = options.filter(o =>
     o.label.toLowerCase().includes(search.toLowerCase()) ||
     (o.detail || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  // Group options — preserve insertion order
   const groupOrder: string[] = [];
   const groups = filtered.reduce<Record<string, Option[]>>((acc, opt) => {
     const g = opt.group || '__none__';
-    if (!acc[g]) {
-      acc[g] = [];
-      groupOrder.push(g);
-    }
+    if (!acc[g]) { acc[g] = []; groupOrder.push(g); }
     acc[g].push(opt);
     return acc;
   }, {});
 
-  const open = () => { if (!disabled) { setIsOpen(true); setSearch(''); } };
   const close = () => { setIsOpen(false); setSearch(''); };
 
   const handleSelect = (val: string) => {
     onChange(val);
-    close();
+    setIsOpen(false);
+    setSearch('');
+    inputRef.current?.blur();
   };
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange('');
     setSearch('');
+    inputRef.current?.focus();
   };
+
+  const handleInputFocus = () => {
+    if (!disabled) {
+      setIsOpen(true);
+      setSearch('');
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    if (!isOpen) setIsOpen(true);
+  };
+
+  const inputDisplayValue = isOpen ? search : (selected ? selected.label : '');
 
   return (
     <div className={`relative ${className}`} ref={ref}>
-      {/* Trigger */}
-      <div
-        onClick={open}
-        className={`w-full h-10 px-3 rounded-lg border bg-background flex items-center gap-2 transition-colors
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-          ${isOpen
-            ? 'border-primary ring-1 ring-primary/20'
-            : 'border-border hover:border-primary/50'
-          } ${triggerClassName}`}
+      <div className={`w-full px-3 rounded-lg border bg-background flex items-center gap-2 transition-colors
+        ${disabled ? 'opacity-50' : ''}
+        ${isOpen
+          ? 'border-primary ring-1 ring-primary/20'
+          : 'border-border hover:border-primary/50'
+        } ${triggerClassName}`}
       >
-        {isOpen ? (
-          <input
-            ref={inputRef}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={searchPlaceholder || placeholder}
-            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <span className={`flex-1 truncate ${selected ? 'text-foreground' : 'text-muted-foreground'}`}>
-            {selected ? selected.label : placeholder}
-          </span>
-        )}
+        <input
+          ref={inputRef}
+          value={inputDisplayValue}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          placeholder={isOpen ? (searchPlaceholder || 'Cari...') : placeholder}
+          disabled={disabled}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground min-w-0 h-full py-0"
+        />
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          {value && !isOpen && (
-            <span
-              onClick={handleClear}
-              className="text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer">
+          {value && (
+            <span onClick={handleClear} className="text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer">
               <X className="h-3 w-3" />
             </span>
           )}
           <ChevronDown
             className={`h-4 w-4 text-muted-foreground transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+            onClick={() => { if (!disabled) { isOpen ? close() : inputRef.current?.focus(); } }}
           />
         </div>
       </div>
 
-      {/* Dropdown panel */}
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={close} />
+          <div className="fixed inset-0 z-40" onMouseDown={close} onTouchEnd={(e) => { e.preventDefault(); close(); }} />
           <div className="absolute left-0 top-full mt-1 w-full min-w-[200px] bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-            <div className={`max-h-52 overflow-y-auto ${dropdownClassName}`}>
+            <div
+              className={`max-h-52 overflow-y-auto ${dropdownClassName}`}
+              style={{ WebkitOverflowScrolling: 'touch' }}
+              onTouchEnd={(e) => e.stopPropagation()}
+            >
               {filtered.length === 0 ? (
                 <div className="py-4 text-center text-xs text-muted-foreground">Tidak ditemukan.</div>
               ) : (
                 groupOrder.map((group) => (
                   <div key={group}>
-                    {/* Group header — tidak pakai sticky */}
                     {group !== '__none__' && (
                       <div className="px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-muted/40 border-y border-border/40">
                         {group}
@@ -141,7 +144,8 @@ export function SearchableDropdown({
                       <button
                         key={opt.value}
                         type="button"
-                        onClick={() => handleSelect(opt.value)}
+                        onMouseDown={(e) => { e.preventDefault(); handleSelect(opt.value); }}
+                        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); handleSelect(opt.value); }}
                         className={`w-full text-left px-3 py-2.5 transition-colors border-b border-border/30 last:border-0
                           ${value === opt.value
                             ? 'bg-primary/10 text-primary font-semibold'

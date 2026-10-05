@@ -426,9 +426,10 @@ export default function AdminData() {
     className: "!bg-primary !text-primary-foreground border-none font-medium !text-[16px] !p-4",
   };
 
-  const API_URL_ROUTES = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/transportations/routes` : "http://localhost:3000/api/admin/transportations/routes";
-  const API_URL_TRANS = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/transportations/trans` : "http://localhost:3000/api/admin/transportations/trans";
-  const API_URL_STOPS = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/transportations/stops` : "http://localhost:3000/api/admin/transportations/stops";
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const API_URL_ROUTES = `${BASE_URL}/api/admin/transportations/routes`;
+  const API_URL_TRANS  = `${BASE_URL}/api/admin/transportations/trans`;
+  const API_URL_STOPS  = `${BASE_URL}/api/admin/transportations/stops`;
   const token = localStorage.getItem("token");
 
   const fetchRoutes = async () => {

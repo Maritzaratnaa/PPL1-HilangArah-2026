@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Login from "./pages/Auth/Login";
@@ -40,7 +40,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/home" element={<Home />} />
@@ -64,12 +64,12 @@ const App = () => (
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/data" element={<AdminTransport />} />
           <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/dashboard" element={<Dashboard/>} />
-          <Route path="/admin/manage" element={<AdminManage/>} />
+          <Route path="/Admin/Dashboard" element={<Dashboard/>} />
+          <Route path="/Admin/Manage" element={<AdminManage/>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -32,7 +32,8 @@ interface Stats {
   inactive: number;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE = `${BASE_URL}/api`;
 
 const CATEGORY_MAP: Record<string, string> = {
   'general': 'General',

@@ -351,6 +351,7 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Bagian kode langganan dll tetap sama ke bawah... */}
             <div className="rounded-xl p-5 mb-0 self-end" style={subCardStyle}>
               {hasPendingPayment ? (
                 <>
@@ -396,6 +397,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Sisa section bawah (Ringkasan & Akses Cepat) dipertahankan sesuai kode aslimu */}
       <section className="bg-muted/50 py-10 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-lg font-bold mb-5">Ringkasan Saya</h2>
