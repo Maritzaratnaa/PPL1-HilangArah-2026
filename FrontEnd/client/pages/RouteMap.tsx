@@ -21,7 +21,9 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const containerStyle = { width: "100%", height: "100%" };
+const GOOGLE_MAPS_LIBRARIES: ("places")[] = ["places"];
 
 interface Facility {
   low_entry: boolean;
@@ -251,7 +253,6 @@ function StopBadges({
   );
 }
 
-// --- Real-time info card, dibuat rapi & reusable ---
 function RealTimeInfoCard({
   info,
   legIdx,
@@ -306,7 +307,6 @@ function RealTimeInfoCard({
           </div>
         </div>
 
-        {/* Kepadatan Penumpang & Cuaca (kanan) sebaris */}
         <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
           <div className="rounded-full bg-purple-100 dark:bg-purple-950/40 p-1.5 shrink-0">
             <Users size={12} className="text-purple-600 dark:text-purple-400" />
@@ -351,7 +351,7 @@ export default function RouteMap() {
   const isMapsEnabled = import.meta.env.VITE_ENABLE_MAPS === "true";
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: isMapsEnabled ? import.meta.env.VITE_GOOGLE_MAPS_API_KEY : "",
-    libraries: ["places"],
+    libraries: GOOGLE_MAPS_LIBRARIES, 
   });
 
   const directionsCallback = useCallback(
@@ -377,89 +377,177 @@ export default function RouteMap() {
       eta_kedatangan_menit: Math.floor(Math.random() * 10) + 2,
       waktu_tempuh_menit: Math.floor(Math.random() * 25) + 10,
       cuaca: ["Cerah", "Berawan", "Hujan Ringan"][Math.floor(Math.random() * 3)],
-      kepadatan_penumpang: ["Loading...", "Memuat Data..."][Math.floor(Math.random() * 2)], // Default sebelum diisi ML
+      kepadatan_penumpang: ["Loading...", "Memuat Data..."][Math.floor(Math.random() * 2)],
     };
   };
 
-  const mockTrafficNews = "Ada penutupan jalan di area Sudirman akibat perbaikan utilitas.";
-  
-  // 1. Buat fungsi untuk memanggil API ML Backend
-  const fetchMLPredictions = async () => {
-    console.log("🚀 [FRONTEND] fetchMLPredictions dipanggil! selectedRoute:", selectedRoute);
-  
-  if (!selectedRoute || !selectedRoute.legs) {
-    console.log("❌ [FRONTEND] Dibatalkan karena selectedRoute atau legs kosong!");
-    return;
-  }
-
+  const getTrafficFromGoogleDirections = (
+    leg: JourneyLeg,
+    gmapResponse: google.maps.DirectionsResult | null
+  ): "Lancar" | "Padat Merayap" | "Macet" => {
     try {
-      const legsPayload = selectedRoute.legs.map((leg, idx) => {
-        const prevTime = idx === 0 ? 0 : selectedRoute.legs[idx - 1].estimated_time_minutes;
-        
-        return {
-          route_id: leg.route_name, // Sesuaikan dengan key di DB Anda (contoh: "1M", "S21")
-          offset_menit: prevTime
-        };
-      });
+      if (gmapResponse?.routes?.[0]?.legs?.[0]?.duration?.value) {
+        const gmapDurationMinutes = Math.round(
+          gmapResponse.routes[0].legs[0].duration.value / 60
+        );
+        const baseDuration = leg.estimated_time_minutes || 15;
+        const ratio = gmapDurationMinutes / baseDuration;
 
-      // Panggil API Backend (Sesuaikan URL dan port backend Anda)
-      // Tambahkan header Authorization jika menggunakan token (verifyToken)
-      const token = localStorage.getItem('token'); // Ambil token dari storage
-      
-      const response = await fetch("http://localhost:3000/api/prediction", {
+        if (ratio >= 1.25) return "Macet";
+        if (ratio >= 1.05) return "Padat Merayap";
+        return "Lancar";
+      }
+    } catch {
+    }
+    return "Lancar";
+  };
+
+  const fetchETA = async (leg: JourneyLeg, currentRealTimeInfo?: RealTimeInfo): Promise<number> => {
+    try {
+      const token = localStorage.getItem("token");
+      const statusLaluLintas = currentRealTimeInfo?.status_lalu_lintas 
+        || ["Lancar", "Padat Merayap", "Macet"][Math.floor(Math.random() * 3)];
+      const kondisiCuaca = currentRealTimeInfo?.cuaca
+        || ["Cerah", "Berawan", "Hujan Ringan"][Math.floor(Math.random() * 3)];
+      const waktuTempuh = leg.estimated_time_minutes;
+
+      const res = await fetch(`${BASE_URL}/api/predict-eta`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ legs: legsPayload })
+        body: JSON.stringify({
+          status_lalu_lintas: statusLaluLintas,
+          kondisi_cuaca: kondisiCuaca,
+          waktu_tempuh_menit: waktuTempuh,
+        }),
       });
 
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        // 2. Gabungkan hasil dari Python ML ke tampilan Frontend
-        const newData: Record<number, RealTimeInfo> = {};
-        
-        selectedRoute.legs.forEach((_, idx) => {
-          const mlResult = result.data[idx]; 
-          
-          // Karena model ML Anda baru memprediksi 'kepadatan', 
-          // sementara frontend butuh banyak info (cuaca, ETA), 
-          // kita kombinasikan hasil ML dengan data dummy/API lain
-          newData[idx] = {
-            ...generateMockData(), // Sisa data (cuaca, kursi) tetap dari mock/API lain
-            cuaca: result.cuaca || "Cerah",
-            status_lalu_lintas: mlResult ? mlResult.kepadatan : "Data tidak tersedia",
-            kepadatan_penumpang: mlResult ? mlResult.kepadatan : "Data tidak tersedia"
-          };
-        });
-        
-        setRealTimeInfo(newData);
-      }
-    } catch (error) {
-      console.error("Gagal mengambil prediksi ML:", error);
-      // Fallback ke data mock jika API gagal
-      const fallbackData: Record<number, RealTimeInfo> = {};
-      selectedRoute.legs.forEach((_, idx) => {
-        fallbackData[idx] = generateMockData();
-      });
-      setRealTimeInfo(fallbackData);
+      const json = await res.json();
+      if (json.success) return Math.round(json.eta_minutes);
+      return leg.estimated_time_minutes;
+    } catch {
+      return leg.estimated_time_minutes;
     }
   };
 
-  // 3. Panggil saat rute pertama kali diload
-  useEffect(() => {
-    fetchMLPredictions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRoute]);
+  const [trafficNews, setTrafficNews] = useState<string | null>(null);
 
-  const handleRefreshRealtime = (legIdx: number) => {
+  const fetchIncidentNews = async (routeNameOrId: string, statusLaluLintas: string) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/insiden/cek`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          route_id: routeNameOrId,
+          status_lalu_lintas: statusLaluLintas,
+        }),
+      });
+      const json = await res.json();
+      if (json && json.berita_insiden) {
+        setTrafficNews(json.berita_insiden);
+      } else {
+        setTrafficNews(null);
+      }
+    } catch {
+      setTrafficNews(null);
+    }
+  };
+
+  const fetchMLPredictions = async () => {
+    if (!selectedRoute || !selectedRoute.legs) return null;
+    try {
+      const legsPayload = selectedRoute.legs.map((leg, idx) => {
+        const prevTime = idx === 0 ? 0 : selectedRoute.legs[idx - 1].estimated_time_minutes;
+        return {
+          route_id: leg.route_name,
+          offset_menit: prevTime,
+        };
+      });
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BASE_URL}/api/prediction`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ legs: legsPayload }),
+      });
+
+      const result = await res.json();
+      return result;
+    } catch (error) {
+      console.error("Gagal mengambil prediksi ML kepadatan:", error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (selectedRoute?.legs) {
+      const updateData = async () => {
+        const mlResultData = await fetchMLPredictions();
+        const initialData: Record<number, RealTimeInfo> = {};
+
+        for (let idx = 0; idx < selectedRoute.legs.length; idx++) {
+          const leg = selectedRoute.legs[idx];
+          const mlResult = mlResultData?.data?.[idx];
+          const trafficStatus = getTrafficFromGoogleDirections(leg, response);
+
+          const mockBase: RealTimeInfo = {
+            ...generateMockData(),
+            status_lalu_lintas: trafficStatus,
+            cuaca: mlResultData?.cuaca || "Cerah",
+            kepadatan_penumpang: mlResult ? mlResult.kepadatan : "Data tidak tersedia",
+          };
+
+          const etaMinutes = await fetchETA(leg, mockBase);
+          initialData[idx] = {
+            ...mockBase,
+            eta_kedatangan_menit: etaMinutes,
+            waktu_tempuh_menit: leg.estimated_time_minutes,
+          };
+
+          if (idx === 0) {
+            fetchIncidentNews(leg.route_name, trafficStatus);
+          }
+        }
+        setRealTimeInfo(initialData);
+      };
+      updateData();
+    }
+  }, [selectedRoute, response]);
+
+  const handleRefreshRealtime = async (legIdx: number) => {
     setIsRefreshing((prev) => ({ ...prev, [legIdx]: true }));
-    setTimeout(() => {
-      setRealTimeInfo((prev) => ({ ...prev, [legIdx]: generateMockData() }));
+    try {
+      const leg = selectedRoute.legs[legIdx];
+      const trafficStatus = getTrafficFromGoogleDirections(leg, response);
+      const prevInfo = realTimeInfo[legIdx];
+
+      const mockBase: RealTimeInfo = {
+        ...generateMockData(),
+        status_lalu_lintas: trafficStatus,
+        kepadatan_penumpang: prevInfo?.kepadatan_penumpang || "Data tidak tersedia",
+      };
+
+      const etaMinutes = await fetchETA(leg, mockBase);
+      setRealTimeInfo((prev) => ({
+        ...prev,
+        [legIdx]: {
+          ...mockBase,
+          eta_kedatangan_menit: etaMinutes,
+          waktu_tempuh_menit: leg.estimated_time_minutes,
+        },
+      }));
+
+      if (legIdx === 0) {
+        fetchIncidentNews(leg.route_name, trafficStatus);
+      }
+    } finally {
       setIsRefreshing((prev) => ({ ...prev, [legIdx]: false }));
-    }, 800);
+    }
   };
 
   const toggleStops = (legIdx: number) => {
@@ -548,7 +636,6 @@ export default function RouteMap() {
     lastLeg.route_path?.find((s) => s.stop_name === finalStopName) ||
     lastLeg.route_path?.[lastLeg.route_path.length - 1];
 
-  // --- Konten sidebar (dipakai untuk desktop & mobile bottom-sheet) ---
   const sidebarContent = (
     <>
       {!isMobile && (
@@ -564,7 +651,6 @@ export default function RouteMap() {
         </div>
       )}
 
-      {/* HEADER CARD */}
       <div className="rounded-xl border border-border p-4 space-y-3 bg-background">
         <div className="flex items-center gap-2">
           {selectedRoute.legs.map((leg, i) => (
@@ -601,10 +687,10 @@ export default function RouteMap() {
           </span>
         )}
 
-        {mockTrafficNews && (
+        {trafficNews && (
           <div className="flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900 rounded-lg p-2.5">
             <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-            <span>Info: {mockTrafficNews}</span>
+            <span>Info: {trafficNews}</span>
           </div>
         )}
 
@@ -615,7 +701,6 @@ export default function RouteMap() {
         )}
       </div>
 
-      {/* ROUTE TIMELINE */}
       <div className="space-y-4 mt-4">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
           Rute Perjalanan
@@ -776,11 +861,9 @@ export default function RouteMap() {
     </>
   );
 
-  // ================= DESKTOP LAYOUT =================
   if (!isMobile) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background">
-        {/* SIDEBAR — KIRI */}
         <div
           style={{ width: panelWidth }}
           className="h-full overflow-y-auto border-r border-border bg-card p-4 shrink-0"
@@ -788,25 +871,20 @@ export default function RouteMap() {
           {sidebarContent}
         </div>
 
-        {/* RESIZE HANDLE */}
         <div
           onMouseDown={onMouseDown}
           className="w-1.5 cursor-col-resize bg-border hover:bg-primary/40 transition-colors shrink-0"
         />
 
-        {/* MAP — KANAN */}
         <div className="relative flex-1 h-full">{mapView}</div>
       </div>
     );
   }
 
-  // ================= MOBILE LAYOUT =================
   return (
     <div className="relative h-screen w-full overflow-hidden bg-background">
-      {/* MAP full-screen di belakang */}
       <div className="absolute inset-0">{mapView}</div>
 
-      {/* Tombol kembali mengambang */}
       <button
         onClick={() => navigate(-1)}
         className="absolute top-4 left-4 z-20 bg-card border border-border rounded-full p-2.5 shadow-lg"
@@ -814,13 +892,11 @@ export default function RouteMap() {
         <ArrowLeft size={18} />
       </button>
 
-      {/* BOTTOM SHEET — peek kecil, bisa di-expand */}
       <div
         className={`absolute left-0 right-0 bottom-0 z-30 bg-card rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] border-t border-border flex flex-col transition-all duration-300 ease-out ${
           showPanel ? "h-[75vh]" : "h-28"
         }`}
       >
-        {/* Header sheet — selalu terlihat, klik untuk toggle */}
         <button
           onClick={() => setShowPanel(!showPanel)}
           className="shrink-0 pt-2.5 pb-2 px-4 text-left"
@@ -844,7 +920,6 @@ export default function RouteMap() {
           </div>
         </button>
 
-        {/* Konten sheet — scroll sendiri, hanya render saat expanded */}
         {showPanel && (
           <div className="flex-1 overflow-y-auto px-4 pb-6">{sidebarContent}</div>
         )}
