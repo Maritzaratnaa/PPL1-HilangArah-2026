@@ -256,7 +256,6 @@ function StopBadges({
   );
 }
 
-// --- Real-time info card, dibuat rapi & reusable ---
 function RealTimeInfoCard({
   info,
   legIdx,
@@ -311,7 +310,6 @@ function RealTimeInfoCard({
           </div>
         </div>
 
-        {/* Kursi Terisi (kiri) & Cuaca (kanan) sebaris */}
         <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
           <div className="rounded-full bg-purple-100 dark:bg-purple-950/40 p-1.5 shrink-0">
             <Users size={12} className="text-purple-600 dark:text-purple-400" />
@@ -448,7 +446,6 @@ export default function RouteMap() {
     }
   };
 
-  // State untuk berita insiden dinamis dari backend
   const [trafficNews, setTrafficNews] = useState<string | null>(null);
 
   const fetchIncidentNews = async (routeNameOrId: string, statusLaluLintas: string) => {
@@ -472,7 +469,6 @@ export default function RouteMap() {
     }
   };
 
-  // Load data awal & update otomatis saat rute Google Maps selesai dimuat
   useEffect(() => {
     if (selectedRoute?.legs) {
       const updateData = async () => {
@@ -494,7 +490,6 @@ export default function RouteMap() {
             waktu_tempuh_menit: leg.estimated_time_minutes,
           };
 
-          // Cek berita insiden untuk rute pertama
           if (idx === 0) {
             fetchIncidentNews(leg.route_name, trafficStatus);
           }
@@ -505,7 +500,6 @@ export default function RouteMap() {
     }
   }, [selectedRoute, response]);
 
-  // Handler saat tombol "Perbarui" diklik
   const handleRefreshRealtime = async (legIdx: number) => {
     setIsRefreshing((prev) => ({ ...prev, [legIdx]: true }));
     try {
@@ -525,7 +519,6 @@ export default function RouteMap() {
         },
       }));
 
-      // Cek ulang berita insiden saat di-refresh
       if (legIdx === 0) {
         fetchIncidentNews(leg.route_name, trafficStatus);
       }
@@ -620,7 +613,6 @@ export default function RouteMap() {
     lastLeg.route_path?.find((s) => s.stop_name === finalStopName) ||
     lastLeg.route_path?.[lastLeg.route_path.length - 1];
 
-  // --- Konten sidebar (dipakai untuk desktop & mobile bottom-sheet) ---
   const sidebarContent = (
     <>
       {!isMobile && (
@@ -636,7 +628,6 @@ export default function RouteMap() {
         </div>
       )}
 
-      {/* HEADER CARD */}
       <div className="rounded-xl border border-border p-4 space-y-3 bg-background">
         <div className="flex items-center gap-2">
           {selectedRoute.legs.map((leg, i) => (
@@ -687,7 +678,6 @@ export default function RouteMap() {
         )}
       </div>
 
-      {/* ROUTE TIMELINE */}
       <div className="space-y-4 mt-4">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
           Rute Perjalanan
@@ -848,11 +838,9 @@ export default function RouteMap() {
     </>
   );
 
-  // ================= DESKTOP LAYOUT =================
   if (!isMobile) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background">
-        {/* SIDEBAR — KIRI */}
         <div
           style={{ width: panelWidth }}
           className="h-full overflow-y-auto border-r border-border bg-card p-4 shrink-0"
@@ -860,25 +848,20 @@ export default function RouteMap() {
           {sidebarContent}
         </div>
 
-        {/* RESIZE HANDLE */}
         <div
           onMouseDown={onMouseDown}
           className="w-1.5 cursor-col-resize bg-border hover:bg-primary/40 transition-colors shrink-0"
         />
 
-        {/* MAP — KANAN */}
         <div className="relative flex-1 h-full">{mapView}</div>
       </div>
     );
   }
 
-  // ================= MOBILE LAYOUT =================
   return (
     <div className="relative h-screen w-full overflow-hidden bg-background">
-      {/* MAP full-screen di belakang */}
       <div className="absolute inset-0">{mapView}</div>
 
-      {/* Tombol kembali mengambang */}
       <button
         onClick={() => navigate(-1)}
         className="absolute top-4 left-4 z-20 bg-card border border-border rounded-full p-2.5 shadow-lg"
@@ -886,13 +869,11 @@ export default function RouteMap() {
         <ArrowLeft size={18} />
       </button>
 
-      {/* BOTTOM SHEET — peek kecil, bisa di-expand */}
       <div
         className={`absolute left-0 right-0 bottom-0 z-30 bg-card rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] border-t border-border flex flex-col transition-all duration-300 ease-out ${
           showPanel ? "h-[75vh]" : "h-28"
         }`}
       >
-        {/* Header sheet — selalu terlihat, klik untuk toggle */}
         <button
           onClick={() => setShowPanel(!showPanel)}
           className="shrink-0 pt-2.5 pb-2 px-4 text-left"
@@ -916,7 +897,6 @@ export default function RouteMap() {
           </div>
         </button>
 
-        {/* Konten sheet — scroll sendiri, hanya render saat expanded */}
         {showPanel && (
           <div className="flex-1 overflow-y-auto px-4 pb-6">{sidebarContent}</div>
         )}

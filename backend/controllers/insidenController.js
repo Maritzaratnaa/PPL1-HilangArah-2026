@@ -1,8 +1,7 @@
 const { getCacheInsiden } = require('../utils/cronInsiden');
-const db = require('../db'); // Pastikan import koneksi database MySQL-mu
+const db = require('../db'); 
 
 const cekRute = async (req, res) => {
-    // Frontend sekarang cukup mengirim 2 data ini saja:
     const { route_id, status_lalu_lintas } = req.body;
     let berita_insiden = null;
 
@@ -16,7 +15,6 @@ const cekRute = async (req, res) => {
         `;
         const [rows] = await db.query(query, [route_id, route_id]);
 
-        // Jika rute tidak ditemukan di database
         if (rows.length === 0) {
             return res.status(404).json({ error: "Rute tidak ditemukan di database." });
         }
@@ -24,7 +22,6 @@ const cekRute = async (req, res) => {
         const jenis_kendaraan = rows[0].jenis_kendaraan;
         const actualRouteId = rows[0].route_id;
 
-        // 2. Terapkan Logika Rule-Based Interceptor
         const kebalInsiden = (jenis_kendaraan === 'MRT' || jenis_kendaraan === 'LRT');
         const isLancar = (status_lalu_lintas === 'Lancar');
 
@@ -35,10 +32,9 @@ const cekRute = async (req, res) => {
             }
         }
 
-        // 3. Kirim Response
         res.json({
             route_id: route_id,
-            kendaraan_terdeteksi: jenis_kendaraan, // Mengembalikan info armada dari DB
+            kendaraan_terdeteksi: jenis_kendaraan,
             berita_insiden: berita_insiden
         });
 
