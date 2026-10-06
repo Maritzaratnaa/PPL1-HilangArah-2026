@@ -448,8 +448,31 @@ export default function RouteMap() {
     }
   };
 
-  const mockTrafficNews = "Ada penutupan jalan di area Sudirman akibat perbaikan utilitas.";
+  // State untuk berita insiden dinamis dari backend
+  const [trafficNews, setTrafficNews] = useState<string | null>(null);
 
+  const fetchIncidentNews = async (routeNameOrId: string, statusLaluLintas: string) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/insiden/cek`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          route_id: routeNameOrId,
+          status_lalu_lintas: statusLaluLintas,
+        }),
+      });
+      const json = await res.json();
+      if (json && json.berita_insiden) {
+        setTrafficNews(json.berita_insiden);
+      } else {
+        setTrafficNews(null);
+      }
+    } catch {
+      setTrafficNews(null);
+    }
+  };
+
+  // Load data awal & update otomatis saat rute Google Maps selesai dimuat
   useEffect(() => {
     if (selectedRoute?.legs) {
       const updateData = async () => {
@@ -470,6 +493,11 @@ export default function RouteMap() {
             eta_kedatangan_menit: etaMinutes,
             waktu_tempuh_menit: leg.estimated_time_minutes,
           };
+
+          // Cek berita insiden untuk rute pertama
+          if (idx === 0) {
+            fetchIncidentNews(leg.route_name, trafficStatus);
+          }
         }
         setRealTimeInfo(initialData);
       };
@@ -477,6 +505,7 @@ export default function RouteMap() {
     }
   }, [selectedRoute, response]);
 
+  // Handler saat tombol "Perbarui" diklik
   const handleRefreshRealtime = async (legIdx: number) => {
     setIsRefreshing((prev) => ({ ...prev, [legIdx]: true }));
     try {
@@ -495,6 +524,11 @@ export default function RouteMap() {
           waktu_tempuh_menit: leg.estimated_time_minutes,
         },
       }));
+
+      // Cek ulang berita insiden saat di-refresh
+      if (legIdx === 0) {
+        fetchIncidentNews(leg.route_name, trafficStatus);
+      }
     } finally {
       setIsRefreshing((prev) => ({ ...prev, [legIdx]: false }));
     }
@@ -639,10 +673,10 @@ export default function RouteMap() {
           </span>
         )}
 
-        {mockTrafficNews && (
+        {trafficNews && (
           <div className="flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900 rounded-lg p-2.5">
             <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-            <span>Info: {mockTrafficNews}</span>
+            <span>Info: {trafficNews}</span>
           </div>
         )}
 
