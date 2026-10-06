@@ -21,7 +21,9 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const containerStyle = { width: "100%", height: "100%" };
+const GOOGLE_MAPS_LIBRARIES: ("places")[] = ["places"];
 
 interface Facility {
   low_entry: boolean;
@@ -357,7 +359,7 @@ export default function RouteMap() {
   const isMapsEnabled = import.meta.env.VITE_ENABLE_MAPS === "true";
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: isMapsEnabled ? import.meta.env.VITE_GOOGLE_MAPS_API_KEY : "",
-    libraries: ["places"],
+    libraries: GOOGLE_MAPS_LIBRARIES, 
   });
 
   const directionsCallback = useCallback(
@@ -393,25 +395,109 @@ export default function RouteMap() {
     };
   };
 
+  const getTrafficFromGoogleDirections = (
+    leg: JourneyLeg,
+    gmapResponse: google.maps.DirectionsResult | null
+  ): "Lancar" | "Padat Merayap" | "Macet" => {
+    try {
+      if (gmapResponse?.routes?.[0]?.legs?.[0]?.duration?.value) {
+        const gmapDurationMinutes = Math.round(
+          gmapResponse.routes[0].legs[0].duration.value / 60
+        );
+        const baseDuration = leg.estimated_time_minutes || 15;
+
+        const ratio = gmapDurationMinutes / baseDuration;
+
+        if (ratio >= 1.25) return "Macet";
+        if (ratio >= 1.05) return "Padat Merayap";
+        return "Lancar";
+      }
+    } catch {
+    }
+    return "Lancar";
+  };
+
+  const fetchETA = async (leg: JourneyLeg, currentRealTimeInfo?: RealTimeInfo): Promise<number> => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const statusLaluLintas = currentRealTimeInfo?.status_lalu_lintas 
+        || ["Lancar", "Padat Merayap", "Macet"][Math.floor(Math.random() * 3)];
+      const kondisiCuaca = currentRealTimeInfo?.cuaca
+        || ["Cerah", "Berawan", "Hujan Ringan"][Math.floor(Math.random() * 3)];
+      const waktuTempuh = leg.estimated_time_minutes;
+
+      const res = await fetch(`${BASE_URL}/api/predict-eta`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          status_lalu_lintas: statusLaluLintas,
+          kondisi_cuaca: kondisiCuaca,
+          waktu_tempuh_menit: waktuTempuh,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success) return Math.round(json.eta_minutes);
+      return leg.estimated_time_minutes;
+    } catch {
+      return leg.estimated_time_minutes;
+    }
+  };
+
   const mockTrafficNews = "Ada penutupan jalan di area Sudirman akibat perbaikan utilitas.";
 
   useEffect(() => {
     if (selectedRoute?.legs) {
-      const initialData: Record<number, RealTimeInfo> = {};
-      selectedRoute.legs.forEach((_, idx) => {
-        initialData[idx] = generateMockData();
-      });
-      setRealTimeInfo(initialData);
+      const updateData = async () => {
+        const initialData: Record<number, RealTimeInfo> = {};
+        for (let idx = 0; idx < selectedRoute.legs.length; idx++) {
+          const leg = selectedRoute.legs[idx];
+          
+          const trafficStatus = getTrafficFromGoogleDirections(leg, response);
+          
+          const mockBase = {
+            ...generateMockData(),
+            status_lalu_lintas: trafficStatus,
+          };
+          
+          const etaMinutes = await fetchETA(leg, mockBase);
+          initialData[idx] = {
+            ...mockBase,
+            eta_kedatangan_menit: etaMinutes,
+            waktu_tempuh_menit: leg.estimated_time_minutes,
+          };
+        }
+        setRealTimeInfo(initialData);
+      };
+      updateData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRoute]);
+  }, [selectedRoute, response]);
 
-  const handleRefreshRealtime = (legIdx: number) => {
+  const handleRefreshRealtime = async (legIdx: number) => {
     setIsRefreshing((prev) => ({ ...prev, [legIdx]: true }));
-    setTimeout(() => {
-      setRealTimeInfo((prev) => ({ ...prev, [legIdx]: generateMockData() }));
+    try {
+      const leg = selectedRoute.legs[legIdx];
+      const trafficStatus = getTrafficFromGoogleDirections(leg, response);
+      const mockBase = {
+        ...generateMockData(),
+        status_lalu_lintas: trafficStatus,
+      };
+      const etaMinutes = await fetchETA(leg, mockBase);
+      setRealTimeInfo((prev) => ({
+        ...prev,
+        [legIdx]: {
+          ...mockBase,
+          eta_kedatangan_menit: etaMinutes,
+          waktu_tempuh_menit: leg.estimated_time_minutes,
+        },
+      }));
+    } finally {
       setIsRefreshing((prev) => ({ ...prev, [legIdx]: false }));
-    }, 800);
+    }
   };
 
   const toggleStops = (legIdx: number) => {
