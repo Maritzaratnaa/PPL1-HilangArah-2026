@@ -67,10 +67,7 @@ interface RealTimeInfo {
   eta_kedatangan_menit: number;
   waktu_tempuh_menit: number;
   cuaca: string;
-  kursi_umum_terisi: number;
-  kursi_umum_total: number;
-  kursi_prioritas_terisi: number;
-  kursi_prioritas_total: number;
+  kepadatan_penumpang: string;
 }
 
 function getTransportIcon(type: string) {
@@ -309,18 +306,15 @@ function RealTimeInfoCard({
           </div>
         </div>
 
-        {/* Kursi Terisi (kiri) & Cuaca (kanan) sebaris */}
+        {/* Kepadatan Penumpang & Cuaca (kanan) sebaris */}
         <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
           <div className="rounded-full bg-purple-100 dark:bg-purple-950/40 p-1.5 shrink-0">
             <Users size={12} className="text-purple-600 dark:text-purple-400" />
           </div>
           <div className="min-w-0">
             <p className="text-[10px] text-muted-foreground">Kursi Terisi</p>
-            <p className="text-xs font-bold leading-tight">
-              Prioritas: {info.kursi_prioritas_terisi}/{info.kursi_prioritas_total}
-            </p>
-            <p className="text-xs font-bold leading-tight">
-              Umum: {info.kursi_umum_terisi}/{info.kursi_umum_total}
+            <p className="text-xs font-bold leading-tight mt-0.5">
+              {info.kepadatan_penumpang}
             </p>
           </div>
         </div>
@@ -378,31 +372,85 @@ export default function RouteMap() {
   const startWidth = useRef(DEFAULT_WIDTH);
 
   const generateMockData = (): RealTimeInfo => {
-    const kursiUmumTotal = Math.floor(Math.random() * 20) + 15;
-    const kursiPrioTotal = Math.floor(Math.random() * 4) + 4;
-
     return {
       status_lalu_lintas: ["Lancar", "Padat Merayap", "Macet"][Math.floor(Math.random() * 3)],
       eta_kedatangan_menit: Math.floor(Math.random() * 10) + 2,
       waktu_tempuh_menit: Math.floor(Math.random() * 25) + 10,
       cuaca: ["Cerah", "Berawan", "Hujan Ringan"][Math.floor(Math.random() * 3)],
-      kursi_umum_total: kursiUmumTotal,
-      kursi_umum_terisi: Math.floor(Math.random() * kursiUmumTotal),
-      kursi_prioritas_total: kursiPrioTotal,
-      kursi_prioritas_terisi: Math.floor(Math.random() * kursiPrioTotal),
+      kepadatan_penumpang: ["Loading...", "Memuat Data..."][Math.floor(Math.random() * 2)], // Default sebelum diisi ML
     };
   };
 
   const mockTrafficNews = "Ada penutupan jalan di area Sudirman akibat perbaikan utilitas.";
+  
+  // 1. Buat fungsi untuk memanggil API ML Backend
+  const fetchMLPredictions = async () => {
+    console.log("🚀 [FRONTEND] fetchMLPredictions dipanggil! selectedRoute:", selectedRoute);
+  
+  if (!selectedRoute || !selectedRoute.legs) {
+    console.log("❌ [FRONTEND] Dibatalkan karena selectedRoute atau legs kosong!");
+    return;
+  }
 
-  useEffect(() => {
-    if (selectedRoute?.legs) {
-      const initialData: Record<number, RealTimeInfo> = {};
-      selectedRoute.legs.forEach((_, idx) => {
-        initialData[idx] = generateMockData();
+    try {
+      const legsPayload = selectedRoute.legs.map((leg, idx) => {
+        const prevTime = idx === 0 ? 0 : selectedRoute.legs[idx - 1].estimated_time_minutes;
+        
+        return {
+          route_id: leg.route_name, // Sesuaikan dengan key di DB Anda (contoh: "1M", "S21")
+          offset_menit: prevTime
+        };
       });
-      setRealTimeInfo(initialData);
+
+      // Panggil API Backend (Sesuaikan URL dan port backend Anda)
+      // Tambahkan header Authorization jika menggunakan token (verifyToken)
+      const token = localStorage.getItem('token'); // Ambil token dari storage
+      
+      const response = await fetch("http://localhost:3000/api/prediction", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify({ legs: legsPayload })
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        // 2. Gabungkan hasil dari Python ML ke tampilan Frontend
+        const newData: Record<number, RealTimeInfo> = {};
+        
+        selectedRoute.legs.forEach((_, idx) => {
+          const mlResult = result.data[idx]; 
+          
+          // Karena model ML Anda baru memprediksi 'kepadatan', 
+          // sementara frontend butuh banyak info (cuaca, ETA), 
+          // kita kombinasikan hasil ML dengan data dummy/API lain
+          newData[idx] = {
+            ...generateMockData(), // Sisa data (cuaca, kursi) tetap dari mock/API lain
+            cuaca: result.cuaca || "Cerah",
+            status_lalu_lintas: mlResult ? mlResult.kepadatan : "Data tidak tersedia",
+            kepadatan_penumpang: mlResult ? mlResult.kepadatan : "Data tidak tersedia"
+          };
+        });
+        
+        setRealTimeInfo(newData);
+      }
+    } catch (error) {
+      console.error("Gagal mengambil prediksi ML:", error);
+      // Fallback ke data mock jika API gagal
+      const fallbackData: Record<number, RealTimeInfo> = {};
+      selectedRoute.legs.forEach((_, idx) => {
+        fallbackData[idx] = generateMockData();
+      });
+      setRealTimeInfo(fallbackData);
     }
+  };
+
+  // 3. Panggil saat rute pertama kali diload
+  useEffect(() => {
+    fetchMLPredictions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRoute]);
 

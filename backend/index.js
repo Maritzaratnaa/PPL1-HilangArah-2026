@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes'); 
@@ -16,6 +17,7 @@ const adminGuideRoutes = require('./routes/adminGuideRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
 const { mulaiCronInsiden } = require('./utils/cronInsiden');
 const insidenRoutes = require('./routes/insidenRoutes');
+const predictionRoutes = require('./routes/predictionRoutes');
 
 const app = express();
 
@@ -37,6 +39,7 @@ app.use('/api/search-routes', searchRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/insiden', insidenRoutes);
+app.use('/api/prediction', predictionRoutes);
 
 app.use('/api/admin/subscriptions', adminSubRoutes);
 app.use('/api/admin/manage', adminRoleRoutes);
