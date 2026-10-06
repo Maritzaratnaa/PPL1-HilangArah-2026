@@ -1,5 +1,5 @@
 # Gunakan Node.js versi 20
-FROM node:20-alpine
+FROM node:20-slim
 
 # Instal pnpm secara global di dalam Docker
 RUN npm install -g pnpm
