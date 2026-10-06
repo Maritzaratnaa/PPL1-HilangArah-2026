@@ -69,10 +69,7 @@ interface RealTimeInfo {
   eta_kedatangan_menit: number;
   waktu_tempuh_menit: number;
   cuaca: string;
-  kursi_umum_terisi: number;
-  kursi_umum_total: number;
-  kursi_prioritas_terisi: number;
-  kursi_prioritas_total: number;
+  kepadatan_penumpang: string;
 }
 
 function getTransportIcon(type: string) {
@@ -316,11 +313,8 @@ function RealTimeInfoCard({
           </div>
           <div className="min-w-0">
             <p className="text-[10px] text-muted-foreground">Kursi Terisi</p>
-            <p className="text-xs font-bold leading-tight">
-              Prioritas: {info.kursi_prioritas_terisi}/{info.kursi_prioritas_total}
-            </p>
-            <p className="text-xs font-bold leading-tight">
-              Umum: {info.kursi_umum_terisi}/{info.kursi_umum_total}
+            <p className="text-xs font-bold leading-tight mt-0.5">
+              {info.kepadatan_penumpang}
             </p>
           </div>
         </div>
@@ -378,18 +372,12 @@ export default function RouteMap() {
   const startWidth = useRef(DEFAULT_WIDTH);
 
   const generateMockData = (): RealTimeInfo => {
-    const kursiUmumTotal = Math.floor(Math.random() * 20) + 15;
-    const kursiPrioTotal = Math.floor(Math.random() * 4) + 4;
-
     return {
       status_lalu_lintas: ["Lancar", "Padat Merayap", "Macet"][Math.floor(Math.random() * 3)],
       eta_kedatangan_menit: Math.floor(Math.random() * 10) + 2,
       waktu_tempuh_menit: Math.floor(Math.random() * 25) + 10,
       cuaca: ["Cerah", "Berawan", "Hujan Ringan"][Math.floor(Math.random() * 3)],
-      kursi_umum_total: kursiUmumTotal,
-      kursi_umum_terisi: Math.floor(Math.random() * kursiUmumTotal),
-      kursi_prioritas_total: kursiPrioTotal,
-      kursi_prioritas_terisi: Math.floor(Math.random() * kursiPrioTotal),
+      kepadatan_penumpang: ["Loading...", "Memuat Data..."][Math.floor(Math.random() * 2)],
     };
   };
 
@@ -403,7 +391,6 @@ export default function RouteMap() {
           gmapResponse.routes[0].legs[0].duration.value / 60
         );
         const baseDuration = leg.estimated_time_minutes || 15;
-
         const ratio = gmapDurationMinutes / baseDuration;
 
         if (ratio >= 1.25) return "Macet";
@@ -418,7 +405,6 @@ export default function RouteMap() {
   const fetchETA = async (leg: JourneyLeg, currentRealTimeInfo?: RealTimeInfo): Promise<number> => {
     try {
       const token = localStorage.getItem("token");
-
       const statusLaluLintas = currentRealTimeInfo?.status_lalu_lintas 
         || ["Lancar", "Padat Merayap", "Macet"][Math.floor(Math.random() * 3)];
       const kondisiCuaca = currentRealTimeInfo?.cuaca
@@ -469,20 +455,53 @@ export default function RouteMap() {
     }
   };
 
+  const fetchMLPredictions = async () => {
+    if (!selectedRoute || !selectedRoute.legs) return null;
+    try {
+      const legsPayload = selectedRoute.legs.map((leg, idx) => {
+        const prevTime = idx === 0 ? 0 : selectedRoute.legs[idx - 1].estimated_time_minutes;
+        return {
+          route_id: leg.route_name,
+          offset_menit: prevTime,
+        };
+      });
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BASE_URL}/api/prediction`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ legs: legsPayload }),
+      });
+
+      const result = await res.json();
+      return result;
+    } catch (error) {
+      console.error("Gagal mengambil prediksi ML kepadatan:", error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (selectedRoute?.legs) {
       const updateData = async () => {
+        const mlResultData = await fetchMLPredictions();
         const initialData: Record<number, RealTimeInfo> = {};
+
         for (let idx = 0; idx < selectedRoute.legs.length; idx++) {
           const leg = selectedRoute.legs[idx];
-          
+          const mlResult = mlResultData?.data?.[idx];
           const trafficStatus = getTrafficFromGoogleDirections(leg, response);
-          
-          const mockBase = {
+
+          const mockBase: RealTimeInfo = {
             ...generateMockData(),
             status_lalu_lintas: trafficStatus,
+            cuaca: mlResultData?.cuaca || "Cerah",
+            kepadatan_penumpang: mlResult ? mlResult.kepadatan : "Data tidak tersedia",
           };
-          
+
           const etaMinutes = await fetchETA(leg, mockBase);
           initialData[idx] = {
             ...mockBase,
@@ -505,10 +524,14 @@ export default function RouteMap() {
     try {
       const leg = selectedRoute.legs[legIdx];
       const trafficStatus = getTrafficFromGoogleDirections(leg, response);
-      const mockBase = {
+      const prevInfo = realTimeInfo[legIdx];
+
+      const mockBase: RealTimeInfo = {
         ...generateMockData(),
         status_lalu_lintas: trafficStatus,
+        kepadatan_penumpang: prevInfo?.kepadatan_penumpang || "Data tidak tersedia",
       };
+
       const etaMinutes = await fetchETA(leg, mockBase);
       setRealTimeInfo((prev) => ({
         ...prev,
