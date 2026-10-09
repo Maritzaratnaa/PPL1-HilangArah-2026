@@ -1,28 +1,27 @@
-# Gunakan Node.js versi 20 yang ringan
-FROM node:20-alpine
+# Gunakan node:20-slim (berbasis Debian) agar instalasi ML lebih instan
+FROM node:20-slim
 
-# Buat folder kerja di dalam Docker
 WORKDIR /app
 
-# --- BAGIAN BARU: Instalasi Python & Library ML ---
-# Instal Python 3, pip, dan library ML versi native Alpine agar cepat dan stabil
-RUN apk add --no-cache python3 py3-pip py3-pandas py3-scikit-learn
+# Instal Python dan virtual environment
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip python3-venv && \
+    rm -rf /var/lib/apt/lists/*
 
-# Instal joblib menggunakan pip (gunakan flag ini karena aturan PEP 668 di Python baru)
-RUN pip3 install joblib --break-system-packages
-# -------------------------------------------------
+# Buat virtual environment untuk Python (standar baru keamanan pip)
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Salin package.json dan package-lock.json lebih dulu
+# Instal dependensi ML (langsung download pre-built, tidak perlu compile)
+RUN pip install --no-cache-dir pandas scikit-learn==1.6.1 joblib
+
+# Salin file konfigurasi Node.js
 COPY package*.json ./
-
-# Instal semua library (express, bcrypt, dll)
 RUN npm install
 
-# Salin sisa kode backend kamu
+# Salin sisa kode backend
 COPY . .
 
-# Beri tahu Docker bahwa backend jalan di port 3000
 EXPOSE 3000
-
-# Perintah untuk menyalakan server
 CMD ["npm", "start"]

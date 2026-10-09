@@ -85,9 +85,9 @@ exports.getRoutePrediction = async (req, res) => {
 
     for (let i = 0; i < legs.length; i++) {
       const leg = legs[i];
-      if (!leg.route_id) continue;
+      // HANYA PREDIKSI untuk leg yang valid transitnya (memiliki route_id dan halte_id awal)
+      if (!leg.route_id || !leg.halte_id) continue;
 
-      // Menggunakan tabel 'trans' sesuai struktur database Anda
       const query = `
         SELECT t.type AS jenis_kendaraan 
         FROM routes r 
@@ -102,7 +102,16 @@ exports.getRoutePrediction = async (req, res) => {
         
         if (jenis) {
           const { hari, jam } = hariJamWIB(Number(leg.offset_menit) || 0);
-          items.push({ hari, jam, jenis });
+          
+          // Mengirimkan feature konteks lengkap ke Python
+          items.push({ 
+            hari, 
+            jam, 
+            jenis_kendaraan: jenis,
+            route_id: leg.route_id,
+            halte_id: leg.halte_id,
+            kondisi_cuaca: cuacaRealtime
+          });
           idx.push(i);
         } else {
           console.log(`[DEBUG] Rute "${leg.route_id}" diabaikan (Tipe armada: ${dbJenis})`);
@@ -118,7 +127,6 @@ exports.getRoutePrediction = async (req, res) => {
       results.forEach((r, k) => { data[idx[k]] = r; });
     }
     
-    // Kirim hasil prediksi dan data cuaca ke frontend
     res.json({ 
       success: true, 
       data, 
