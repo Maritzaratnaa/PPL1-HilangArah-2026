@@ -313,7 +313,7 @@ function RealTimeInfoCard({
           </div>
           <div className="min-w-0">
             <p className="text-[10px] text-muted-foreground">Kursi Terisi</p>
-            <p className="text-xs font-bold leading-tight mt-0.5">
+            <p className="text-xs font-bold leading-tight mt-0.5 whitespace-pre-wrap">
               {info.kepadatan_penumpang}
             </p>
           </div>
@@ -458,11 +458,16 @@ export default function RouteMap() {
   const fetchMLPredictions = async () => {
     if (!selectedRoute || !selectedRoute.legs) return null;
     try {
-      const legsPayload = selectedRoute.legs.map((leg, idx) => {
-        const prevTime = idx === 0 ? 0 : selectedRoute.legs[idx - 1].estimated_time_minutes;
+      let cumulativeTime = 0; // Menghitung akumulasi waktu transit
+      
+      const legsPayload = selectedRoute.legs.map((leg) => {
+        const currentOffset = cumulativeTime;
+        cumulativeTime += leg.estimated_time_minutes; // Tambah durasi leg saat ini untuk leg berikutnya
+        
         return {
           route_id: leg.route_name,
-          offset_menit: prevTime,
+          halte_id: leg.origin_stop, // DIKIRIM KE BACKEND (wajib untuk filter Node.js terbaru)
+          offset_menit: currentOffset,
         };
       });
 
@@ -495,11 +500,18 @@ export default function RouteMap() {
           const mlResult = mlResultData?.data?.[idx];
           const trafficStatus = getTrafficFromGoogleDirections(leg, response);
 
+          // LOGIKA KEPADATAN DIPERBARUI: Menghilangkan persen, tapi mempertahankan info potensi padat
+          const kepadatanText = mlResult 
+            ? (mlResult.detail?.includes("berpotensi") 
+                ? `${mlResult.kepadatan}, Berpotensi Padat` 
+                : mlResult.kepadatan)
+            : "Data tidak tersedia";
+
           const mockBase: RealTimeInfo = {
             ...generateMockData(),
             status_lalu_lintas: trafficStatus,
             cuaca: mlResultData?.cuaca || "Cerah",
-            kepadatan_penumpang: mlResult ? mlResult.kepadatan : "Data tidak tersedia",
+            kepadatan_penumpang: kepadatanText,
           };
 
           const etaMinutes = await fetchETA(leg, mockBase);
