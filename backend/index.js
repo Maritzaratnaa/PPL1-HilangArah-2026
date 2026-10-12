@@ -15,7 +15,6 @@ const adminTransportRoutes = require('./routes/adminTransportRoutes');
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 const adminGuideRoutes = require('./routes/adminGuideRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
-const { mulaiCronInsiden } = require('./utils/cronInsiden');
 const insidenRoutes = require('./routes/insidenRoutes');
 const predictionRoutes = require('./routes/predictionRoutes');
 
@@ -80,7 +79,6 @@ app.use('/api/admin', adminDashboardRoutes);
 app.use('/api/admin/guides', adminGuideRoutes);
 app.use('/api/admin/users', adminUserRoutes);
 
-mulaiCronInsiden();
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server backend berjalan di http://localhost:${PORT}`);
