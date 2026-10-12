@@ -14,7 +14,7 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Instal dependensi ML (langsung download pre-built, tidak perlu compile)
-RUN pip install --no-cache-dir pandas scikit-learn==1.7.2 joblib numpy Flask flask-cors gunicorn
+RUN pip install --no-cache-dir pandas scikit-learn==1.6.1 joblib numpy Flask flask-cors gunicorn
 # Salin file konfigurasi Node.js
 COPY package*.json ./
 RUN npm install
