@@ -15,7 +15,6 @@ const adminTransportRoutes = require('./routes/adminTransportRoutes');
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 const adminGuideRoutes = require('./routes/adminGuideRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
-const insidenRoutes = require('./routes/insidenRoutes');
 const predictionRoutes = require('./routes/predictionRoutes');
 
 const app = express();
@@ -37,7 +36,6 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/search-routes', searchRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/subscription', subscriptionRoutes);
-app.use('/api/insiden', insidenRoutes);
 app.use('/api/prediction', predictionRoutes);
 
 app.post('/api/predict-eta', (req, res) => {
