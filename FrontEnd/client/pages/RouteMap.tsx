@@ -18,7 +18,6 @@ import {
   Users,
   Cloud,
   Car,
-  AlertTriangle,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -371,16 +370,6 @@ export default function RouteMap() {
   const startX = useRef(0);
   const startWidth = useRef(DEFAULT_WIDTH);
 
-  const generateMockData = (): RealTimeInfo => {
-    return {
-      status_lalu_lintas: ["Lancar", "Padat Merayap", "Macet"][Math.floor(Math.random() * 3)],
-      eta_kedatangan_menit: Math.floor(Math.random() * 10) + 2,
-      waktu_tempuh_menit: Math.floor(Math.random() * 25) + 10,
-      cuaca: ["Cerah", "Berawan", "Hujan Ringan"][Math.floor(Math.random() * 3)],
-      kepadatan_penumpang: ["Loading...", "Memuat Data..."][Math.floor(Math.random() * 2)],
-    };
-  };
-
   const getTrafficFromGoogleDirections = (
     leg: JourneyLeg,
     gmapResponse: google.maps.DirectionsResult | null
@@ -432,29 +421,6 @@ export default function RouteMap() {
     }
   };
 
-  const [trafficNews, setTrafficNews] = useState<string | null>(null);
-
-  const fetchIncidentNews = async (routeNameOrId: string, statusLaluLintas: string) => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/insiden/cek`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          route_id: routeNameOrId,
-          status_lalu_lintas: statusLaluLintas,
-        }),
-      });
-      const json = await res.json();
-      if (json && json.berita_insiden) {
-        setTrafficNews(json.berita_insiden);
-      } else {
-        setTrafficNews(null);
-      }
-    } catch {
-      setTrafficNews(null);
-    }
-  };
-
   const fetchMLPredictions = async () => {
     if (!selectedRoute || !selectedRoute.legs) return null;
     try {
@@ -500,30 +466,24 @@ export default function RouteMap() {
           const mlResult = mlResultData?.data?.[idx];
           const trafficStatus = getTrafficFromGoogleDirections(leg, response);
 
-          // LOGIKA KEPADATAN DIPERBARUI: Menghilangkan persen, tapi mempertahankan info potensi padat
           const kepadatanText = mlResult 
             ? (mlResult.detail?.includes("berpotensi") 
                 ? `${mlResult.kepadatan}, Berpotensi Padat` 
                 : mlResult.kepadatan)
             : "Data tidak tersedia";
 
-          const mockBase: RealTimeInfo = {
-            ...generateMockData(),
+          const baseInfo = {
             status_lalu_lintas: trafficStatus,
-            cuaca: mlResultData?.cuaca || "Cerah",
+            cuaca: mlResultData?.cuaca ?? "",
             kepadatan_penumpang: kepadatanText,
           };
 
-          const etaMinutes = await fetchETA(leg, mockBase);
+          const etaMinutes = await fetchETA(leg, baseInfo);
           initialData[idx] = {
-            ...mockBase,
+            ...baseInfo,
             eta_kedatangan_menit: etaMinutes,
             waktu_tempuh_menit: leg.estimated_time_minutes,
           };
-
-          if (idx === 0) {
-            fetchIncidentNews(leg.route_name, trafficStatus);
-          }
         }
         setRealTimeInfo(initialData);
       };
@@ -538,25 +498,24 @@ export default function RouteMap() {
       const trafficStatus = getTrafficFromGoogleDirections(leg, response);
       const prevInfo = realTimeInfo[legIdx];
 
-      const mockBase: RealTimeInfo = {
-        ...generateMockData(),
+      const updatedBase: RealTimeInfo = {
         status_lalu_lintas: trafficStatus,
+        cuaca: prevInfo?.cuaca ?? "",
         kepadatan_penumpang: prevInfo?.kepadatan_penumpang || "Data tidak tersedia",
+        eta_kedatangan_menit: prevInfo?.eta_kedatangan_menit || leg.estimated_time_minutes,
+        waktu_tempuh_menit: leg.estimated_time_minutes,
       };
 
-      const etaMinutes = await fetchETA(leg, mockBase);
+      const etaMinutes = await fetchETA(leg, updatedBase);
       setRealTimeInfo((prev) => ({
         ...prev,
         [legIdx]: {
-          ...mockBase,
+          ...updatedBase,
           eta_kedatangan_menit: etaMinutes,
           waktu_tempuh_menit: leg.estimated_time_minutes,
         },
       }));
 
-      if (legIdx === 0) {
-        fetchIncidentNews(leg.route_name, trafficStatus);
-      }
     } finally {
       setIsRefreshing((prev) => ({ ...prev, [legIdx]: false }));
     }
@@ -697,13 +656,6 @@ export default function RouteMap() {
           >
             {accessBadge.label}
           </span>
-        )}
-
-        {trafficNews && (
-          <div className="flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900 rounded-lg p-2.5">
-            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-            <span>Info: {trafficNews}</span>
-          </div>
         )}
 
         {categoryAdvice && (
