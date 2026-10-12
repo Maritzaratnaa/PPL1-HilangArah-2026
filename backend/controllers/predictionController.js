@@ -51,7 +51,7 @@ function runPython(items) {
   return new Promise((resolve, reject) => {
     const proc = spawn(PYTHON, [SCRIPT]);
     let out = '', err = '';
-    const timer = setTimeout(() => { proc.kill(); reject(new Error('Timeout')); }, 15000);
+    const timer = setTimeout(() => { proc.kill(); reject(new Error('Timeout')); }, 30000);
     
     proc.stdout.on('data', (d) => (out += d.toString()));
     proc.stderr.on('data', (d) => (err += d.toString()));
