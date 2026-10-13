@@ -70,7 +70,7 @@ describe('reportController', () => {
 
         it('should create report successfully', async () => {
             req.user.user_id = 'u1';
-            req.body = { category: 'Infrastructure', stop_id: 's1', subs_id: 'sub1', description: 'Broken ramp' };
+            req.body = { category: 'Infrastructure', stop_id: 's1', subs_id: 'sub1', phone_number: '08123456789', description: 'Broken ramp' };
             jest.spyOn(crypto, 'randomUUID').mockReturnValue('mock-report-uuid');
             pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
@@ -78,7 +78,7 @@ describe('reportController', () => {
 
             expect(pool.query).toHaveBeenCalledWith(
                 expect.stringContaining('INSERT INTO reports'),
-                ['mock-report-uuid', 'u1', 'Infrastructure', 's1', 'sub1', 'Broken ramp']
+                ['mock-report-uuid', 'u1', 'Infrastructure', 's1', 'sub1', '08123456789', 'Broken ramp']
             );
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith({
