@@ -11,12 +11,19 @@ import { toast } from "sonner";
 export interface Report {
   report_id: string;
   reporter_name: string;
+  phone_number: string | null;
+  subs_id: string | null;
   category: string;
   stop_name: string | null;
   description: string;
   status: string;
   created_at: string;
   resolved_by: string | null;
+
+  guide_name?: string;
+  guide_gender?: string;
+  guide_phone?: string;
+  guide_age?: number;
 }
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -107,6 +114,62 @@ function StatusDropdown({ report, onStatusChange }: {
   );
 }
 
+function GuideInfoDropdown({ report }: { report: Report }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Jika tidak memiliki subs_id, jangan tampilkan tombol
+  if (!report.subs_id) return null;
+
+  return (
+    <div className="relative" ref={ref}>
+      <Button 
+        size="sm" 
+        variant="outline" 
+        className="h-8 text-[10px] px-3 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        Info Pemandu
+      </Button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute right-0 bottom-full mb-1 w-52 bg-card border border-border rounded-xl shadow-lg z-50 p-4 text-left">
+            <h4 className="text-xs font-bold border-b border-border pb-2 mb-3 text-foreground">Detail Pemandu</h4>
+            <div className="space-y-2 text-[11px]">
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground whitespace-nowrap">Nama:</span> 
+                <span className="font-semibold text-right truncate" title={report.guide_name}>{report.guide_name || '-'}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground whitespace-nowrap">No. HP:</span> 
+                <span className="font-semibold text-right">{report.guide_phone || '-'}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground whitespace-nowrap">Gender:</span> 
+                <span className="font-semibold text-right">{report.guide_gender || '-'}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground whitespace-nowrap">Umur:</span> 
+                <span className="font-semibold text-right">{report.guide_age ? `${report.guide_age} thn` : '-'}</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function DropdownFilter({ label, options, selectedValue, onSelect, displayMap }: {
   label: string;
   options: string[];
@@ -173,6 +236,8 @@ function DetailModal({ report, onClose, onStatusChange }: {
             {[
               { label: 'ID Laporan', value: report.report_id },
               { label: 'Pelapor', value: report.reporter_name || 'Anonim' },
+              { label: 'No. HP', value: report.subs_id ? (report.phone_number || '-') : 'Tidak Tersedia' },
+              { label: 'Status Pemandu', value: report.subs_id ? `Berlangganan (${report.subs_id})` : 'Tidak Berlangganan' },
               { label: 'Kategori', value: report.category || '-' },
               { label: 'Lokasi', value: report.stop_name || extractLocationFromDesc(report.description).location },
               { label: 'Tanggal', value: report.created_at || '-' },
@@ -190,6 +255,46 @@ function DetailModal({ report, onClose, onStatusChange }: {
           </div>
           <Button variant="outline" className="w-full" onClick={onClose}>Tutup</Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function GuideModal({ report, onClose }: {
+  report: Report;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-card rounded-2xl border border-border p-6 w-full max-w-sm shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold">Detail Pemandu</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between border-b border-border/50 pb-2">
+            <span className="text-muted-foreground">Nama</span>
+            <span className="font-semibold text-right">{report.guide_name || '-'}</span>
+          </div>
+          <div className="flex justify-between border-b border-border/50 pb-2">
+            <span className="text-muted-foreground">No. HP</span>
+            <span className="font-semibold text-right">{report.guide_phone || '-'}</span>
+          </div>
+          <div className="flex justify-between border-b border-border/50 pb-2">
+            <span className="text-muted-foreground">Gender</span>
+            <span className="font-semibold text-right">{report.guide_gender || '-'}</span>
+          </div>
+          <div className="flex justify-between pb-2">
+            <span className="text-muted-foreground">Umur</span>
+            <span className="font-semibold text-right">{report.guide_age ? `${report.guide_age} Tahun` : '-'}</span>
+          </div>
+        </div>
+        
+        <Button className="w-full mt-6" onClick={onClose}>Tutup</Button>
       </div>
     </div>
   );
@@ -225,6 +330,7 @@ export default function AdminReports() {
   const [filterCategory, setFilterCategory] = useState('All');
   const [detailTarget, setDetailTarget] = useState<Report | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Report | null>(null);
+  const [guideTarget, setGuideTarget] = useState<Report | null>(null);
 
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -351,7 +457,7 @@ export default function AdminReports() {
               <table className="w-full min-w-[1100px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
-                    {["Pelapor", "Kategori", "Lokasi", "Deskripsi", "Status", "Tanggal", "Aksi"].map((h) => (
+                    {["Pelapor", "Info Kontak","Kategori", "Lokasi", "Deskripsi", "Status", "Tanggal", "Aksi"].map((h) => (
                       <th key={h} className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap">
                         {h}
                       </th>
@@ -380,6 +486,18 @@ export default function AdminReports() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
+                          {report.subs_id ? (
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">{report.phone_number || '-'}</span>
+                              <span className="text-[10px] text-primary font-semibold bg-primary/10 px-2 py-0.5 rounded-full w-fit mt-1">
+                                Pemandu: {report.subs_id}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${getCategoryColor(report.category)}`}>
                             {report.category || '-'}
                           </span>
@@ -401,7 +519,19 @@ export default function AdminReports() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <Button size="sm" variant="outline" className="h-8 text-[10px] px-3"
-                              onClick={() => setDetailTarget(report)}>Detail</Button>
+                              onClick={() => setDetailTarget(report)}>Detail
+                            </Button>
+
+                            {report.subs_id && (
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="h-8 text-[10px] px-3 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900"
+                                onClick={() => setGuideTarget(report)}>
+                                Pemandu
+                              </Button>
+                            )}
+
                             <Button size="sm" variant="outline" className="h-8 px-2 text-rose-600 border-rose-200 hover:bg-rose-50"
                               onClick={() => setDeleteTarget(report)}>
                               <Trash2 className="h-3.5 w-3.5" />
@@ -429,6 +559,10 @@ export default function AdminReports() {
       {deleteTarget && (
         <DeleteModal report={deleteTarget} onConfirm={() => handleDelete(deleteTarget.report_id)} onCancel={() => setDeleteTarget(null)} />
       )}
+      {guideTarget && (
+        <GuideModal report={guideTarget} onClose={() => setGuideTarget(null)} />
+      )}
     </div>
   );
 }
+

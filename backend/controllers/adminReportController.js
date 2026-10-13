@@ -7,19 +7,29 @@ const getAllReports = async (req, res) => {
             `SELECT 
                 r.report_id, 
                 p.full_name AS reporter_name, 
+                r.phone_number, 
+                r.subs_id,
                 r.category, 
                 s.name AS stop_name, 
                 r.description, 
                 r.status, 
                 r.created_at, 
-                r.resolved_by
+                r.resolved_by,
+                -- Field baru dari tabel guides
+                g.full_name AS guide_name,
+                g.gender AS guide_gender,
+                g.phone_number AS guide_phone,
+                g.age AS guide_age
             FROM reports r
             LEFT JOIN profiles p ON r.reporter_id = p.user_id
             LEFT JOIN stops s ON r.stop_id = s.stop_id
+            LEFT JOIN subs su ON r.subs_id = su.subs_id
+            LEFT JOIN guides g ON su.employee_id = g.employee_id
             ORDER BY r.created_at DESC`;
+            
         const [reports] = await pool.execute(query);
 
-            res.status(200).json({
+        res.status(200).json({
             message: "Berhasil mengambil semua laporan.",
             data: reports
         });
@@ -83,6 +93,8 @@ const deleteReport = async (req, res) => {
         res.status(500).json({message: "Gagal menghapus laporan dari database."});
     }
 };
+
+
 
 module.exports = {
     getAllReports,
