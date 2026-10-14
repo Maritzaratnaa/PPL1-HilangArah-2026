@@ -1,5 +1,6 @@
 const {
     createReport,
+    getGuideOptions,
     getMyReports,
     getLocationOptions
 } = require('../controllers/reportController');
@@ -41,7 +42,7 @@ describe('reportController', () => {
 
         it('should return 403 if category is Pemandu and user has no active subscription', async () => {
             req.user.user_id = 'u1';
-            req.body = { category: 'Pemandu', description: 'Guide was late' };
+            req.body = { category: 'Pemandu', description: 'Guide was late', subs_id: 'sub1' };
             pool.query.mockResolvedValueOnce([[]]); // no active subscription
 
             await createReport(req, res);
@@ -52,15 +53,35 @@ describe('reportController', () => {
             });
         });
 
+        it('should return 400 if a Pemandu report does not select a subscription', async () => {
+            req.user.user_id = 'u1';
+            req.body = { category: 'Pemandu', description: 'Guide was late' };
+
+            await createReport(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(pool.query).not.toHaveBeenCalled();
+        });
+
         it('should create Pemandu category report successfully if user has active subscription', async () => {
             req.user.user_id = 'u1';
             req.body = { category: 'Pemandu', description: 'Guide was late', subs_id: 'sub1' };
             jest.spyOn(crypto, 'randomUUID').mockReturnValue('mock-report-uuid');
-            pool.query.mockResolvedValueOnce([[{ subs_id: 'sub1' }]]); // active subscription found
+            pool.query.mockResolvedValueOnce([[{
+                subs_id: 'sub1',
+                user_phone: '081234567890',
+                employee_id: 'guide1',
+                guide_name: 'Guide A',
+                guide_phone: '081234567891'
+            }]]);
             pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]); // insert report
 
             await createReport(req, res);
 
+            expect(pool.query).toHaveBeenLastCalledWith(
+                expect.stringContaining('INSERT INTO reports'),
+                ['mock-report-uuid', 'u1', 'Pemandu', null, 'sub1', 'Guide was late']
+            );
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith({
                 message: "Laporan berhasil dikirim dan menunggu antrean.",
@@ -68,9 +89,60 @@ describe('reportController', () => {
             });
         });
 
+        it('should reject Pemandu report if the active subscription has no assigned guide', async () => {
+            req.user.user_id = 'u1';
+            req.body = { category: 'Pemandu', description: 'Guide was late', subs_id: 'sub1' };
+            pool.query.mockResolvedValueOnce([[{
+                subs_id: 'sub1',
+                user_phone: '081234567890',
+                employee_id: null,
+                guide_name: null,
+                guide_phone: null
+            }]]);
+
+            await createReport(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(409);
+            expect(pool.query).toHaveBeenCalledTimes(1);
+        });
+
+        it('should reject Pemandu report if either contact number is unavailable', async () => {
+            req.user.user_id = 'u1';
+            req.body = { category: 'Pemandu', description: 'Guide was late', subs_id: 'sub1' };
+            pool.query.mockResolvedValueOnce([[{
+                subs_id: 'sub1',
+                user_phone: ' ',
+                employee_id: 'guide1',
+                guide_name: 'Guide A',
+                guide_phone: '081234567891'
+            }]]);
+
+            await createReport(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(409);
+            expect(pool.query).toHaveBeenCalledTimes(1);
+        });
+
+        it('should reject Pemandu report if the guide contact number is unavailable', async () => {
+            req.user.user_id = 'u1';
+            req.body = { category: 'Pemandu', description: 'Guide was late', subs_id: 'sub1' };
+            pool.query.mockResolvedValueOnce([[{
+                subs_id: 'sub1',
+                user_phone: '081234567890',
+                employee_id: 'guide1',
+                guide_name: 'Guide A',
+                guide_phone: ' '
+            }]]);
+
+            await createReport(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(409);
+            expect(pool.query).toHaveBeenCalledTimes(1);
+        });
+
         it('should create report successfully', async () => {
             req.user.user_id = 'u1';
-            req.body = { category: 'Infrastructure', stop_id: 's1', subs_id: 'sub1', phone_number: '08123456789', description: 'Broken ramp' };
+            req.body = { category: 'Infrastructure', stop_id: 's1', description: 'Broken ramp' };
             jest.spyOn(crypto, 'randomUUID').mockReturnValue('mock-report-uuid');
             pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
@@ -78,7 +150,7 @@ describe('reportController', () => {
 
             expect(pool.query).toHaveBeenCalledWith(
                 expect.stringContaining('INSERT INTO reports'),
-                ['mock-report-uuid', 'u1', 'Infrastructure', 's1', 'sub1', '08123456789', 'Broken ramp']
+                ['mock-report-uuid', 'u1', 'Infrastructure', 's1', null, 'Broken ramp']
             );
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith({
@@ -95,6 +167,47 @@ describe('reportController', () => {
             await createReport(req, res);
 
             expect(res.status).toHaveBeenCalledWith(500);
+        });
+    });
+
+    describe('getGuideOptions', () => {
+        it('should return only the current user active subscriptions and assigned guide contacts', async () => {
+            req.user.user_id = 'u1';
+            const subscriptions = [{
+                subs_id: 'sub1',
+                user_phone: '081234567890',
+                employee_id: 'guide1',
+                guide_name: 'Guide A',
+                guide_phone: '081234567891'
+            }];
+            pool.query.mockResolvedValueOnce([subscriptions]);
+
+            await getGuideOptions(req, res);
+
+            expect(pool.query).toHaveBeenCalledWith(
+                expect.stringContaining("s.status = 'Active'"),
+                ['u1']
+            );
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Data pemandu langganan berhasil diambil.",
+                has_active_subscription: true,
+                data: subscriptions
+            });
+        });
+
+        it('should report when the user has no active subscription', async () => {
+            req.user.user_id = 'u1';
+            pool.query.mockResolvedValueOnce([[]]);
+
+            await getGuideOptions(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Data pemandu langganan berhasil diambil.",
+                has_active_subscription: false,
+                data: []
+            });
         });
     });
 

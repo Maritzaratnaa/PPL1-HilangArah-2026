@@ -7,8 +7,12 @@ const getAllReports = async (req, res) => {
             `SELECT 
                 r.report_id, 
                 p.full_name AS reporter_name, 
+                sub.phone_number AS user_phone,
                 r.category, 
+                g.full_name AS guide_name,
+                g.phone_number AS guide_phone,
                 s.name AS stop_name, 
+                r.subs_id,
                 r.description, 
                 r.status, 
                 r.created_at, 
@@ -16,6 +20,8 @@ const getAllReports = async (req, res) => {
             FROM reports r
             LEFT JOIN profiles p ON r.reporter_id = p.user_id
             LEFT JOIN stops s ON r.stop_id = s.stop_id
+            LEFT JOIN subs sub ON r.subs_id = sub.subs_id
+            LEFT JOIN guides g ON sub.employee_id = g.employee_id
             ORDER BY r.created_at DESC`;
         const [reports] = await pool.execute(query);
 

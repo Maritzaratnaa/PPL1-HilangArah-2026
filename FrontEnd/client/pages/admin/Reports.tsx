@@ -11,7 +11,11 @@ import { toast } from "sonner";
 export interface Report {
   report_id: string;
   reporter_name: string;
+  user_phone: string | null;
   category: string;
+  guide_name: string | null;
+  guide_phone: string | null;
+  subs_id: string | null;
   stop_name: string | null;
   description: string;
   status: string;
@@ -173,7 +177,12 @@ function DetailModal({ report, onClose, onStatusChange }: {
             {[
               { label: 'ID Laporan', value: report.report_id },
               { label: 'Pelapor', value: report.reporter_name || 'Anonim' },
+              { label: 'Nomor Pelapor', value: report.user_phone || 'Tidak tersedia' },
               { label: 'Kategori', value: report.category || '-' },
+              ...(report.category === 'Pemandu' ? [
+                { label: 'Pemandu', value: report.guide_name || 'Tidak tersedia' },
+                { label: 'Nomor Pemandu', value: report.guide_phone || 'Tidak tersedia' },
+              ] : []),
               { label: 'Lokasi', value: report.stop_name || extractLocationFromDesc(report.description).location },
               { label: 'Tanggal', value: report.created_at || '-' },
               { label: 'Diselesaikan oleh', value: report.resolved_by || '-' },
@@ -351,7 +360,7 @@ export default function AdminReports() {
               <table className="w-full min-w-[1100px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
-                    {["Pelapor", "Kategori", "Lokasi", "Deskripsi", "Status", "Tanggal", "Aksi"].map((h) => (
+                    {["Pelapor / Kontak", "Kategori / Pemandu", "Lokasi", "Deskripsi", "Status", "Tanggal", "Aksi"].map((h) => (
                       <th key={h} className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap">
                         {h}
                       </th>
@@ -376,13 +385,22 @@ export default function AdminReports() {
                             <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
                               {initials}
                             </div>
-                            <div className="text-sm font-semibold truncate max-w-[150px]">{report.reporter_name || 'Anonim'}</div>
+                            <div>
+                              <div className="text-sm font-semibold truncate max-w-[150px]">{report.reporter_name || 'Anonim'}</div>
+                              <div className="text-xs text-muted-foreground">{report.user_phone || 'Nomor tidak tersedia'}</div>
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${getCategoryColor(report.category)}`}>
                             {report.category || '-'}
                           </span>
+                          {report.category === 'Pemandu' && (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              <div>{report.guide_name || 'Pemandu tidak tersedia'}</div>
+                              <div>{report.guide_phone || 'Nomor tidak tersedia'}</div>
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
                           {report.stop_name || extractLocationFromDesc(report.description).location}
