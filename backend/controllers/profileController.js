@@ -5,12 +5,11 @@ const getProfile = async (req, res) => {
     try {
         const userId = req.user.user_id;
         
-        // Update Query
         const query = `
             SELECT 
                 u.email, 
                 p.full_name, 
-                p.phone_number, 
+                COALESCE(p.phone_number, s.phone_number) AS phone_number, 
                 p.category_status, 
                 p.font_size_pref,
                 s.status AS sub_status 

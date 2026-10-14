@@ -107,6 +107,7 @@ CREATE TABLE reports (
     category ENUM('Fasilitas', 'Pemandu'),
     stop_id CHAR(36),
     subs_id CHAR(36),
+    phone_number VARCHAR(20),
     description TEXT,
     status ENUM('Pending', 'Processed', 'Resolved') DEFAULT 'Pending',
     resolved_by CHAR(36),

@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const createReport = async (req, res) => {
     try {
         const reporterId = req.user.user_id; 
-        const { category, stop_id, subs_id, description } = req.body;
+        const { category, stop_id, subs_id, description, phone_number } = req.body;
 
         if (!category || !description) {
             return res.status(400).json({ message: "Kategori dan deskripsi laporan wajib diisi." });
@@ -58,8 +58,8 @@ const createReport = async (req, res) => {
         const reportId = crypto.randomUUID();
 
         const query = `
-            INSERT INTO reports (report_id, reporter_id, category, stop_id, subs_id, description, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'Pending')
+            INSERT INTO reports (report_id, reporter_id, category, stop_id, subs_id, phone_number, description, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')
         `;
         
         await pool.query(query, [

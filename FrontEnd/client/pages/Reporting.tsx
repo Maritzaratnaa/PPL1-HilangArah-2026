@@ -2,6 +2,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -16,7 +17,7 @@ import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
 import { useNavigate } from "react-router-dom";
 import {
   CheckCircle, AlertCircle, Clock, MessageSquare, Plus, ArrowRight,
-  ShieldAlert, Inbox, Sparkles, X, Calendar, Loader2,
+  ShieldAlert, Inbox, Sparkles, X, Calendar, Loader2, Phone,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -91,6 +92,10 @@ export default function Reporting() {
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [locationError, setLocationError]       = useState("");
 
+  const [existingPhone, setExistingPhone] = useState<string>("");
+  const [phoneOption, setPhoneOption]     = useState<"existing" | "new">("existing");
+  const [customPhone, setCustomPhone]     = useState("");
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
@@ -98,6 +103,24 @@ export default function Reporting() {
     fetchLocations();
     fetchGuideSubscriptions();
   }, [navigate]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res   = await fetch(`${BASE_URL}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (res.ok && json.data) {
+        const phone = json.data.phone_number || "";
+        setExistingPhone(phone);
+        if (!phone) {
+          setPhoneOption("new");
+        }
+      }
+    } catch {
+    }
+  };
 
   const fetchReports = async () => {
     setLoading(true);
@@ -121,6 +144,15 @@ export default function Reporting() {
   };
 
   const handleSubmit = async () => {
+    let phoneToSend = phoneOption === "existing" ? existingPhone : "";
+    if (phoneOption === "new") {
+      if (!customPhone.trim()) {
+        alert("Silakan masukkan nomor telepon kontak baru.");
+        return;
+      }
+      phoneToSend = `+62${customPhone.trim()}`;
+    }
+
     if (!category || !locationId || description.length < 10) return;
     const selectedGuideSubscription = guideSubscriptions.find((subscription) => subscription.subs_id === selectedSubsId);
     if (category === "Pemandu" && !isReportableGuideSubscription(selectedGuideSubscription)) return;
@@ -146,6 +178,8 @@ export default function Reporting() {
         setSelectedSubsId("");
         setLocationId("");
         setDescription("");
+        setCustomPhone("");
+        setPhoneOption(existingPhone ? "existing" : "new");
         setTimeout(() => setSuccessMessage(false), 4000);
         fetchReports();
       } else if (res.status === 403) {
@@ -237,6 +271,8 @@ export default function Reporting() {
     setSelectedSubsId("");
     setLocationId("");
     setDescription("");
+    setCustomPhone("");
+    setPhoneOption(existingPhone ? "existing" : "new");
   };
 
   const isReportableGuideSubscription = (subscription?: GuideSubscription) =>
@@ -452,6 +488,73 @@ export default function Reporting() {
                 </div>
 
                 <div className="space-y-3">
+                  <Label className="text-[15px] font-bold text-foreground ml-1">
+                    Nomor yang Dapat Dihubungi
+                  </Label>
+
+                  <div className="flex flex-wrap gap-2 p-1 bg-muted/50 rounded-xl border border-border w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setPhoneOption("existing")}
+                      disabled={!existingPhone}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                        phoneOption === "existing"
+                          ? "bg-card text-primary shadow-sm"
+                          : "text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                      }`}>
+                      Gunakan Kontak Terdaftar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhoneOption("new")}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                        phoneOption === "new"
+                          ? "bg-card text-primary shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}>
+                      Masukkan Kontak Baru
+                    </button>
+                  </div>
+
+                  {phoneOption === "existing" ? (
+                    existingPhone ? (
+                      <div className="h-14 border border-border rounded-2xl px-5 flex items-center justify-between bg-muted/20">
+                        <span className="text-[16px] font-semibold text-foreground">{existingPhone}</span>
+                        <span className="text-xs text-muted-foreground">dari profil Anda</span>
+                      </div>
+                    ) : (
+                      <div className="h-14 border border-dashed border-border rounded-2xl px-5 flex items-center text-muted-foreground">
+                        <span className="text-[14px]">Nomor telepon belum diisi di profil. Gunakan kontak baru.</span>
+                      </div>
+                    )
+                  ) : (
+                    <div className="relative">
+                      <span
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold border-r border-border pr-3 flex items-center h-5 select-none"
+                        style={{ fontSize: "16px" }}
+                      >
+                        +62
+                      </span>
+                      <Input
+                        type="tel"
+                        inputMode="numeric"
+                        value={customPhone}
+                        onChange={(e) => {
+                          let val = e.target.value.replace(/\D/g, "");
+                          if (val.startsWith("0")) val = val.substring(1);
+                          setCustomPhone(val);
+                        }}
+                        placeholder="812xxxxxxx"
+                        className="h-14 border-border rounded-2xl font-medium text-[16px] md:text-[16px] placeholder:text-[16px]"
+                        style={{ fontSize: "16px", paddingLeft: "68px" }}
+                        maxLength={13}
+                        disabled={submitting}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
                   <Label className="text-[15px] font-bold text-foreground ml-1">Deskripsi Masalah</Label>
                   <Textarea
                     value={description}
@@ -590,7 +693,7 @@ export default function Reporting() {
       </main>
 
       <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
-        <DialogContent className="max-w-2xl rounded-[32px] p-8 lg:p-10 border-border bg-card font-['Atkinson_Hyperlegible']">
+        <DialogContent className="max-w-2xl rounded-[32px] p-8 lg:p-10 border-border bg-card font-['Atkinson_Hyperlegible'] [&>button:last-child]:hidden">
           {selectedReport && (() => {
             const cat    = reportCategories.find((c) => c.value === selectedReport.category);
             const status = statusConfig[selectedReport.status] || statusConfig["Pending"];
