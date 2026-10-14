@@ -271,7 +271,7 @@ function RealTimeInfoCard({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          Info Real-time
+          Prediksi Perjalanan
         </p>
         <button
           onClick={() => onRefresh(legIdx)}
@@ -289,9 +289,9 @@ function RealTimeInfoCard({
             <Clock size={12} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] text-muted-foreground">Waktu & ETA</p>
+            <p className="text-[10px] text-muted-foreground">ETA</p>
             <p className="text-xs font-bold truncate">
-              {info.waktu_tempuh_menit} mnt (ETA {info.eta_kedatangan_menit}m)
+              {info.eta_kedatangan_menit} menit
             </p>
           </div>
         </div>
