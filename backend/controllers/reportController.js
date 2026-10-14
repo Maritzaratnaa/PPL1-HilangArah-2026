@@ -10,20 +10,49 @@ const createReport = async (req, res) => {
             return res.status(400).json({ message: "Kategori dan deskripsi laporan wajib diisi." });
         }
 
+        let reportSubscriptionId = null;
+
         if (category === "Pemandu") {
-            
+            if (!subs_id) {
+                return res.status(400).json({
+                    message: "Pilih langganan aktif dan pemandu yang ingin dilaporkan."
+                });
+            }
+
             const subscriptionQuery = `
-                SELECT subs_id FROM subs 
-                WHERE user_id = ? AND status = 'Active' 
-                LIMIT 1
+                SELECT
+                    s.subs_id,
+                    s.phone_number AS user_phone,
+                    s.employee_id,
+                    g.full_name AS guide_name,
+                    g.phone_number AS guide_phone
+                FROM subs s
+                LEFT JOIN guides g ON s.employee_id = g.employee_id
+                WHERE s.user_id = ? AND s.status = 'Active'
+                AND s.subs_id = ?
             `;
-            const [subscriptionRows] = await pool.query(subscriptionQuery, [reporterId]);
+            const [subscriptionRows] = await pool.query(subscriptionQuery, [reporterId, subs_id || null]);
 
             if (subscriptionRows.length === 0) {
                 return res.status(403).json({ 
                     message: "Kategori laporan 'Pemandu' hanya tersedia untuk pengguna yang sedang berlangganan." 
                 });
             }
+
+            const subscription = subscriptionRows[0];
+            if (!subscription.employee_id || !subscription.guide_name) {
+                return res.status(409).json({
+                    message: "Langganan aktif Anda belum memiliki pemandu yang ditetapkan."
+                });
+            }
+
+            if (!subscription.user_phone?.trim() || !subscription.guide_phone?.trim()) {
+                return res.status(409).json({
+                    message: "Nomor kontak pengguna dan pemandu harus tersedia sebelum laporan dikirim."
+                });
+            }
+
+            reportSubscriptionId = subscription.subs_id;
         }
 
         const reportId = crypto.randomUUID();
@@ -38,7 +67,7 @@ const createReport = async (req, res) => {
             reporterId, 
             category, 
             stop_id || null, 
-            subs_id || null, 
+            reportSubscriptionId,
             description
         ]);
 
@@ -49,6 +78,33 @@ const createReport = async (req, res) => {
     } catch (error) {
         console.error("Error Create Report:", error);
         res.status(500).json({ message: "Terjadi kesalahan pada server saat mengirim laporan." });
+    }
+};
+
+const getGuideOptions = async (req, res) => {
+    try {
+        const [subscriptions] = await pool.query(
+            `SELECT
+                s.subs_id,
+                s.phone_number AS user_phone,
+                s.employee_id,
+                g.full_name AS guide_name,
+                g.phone_number AS guide_phone
+             FROM subs s
+             LEFT JOIN guides g ON s.employee_id = g.employee_id
+             WHERE s.user_id = ? AND s.status = 'Active'
+             ORDER BY s.start_date DESC`,
+            [req.user.user_id]
+        );
+
+        res.status(200).json({
+            message: "Data pemandu langganan berhasil diambil.",
+            has_active_subscription: subscriptions.length > 0,
+            data: subscriptions
+        });
+    } catch (error) {
+        console.error("Error Get Guide Options:", error);
+        res.status(500).json({ message: "Terjadi kesalahan saat mengambil data pemandu langganan." });
     }
 };
 
@@ -71,12 +127,17 @@ const getMyReports = async (req, res) => {
                 r.stop_id,
                 s.name AS stop_name,
                 r.subs_id,
+                g.full_name AS guide_name,
+                g.phone_number AS guide_phone,
+                sub.phone_number AS user_phone,
                 r.description,
                 r.status,
                 r.resolved_by,
                 r.created_at
             FROM reports r
             LEFT JOIN stops s ON r.stop_id = s.stop_id
+            LEFT JOIN subs sub ON r.subs_id = sub.subs_id
+            LEFT JOIN guides g ON sub.employee_id = g.employee_id
             WHERE r.reporter_id = ?
             ORDER BY r.created_at DESC
         `;
@@ -125,6 +186,7 @@ const getLocationOptions = async (req, res) => {
 
 module.exports = {
     createReport,
+    getGuideOptions,
     getMyReports,
     getLocationOptions,
 };

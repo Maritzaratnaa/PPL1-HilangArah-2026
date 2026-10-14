@@ -29,6 +29,9 @@ interface Report {
   stop_id: string | null;
   stop_name: string | null;
   subs_id: string | null;
+  guide_name: string | null;
+  guide_phone: string | null;
+  user_phone: string | null;
   resolved_by: string | null;
   created_at: string;
 }
@@ -38,6 +41,14 @@ interface LocationOption {
   name: string;
   type: "stop" | "trans";
   detail?: string;
+}
+
+interface GuideSubscription {
+  subs_id: string;
+  user_phone: string | null;
+  employee_id: string | null;
+  guide_name: string | null;
+  guide_phone: string | null;
 }
 
 const reportCategories = [
@@ -67,10 +78,14 @@ export default function Reporting() {
   const [reports, setReports]         = useState<Report[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [selectedSubsId, setSelectedSubsId] = useState("");
   const [loading, setLoading]         = useState(true);
   const [submitting, setSubmitting]   = useState(false);
   const [errorMsg, setErrorMsg]       = useState("");
   const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [guideSubscriptions, setGuideSubscriptions] = useState<GuideSubscription[]>([]);
+  const [loadingGuideSubscriptions, setLoadingGuideSubscriptions] = useState(false);
+  const [guideSubscriptionError, setGuideSubscriptionError] = useState("");
 
   const [locationOptions, setLocationOptions]   = useState<LocationOption[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
@@ -81,6 +96,7 @@ export default function Reporting() {
     if (!token) { navigate("/login"); return; }
     fetchReports();
     fetchLocations();
+    fetchGuideSubscriptions();
   }, [navigate]);
 
   const fetchReports = async () => {
@@ -106,19 +122,28 @@ export default function Reporting() {
 
   const handleSubmit = async () => {
     if (!category || !locationId || description.length < 10) return;
+    const selectedGuideSubscription = guideSubscriptions.find((subscription) => subscription.subs_id === selectedSubsId);
+    if (category === "Pemandu" && !isReportableGuideSubscription(selectedGuideSubscription)) return;
+
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
       const res   = await fetch(`${BASE_URL}/api/reports`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ category, description, stop_id: locationId }),
+        body: JSON.stringify({
+          category,
+          description,
+          stop_id: locationId,
+          ...(category === "Pemandu" ? { subs_id: selectedSubsId } : {}),
+        }),
       });
       const json = await res.json();
       if (res.ok) {
         setSuccessMessage(true);
         setShowForm(false);
         setCategory("");
+        setSelectedSubsId("");
         setLocationId("");
         setDescription("");
         setTimeout(() => setSuccessMessage(false), 4000);
@@ -132,6 +157,34 @@ export default function Reporting() {
       alert("Gagal menghubungi server.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const fetchGuideSubscriptions = async () => {
+    setLoadingGuideSubscriptions(true);
+    setGuideSubscriptionError("");
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BASE_URL}/api/reports/guide-options`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setGuideSubscriptionError(json.message || "Gagal memeriksa langganan pemandu.");
+        return;
+      }
+
+      const subscriptions: GuideSubscription[] = json.data ?? [];
+      setGuideSubscriptions(subscriptions);
+      setIsPremium(json.has_active_subscription === true);
+      const firstAvailable = subscriptions.find(isReportableGuideSubscription);
+      if (firstAvailable) setSelectedSubsId(firstAvailable.subs_id);
+    } catch (err) {
+      console.error("Gagal memeriksa langganan pemandu:", err);
+      setGuideSubscriptionError("Gagal memeriksa langganan dan kontak pemandu.");
+    } finally {
+      setLoadingGuideSubscriptions(false);
     }
   };
 
@@ -181,10 +234,21 @@ export default function Reporting() {
   const resetForm = () => {
     setShowForm(false);
     setCategory("");
+    setSelectedSubsId("");
     setLocationId("");
     setDescription("");
   };
 
+  const isReportableGuideSubscription = (subscription?: GuideSubscription) =>
+    Boolean(
+      subscription?.employee_id &&
+      subscription.guide_name?.trim() &&
+      subscription.guide_phone?.trim() &&
+      subscription.user_phone?.trim(),
+    );
+
+  const availableGuideSubscriptions = guideSubscriptions.filter(isReportableGuideSubscription);
+  const selectedGuideSubscription = guideSubscriptions.find((subscription) => subscription.subs_id === selectedSubsId);
   const selectedLocation = locationOptions.find((o) => o.id === locationId);
 
   const filteredReports = reports.filter(
@@ -305,6 +369,55 @@ export default function Reporting() {
                       })}
                     </SelectContent>
                   </Select>
+                  {category === "Pemandu" && (
+                    <div className="rounded-2xl border border-border bg-muted/20 p-4 text-[14px]">
+                      {loadingGuideSubscriptions ? (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 size={16} className="animate-spin" />
+                          Memeriksa langganan dan kontak...
+                        </div>
+                      ) : guideSubscriptionError ? (
+                        <p className="text-rose-600">{guideSubscriptionError}</p>
+                      ) : availableGuideSubscriptions.length === 0 ? (
+                        <p className="text-muted-foreground">
+                          {isPremium
+                            ? "Pemandu atau nomor kontak pengguna/pemandu belum tersedia pada langganan aktif."
+                            : "Pelaporan pemandu hanya tersedia jika Anda memiliki langganan aktif."}
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          <Label className="font-bold text-foreground">Pemandu dari langganan aktif</Label>
+                          <Select
+                            value={selectedSubsId}
+                            onValueChange={setSelectedSubsId}
+                            disabled={submitting}
+                          >
+                            <SelectTrigger className="h-12 rounded-xl bg-background">
+                              <SelectValue placeholder="Pilih pemandu langganan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {guideSubscriptions.map((subscription) => (
+                                <SelectItem
+                                  key={subscription.subs_id}
+                                  value={subscription.subs_id}
+                                  disabled={!isReportableGuideSubscription(subscription)}
+                                >
+                                  {subscription.guide_name || "Pemandu belum ditetapkan"}
+                                  {!isReportableGuideSubscription(subscription) && " (kontak belum tersedia)"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {isReportableGuideSubscription(selectedGuideSubscription) && (
+                            <div className="grid gap-2 text-muted-foreground sm:grid-cols-2">
+                              <p>Nomor pengguna: <span className="font-semibold text-foreground">{selectedGuideSubscription.user_phone}</span></p>
+                              <p>Nomor pemandu: <span className="font-semibold text-foreground">{selectedGuideSubscription.guide_phone}</span></p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -361,7 +474,13 @@ export default function Reporting() {
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={submitting || !category || !locationId || description.length < 10}
+                    disabled={
+                      submitting ||
+                      !category ||
+                      !locationId ||
+                      description.length < 10 ||
+                      (category === "Pemandu" && (!isReportableGuideSubscription(selectedGuideSubscription) || loadingGuideSubscriptions))
+                    }
                     className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold">
                     {submitting
                       ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Mengirim...</>
@@ -523,6 +642,20 @@ export default function Reporting() {
                     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/15">
                       <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">Lokasi Kejadian</p>
                       <p className="font-bold text-foreground text-[15px]">{locationDisplay}</p>
+                    </div>
+                  )}
+
+                  {selectedReport.category === "Pemandu" && (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="p-4 bg-muted/30 rounded-2xl border border-border">
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">Pemandu</p>
+                        <p className="font-bold text-foreground text-[15px]">{selectedReport.guide_name || "Tidak tersedia"}</p>
+                        <p className="text-[13px] text-muted-foreground mt-1">{selectedReport.guide_phone || "Nomor tidak tersedia"}</p>
+                      </div>
+                      <div className="p-4 bg-muted/30 rounded-2xl border border-border">
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">Nomor Pengguna</p>
+                        <p className="font-bold text-foreground text-[15px]">{selectedReport.user_phone || "Tidak tersedia"}</p>
+                      </div>
                     </div>
                   )}
 
