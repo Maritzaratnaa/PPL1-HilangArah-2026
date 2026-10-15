@@ -57,7 +57,7 @@ const createReport = async (req, res) => {
 
         const reportId = crypto.randomUUID();
 
-        const query = `
+       const query = `
             INSERT INTO reports (report_id, reporter_id, category, stop_id, subs_id, phone_number, description, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')
         `;
@@ -68,6 +68,7 @@ const createReport = async (req, res) => {
             category, 
             stop_id || null, 
             reportSubscriptionId,
+            phone_number || null, // <--- TAMBAHKAN BARIS INI
             description
         ]);
 
