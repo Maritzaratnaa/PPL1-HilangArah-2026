@@ -68,7 +68,7 @@ const createReport = async (req, res) => {
             category, 
             stop_id || null, 
             reportSubscriptionId,
-            phone_number || null, // <--- TAMBAHKAN BARIS INI
+            phone_number || null,
             description
         ]);
 
@@ -159,7 +159,7 @@ const getMyReports = async (req, res) => {
 const getLocationOptions = async (req, res) => {
     try {
         const [stops] = await pool.query(
-            `SELECT stop_id AS id, name, address AS detail, 'stop' AS type
+            `SELECT stop_id AS id, name, address AS detail, latitude, longitude, 'stop' AS type
              FROM stops
              WHERE is_active = 1
              ORDER BY name ASC`
@@ -172,11 +172,40 @@ const getLocationOptions = async (req, res) => {
              ORDER BY name ASC`
         );
 
+        const [routes] = await pool.query(
+            `SELECT 
+                TRIM(r.route_id) AS id,
+                r.route_name AS name,
+                t.name AS trans_name,
+                t.type AS trans_type
+             FROM routes r
+             LEFT JOIN trans t ON r.trans_id = t.trans_id
+             WHERE r.is_active = 1
+             ORDER BY t.name ASC, r.route_name ASC`
+        );
+
+        const [routeStops] = await pool.query(
+            `SELECT 
+                TRIM(rs.route_id) AS route_id,
+                TRIM(rs.stop_id) AS stop_id,
+                s.name AS stop_name,
+                s.address AS stop_detail,
+                s.latitude,
+                s.longitude,
+                rs.stop_order
+             FROM route_stops rs
+             JOIN stops s ON rs.stop_id = s.stop_id
+             WHERE s.is_active = 1
+             ORDER BY rs.route_id, rs.stop_order ASC`
+        );
+
         res.status(200).json({
             message: "Daftar lokasi berhasil diambil.",
             data: {
                 stops,
-                trans
+                trans,
+                routes,
+                routeStops
             }
         });
     } catch (error) {

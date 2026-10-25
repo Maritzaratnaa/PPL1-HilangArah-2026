@@ -259,11 +259,15 @@ describe('reportController', () => {
 
     describe('getLocationOptions', () => {
         it('should successfully get location options', async () => {
-            const mockStops = [{ id: 's1', name: 'Stop A', detail: 'Address A', type: 'stop' }];
+            const mockStops = [{ id: 's1', name: 'Stop A', detail: 'Address A', latitude: -6.2, longitude: 106.8, type: 'stop' }];
             const mockTransports = [{ id: 't1', name: 'Bus 1', detail: 'BRT', type: 'trans' }];
+            const mockRoutes = [{ id: 'r1', name: 'Route 1', trans_name: 'Bus 1', trans_type: 'Bus' }];
+            const mockRouteStops = [{ route_id: 'r1', stop_id: 's1', stop_name: 'Stop A', stop_detail: 'Address A', latitude: -6.2, longitude: 106.8, stop_order: 1 }];
             pool.query
                 .mockResolvedValueOnce([mockStops])
-                .mockResolvedValueOnce([mockTransports]);
+                .mockResolvedValueOnce([mockTransports])
+                .mockResolvedValueOnce([mockRoutes])
+                .mockResolvedValueOnce([mockRouteStops]);
 
             await getLocationOptions(req, res);
 
@@ -272,11 +276,11 @@ describe('reportController', () => {
                 message: "Daftar lokasi berhasil diambil.",
                 data: {
                     stops: mockStops,
-                    trans: mockTransports
+                    trans: mockTransports,
+                    routes: mockRoutes,
+                    routeStops: mockRouteStops
                 }
             });
         });
-
-        
     });
 });
