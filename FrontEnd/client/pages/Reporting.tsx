@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import {
   CheckCircle, AlertCircle, Clock, MessageSquare, Plus, ArrowRight,
   ShieldAlert, Inbox, Sparkles, X, Calendar, Loader2, Phone,
+  MapPin, Navigation, Route, ListFilter,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -42,6 +43,25 @@ interface LocationOption {
   name: string;
   type: "stop" | "trans";
   detail?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+interface RouteOption {
+  id: string;
+  name: string;
+  trans_name?: string;
+  trans_type?: string;
+}
+
+interface RouteStop {
+  route_id: string;
+  stop_id: string;
+  stop_name: string;
+  stop_detail?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  stop_order: number;
 }
 
 interface GuideSubscription {
@@ -50,6 +70,21 @@ interface GuideSubscription {
   employee_id: string | null;
   guide_name: string | null;
   guide_phone: string | null;
+}
+
+function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3;
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.round(R * c);
 }
 
 const reportCategories = [
@@ -92,6 +127,13 @@ export default function Reporting() {
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [locationError, setLocationError]       = useState("");
 
+  const [routes, setRoutes]                     = useState<RouteOption[]>([]);
+  const [routeStops, setRouteStops]             = useState<RouteStop[]>([]);
+  const [selectedRouteId, setSelectedRouteId]   = useState<string>("");
+  const [locationMode, setLocationMode]         = useState<"current" | "route" | "all">("route");
+  const [isLocating, setIsLocating]             = useState(false);
+  const [locationNote, setLocationNote]         = useState<string>("");
+
   const [existingPhone, setExistingPhone] = useState<string>("");
   const [phoneOption, setPhoneOption]     = useState<"existing" | "new">("existing");
   const [customPhone, setCustomPhone]     = useState("");
@@ -102,6 +144,7 @@ export default function Reporting() {
     fetchReports();
     fetchLocations();
     fetchGuideSubscriptions();
+    fetchUserProfile(); 
   }, [navigate]);
 
   const fetchUserProfile = async () => {
@@ -238,10 +281,12 @@ export default function Reporting() {
       }
 
       const stops: LocationOption[] = (json.data?.stops ?? []).map((s: any) => ({
-        id:     s.id,
-        name:   s.name,
-        type:   "stop" as const,
-        detail: s.detail || "",
+        id:        s.id,
+        name:      s.name,
+        type:      "stop" as const,
+        detail:    s.detail || "",
+        latitude:  s.latitude != null ? Number(s.latitude) : null,
+        longitude: s.longitude != null ? Number(s.longitude) : null,
       }));
 
       const trans: LocationOption[] = (json.data?.trans ?? []).map((t: any) => ({
@@ -254,6 +299,25 @@ export default function Reporting() {
       const combined = [...stops, ...trans];
       setLocationOptions(combined);
 
+      const rts: RouteOption[] = (json.data?.routes ?? []).map((r: any) => ({
+        id:         r.id,
+        name:       r.name,
+        trans_name: r.trans_name || "",
+        trans_type: r.trans_type || "",
+      }));
+      setRoutes(rts);
+
+      const rStops: RouteStop[] = (json.data?.routeStops ?? []).map((rs: any) => ({
+        route_id:    rs.route_id,
+        stop_id:     rs.stop_id,
+        stop_name:   rs.stop_name,
+        stop_detail: rs.stop_detail || "",
+        latitude:    rs.latitude != null ? Number(rs.latitude) : null,
+        longitude:   rs.longitude != null ? Number(rs.longitude) : null,
+        stop_order:  rs.stop_order,
+      }));
+      setRouteStops(rStops);
+
       if (combined.length === 0) {
         setLocationError("Belum ada data lokasi aktif. Silakan hubungi admin.");
       }
@@ -265,11 +329,88 @@ export default function Reporting() {
     }
   };
 
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Perangkat Anda tidak mendukung fitur lokasi (Geolocation).");
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationNote("");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setIsLocating(false);
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+
+        const stopsWithCoords = locationOptions.filter(
+          (s) => s.type === "stop" && s.latitude != null && s.longitude != null && !isNaN(Number(s.latitude)) && !isNaN(Number(s.longitude))
+        );
+
+        if (stopsWithCoords.length === 0) {
+          alert("Data koordinat halte belum tersedia di sistem. Silakan pilih rute atau lokasi secara manual.");
+          return;
+        }
+
+        let nearestStop = stopsWithCoords[0];
+        let shortestDist = calculateDistanceMeters(
+          userLat,
+          userLng,
+          Number(nearestStop.latitude),
+          Number(nearestStop.longitude)
+        );
+
+        for (let i = 1; i < stopsWithCoords.length; i++) {
+          const s = stopsWithCoords[i];
+          const dist = calculateDistanceMeters(
+            userLat,
+            userLng,
+            Number(s.latitude),
+            Number(s.longitude)
+          );
+          if (dist < shortestDist) {
+            shortestDist = dist;
+            nearestStop = s;
+          }
+        }
+
+        setLocationId(nearestStop.id);
+        const distText = shortestDist < 1000 ? `${shortestDist} meter` : `${(shortestDist / 1000).toFixed(1)} km`;
+        setLocationNote(`Terdeteksi ± ${distText} dari posisi GPS Anda`);
+      },
+      (error) => {
+        setIsLocating(false);
+        let errorMsg = "Gagal mendeteksi lokasi saat ini.";
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = "Izin akses lokasi ditolak oleh browser. Silakan aktifkan izin lokasi di browser atau pilih rute secara manual.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMsg = "Informasi lokasi tidak tersedia pada perangkat Anda.";
+        } else if (error.code === error.TIMEOUT) {
+          errorMsg = "Waktu permintaan lokasi habis. Silakan coba lagi.";
+        }
+        alert(errorMsg);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
+  const handleRouteChange = (routeId: string) => {
+    setSelectedRouteId(routeId);
+    const stopsInRoute = routeStops.filter((rs) => rs.route_id === routeId);
+    if (!stopsInRoute.some((rs) => rs.stop_id === locationId)) {
+      setLocationId("");
+    }
+  };
+
   const resetForm = () => {
     setShowForm(false);
     setCategory("");
     setSelectedSubsId("");
     setLocationId("");
+    setSelectedRouteId("");
+    setLocationMode("route");
+    setLocationNote("");
     setDescription("");
     setCustomPhone("");
     setPhoneOption(existingPhone ? "existing" : "new");
@@ -285,6 +426,7 @@ export default function Reporting() {
 
   const availableGuideSubscriptions = guideSubscriptions.filter(isReportableGuideSubscription);
   const selectedGuideSubscription = guideSubscriptions.find((subscription) => subscription.subs_id === selectedSubsId);
+  const selectedRoute = routes.find((r) => r.id === selectedRouteId);
   const selectedLocation = locationOptions.find((o) => o.id === locationId);
 
   const filteredReports = reports.filter(
@@ -457,33 +599,227 @@ export default function Reporting() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-[15px] font-bold text-foreground ml-1">
-                    Lokasi Kejadian
-                  </Label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <Label className="text-[15px] font-bold text-foreground ml-1">
+                      Lokasi Kejadian
+                    </Label>
+
+                    <div className="flex flex-wrap gap-1.5 p-1 bg-muted/50 rounded-xl border border-border w-fit">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLocationMode("current");
+                          handleUseCurrentLocation();
+                        }}
+                        disabled={submitting || loadingLocations}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          locationMode === "current"
+                            ? "bg-card text-primary shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Navigation size={13} />
+                        Gunakan Lokasi Saat Ini
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLocationMode("route")}
+                        disabled={submitting || loadingLocations}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          locationMode === "route"
+                            ? "bg-card text-primary shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Route size={13} />
+                        Pilih Sesuai Rute
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLocationMode("all")}
+                        disabled={submitting || loadingLocations}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          locationMode === "all"
+                            ? "bg-card text-primary shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <ListFilter size={13} />
+                        Semua Lokasi
+                      </button>
+                    </div>
+                  </div>
 
                   {loadingLocations ? (
                     <div className="h-14 border border-border rounded-2xl px-4 flex items-center gap-3 text-muted-foreground">
                       <Loader2 size={18} className="animate-spin text-primary" />
-                      <span className="text-[15px]">Memuat daftar lokasi...</span>
+                      <span className="text-[15px]">Memuat daftar lokasi dan rute...</span>
+                    </div>
+                  ) : locationError ? (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm">
+                      {locationError}
                     </div>
                   ) : (
-                    <SearchableDropdown
-                      options={[
-                        ...locationOptions
-                          .filter((o) => o.type === "stop")
-                          .map((o) => ({ value: o.id, label: o.name, group: "Halte / Stasiun", detail: o.detail })),
-                        ...locationOptions
-                          .filter((o) => o.type === "trans")
-                          .map((o) => ({ value: o.id, label: o.name, group: "Transportasi", detail: o.detail })),
-                      ]}
-                      value={locationId}
-                      onChange={setLocationId}
-                      placeholder="Pilih halte atau transportasi..."
-                      searchPlaceholder="Cari lokasi..."
-                      disabled={submitting}
-                      triggerClassName="h-14 rounded-2xl text-[16px] font-medium"
-                      dropdownClassName="text-[16px]"
-                    />
+                    <>
+                      {locationMode === "current" && (
+                        <div className="space-y-3 p-4 rounded-2xl border border-border bg-card/60">
+                          {isLocating ? (
+                            <div className="h-20 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                              <Loader2 size={22} className="animate-spin text-primary" />
+                              <span className="text-sm font-medium">Mendeteksi koordinat GPS dan halte terdekat...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                                    <MapPin size={20} />
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-bold text-foreground">
+                                      {locationId ? (
+                                        locationOptions.find((o) => o.id === locationId)?.name || "Halte Terdeteksi"
+                                      ) : (
+                                        "Belum ada lokasi terdeteksi"
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {locationNote || "Klik tombol di samping untuk mendeteksi halte terdekat dari posisi GPS Anda"}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleUseCurrentLocation}
+                                  disabled={isLocating || submitting}
+                                  className="gap-1.5 rounded-xl font-semibold flex-shrink-0 w-fit"
+                                >
+                                  <Navigation size={14} />
+                                  {locationId ? "Deteksi Ulang" : "Deteksi Lokasi"}
+                                </Button>
+                              </div>
+
+                              <div className="pt-3 border-t border-border/60">
+                                <Label className="text-xs text-muted-foreground block mb-1.5">
+                                  Bukan lokasi yang tepat? Ganti manual dengan halte lain:
+                                </Label>
+                                <SearchableDropdown
+                                  options={locationOptions
+                                    .filter((o) => o.type === "stop")
+                                    .map((o) => ({
+                                      value: o.id,
+                                      label: o.name,
+                                      detail: o.detail,
+                                    }))}
+                                  value={locationId}
+                                  onChange={(val) => {
+                                    setLocationId(val);
+                                    setLocationNote("Dipilih manual");
+                                  }}
+                                  placeholder="Cari atau ganti halte..."
+                                  searchPlaceholder="Ketik nama halte..."
+                                  disabled={submitting}
+                                  triggerClassName="h-11 rounded-xl text-[14px]"
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {locationMode === "route" && (
+                        <div className="space-y-3 p-4 rounded-2xl border border-border bg-card/60">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-muted-foreground">
+                              1. Pilih Rute Transportasi
+                            </Label>
+                            <SearchableDropdown
+                              options={routes.map((r) => ({
+                                value: r.id,
+                                label: r.name,
+                                group: r.trans_type || r.trans_name || "Rute",
+                                detail: [r.trans_name, r.trans_type].filter(Boolean).join(" • "),
+                              }))}
+                              value={selectedRouteId}
+                              onChange={handleRouteChange}
+                              placeholder="Pilih rute perjalanan..."
+                              searchPlaceholder="Cari rute (misal: Koridor 1, MRT, LRT)..."
+                              disabled={submitting}
+                              triggerClassName="h-12 rounded-xl text-[15px]"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-muted-foreground">
+                              2. Pilih Halte / Stasiun pada Rute
+                            </Label>
+                            <SearchableDropdown
+                              options={
+                                selectedRouteId
+                                  ? routeStops
+                                      .filter((rs) => rs.route_id === selectedRouteId)
+                                      .sort((a, b) => a.stop_order - b.stop_order)
+                                      .map((rs) => ({
+                                        value: rs.stop_id,
+                                        label: `${rs.stop_order}. ${rs.stop_name}`,
+                                        detail: rs.stop_detail,
+                                      }))
+                                  : []
+                              }
+                              value={locationId}
+                              onChange={(val) => {
+                                setLocationId(val);
+                                setLocationNote("");
+                              }}
+                              placeholder={
+                                selectedRouteId
+                                  ? "Pilih halte di sepanjang rute ini..."
+                                  : "Pilih rute di atas terlebih dahulu"
+                              }
+                              searchPlaceholder="Cari nama halte pada rute ini..."
+                              disabled={submitting || !selectedRouteId}
+                              triggerClassName="h-12 rounded-xl text-[15px]"
+                            />
+                            {selectedRoute && (
+                              <p className="text-xs text-muted-foreground ml-1">
+                                Menampilkan halte yang dilayani oleh rute <span className="font-semibold text-foreground">{selectedRoute.name}</span>.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {locationMode === "all" && (
+                        <div className="space-y-2">
+                          <SearchableDropdown
+                            options={[
+                              ...locationOptions
+                                .filter((o) => o.type === "stop")
+                                .map((o) => ({ value: o.id, label: o.name, group: "Halte / Stasiun", detail: o.detail })),
+                              ...locationOptions
+                                .filter((o) => o.type === "trans")
+                                .map((o) => ({ value: o.id, label: o.name, group: "Transportasi", detail: o.detail })),
+                            ]}
+                            value={locationId}
+                            onChange={(val) => {
+                              setLocationId(val);
+                              setLocationNote("");
+                            }}
+                            placeholder="Pilih halte atau transportasi..."
+                            searchPlaceholder="Cari langsung semua halte atau transportasi..."
+                            disabled={submitting}
+                            triggerClassName="h-14 rounded-2xl text-[16px] font-medium"
+                            dropdownClassName="text-[16px]"
+                          />
+                          <p className="text-xs text-muted-foreground ml-1">
+                            Cari langsung dari seluruh halte, stasiun, atau armada transportasi yang terdaftar.
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
