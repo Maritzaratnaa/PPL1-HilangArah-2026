@@ -18,6 +18,7 @@ import {
   Users,
   Cloud,
   Car,
+  AlertTriangle, // Tambahan import icon untuk tombol lapor
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -424,15 +425,15 @@ export default function RouteMap() {
   const fetchMLPredictions = async () => {
     if (!selectedRoute || !selectedRoute.legs) return null;
     try {
-      let cumulativeTime = 0; // Menghitung akumulasi waktu transit
+      let cumulativeTime = 0; 
       
       const legsPayload = selectedRoute.legs.map((leg) => {
         const currentOffset = cumulativeTime;
-        cumulativeTime += leg.estimated_time_minutes; // Tambah durasi leg saat ini untuk leg berikutnya
+        cumulativeTime += leg.estimated_time_minutes; 
         
         return {
           route_id: leg.route_name,
-          halte_id: leg.origin_stop, // DIKIRIM KE BACKEND (wajib untuk filter Node.js terbaru)
+          halte_id: leg.origin_stop, 
           offset_menit: currentOffset,
         };
       });
@@ -840,7 +841,22 @@ export default function RouteMap() {
           className="w-1.5 cursor-col-resize bg-border hover:bg-primary/40 transition-colors shrink-0"
         />
 
-        <div className="relative flex-1 h-full">{mapView}</div>
+        {/* --- TOMBOL LAPOR DESKTOP --- */}
+        <div className="relative flex-1 h-full">
+          {mapView}
+          
+          {/* Posisi dipindah ke pojok kiri bawah peta */}
+          <div className="absolute bottom-8 left-4 z-10">
+            <Button
+              variant="destructive"
+              className="shadow-lg font-bold"
+              onClick={() => navigate("/reporting")}
+            >
+              <AlertTriangle size={16} className="mr-2" />
+              Lapor
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -876,11 +892,19 @@ export default function RouteMap() {
                 {selectedRoute.total_estimated_time} mnt • {firstStopName} → {finalStopName}
               </p>
             </div>
-            {showPanel ? (
-              <ChevronDown size={18} className="text-muted-foreground shrink-0 ml-2" />
-            ) : (
-              <ChevronUp size={18} className="text-muted-foreground shrink-0 ml-2" />
-            )}
+            
+            <Button
+              size="sm"
+              variant="destructive"
+              className="shrink-0 ml-2 h-8 px-3 rounded-full text-xs font-bold"
+              onClick={(e) => {
+                e.stopPropagation(); 
+                navigate("/reporting");
+              }}
+            >
+              <AlertTriangle size={14} className="mr-1.5" />
+              Lapor
+            </Button>
           </div>
         </button>
 
