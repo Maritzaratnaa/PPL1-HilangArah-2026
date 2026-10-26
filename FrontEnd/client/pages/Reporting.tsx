@@ -133,6 +133,8 @@ export default function Reporting() {
   const [locationMode, setLocationMode]         = useState<"current" | "route" | "all">("route");
   const [isLocating, setIsLocating]             = useState(false);
   const [locationNote, setLocationNote]         = useState<string>("");
+  const [detectedAddress, setDetectedAddress]   = useState<string>("");
+  const [detectedStopName, setDetectedStopName] = useState<string>("");
 
   const [existingPhone, setExistingPhone] = useState<string>("");
   const [phoneOption, setPhoneOption]     = useState<"existing" | "new">("existing");
@@ -216,13 +218,7 @@ export default function Reporting() {
       const json = await res.json();
       if (res.ok) {
         setSuccessMessage(true);
-        setShowForm(false);
-        setCategory("");
-        setSelectedSubsId("");
-        setLocationId("");
-        setDescription("");
-        setCustomPhone("");
-        setPhoneOption(existingPhone ? "existing" : "new");
+        resetForm();
         setTimeout(() => setSuccessMessage(false), 4000);
         fetchReports();
       } else if (res.status === 403) {
@@ -329,6 +325,7 @@ export default function Reporting() {
     }
   };
 
+  // --- INTEGRASI API DETEKSI LOKASI & HALTE TERDEKAT ---
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
       alert("Perangkat Anda tidak mendukung fitur lokasi (Geolocation).");
@@ -337,47 +334,96 @@ export default function Reporting() {
 
     setIsLocating(true);
     setLocationNote("");
+    setDetectedAddress("");
+    setDetectedStopName("");
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setIsLocating(false);
+      async (position) => {
         const userLat = position.coords.latitude;
         const userLng = position.coords.longitude;
 
-        const stopsWithCoords = locationOptions.filter(
-          (s) => s.type === "stop" && s.latitude != null && s.longitude != null && !isNaN(Number(s.latitude)) && !isNaN(Number(s.longitude))
-        );
+        try {
+          const token = localStorage.getItem("token");
+          const res = await fetch(`${BASE_URL}/api/location/nearest-stop`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ lat: userLat, lng: userLng }),
+          });
 
-        if (stopsWithCoords.length === 0) {
-          alert("Data koordinat halte belum tersedia di sistem. Silakan pilih rute atau lokasi secara manual.");
-          return;
-        }
+          const json = await res.json();
 
-        let nearestStop = stopsWithCoords[0];
-        let shortestDist = calculateDistanceMeters(
-          userLat,
-          userLng,
-          Number(nearestStop.latitude),
-          Number(nearestStop.longitude)
-        );
+          if (res.ok && json.success && json.nearest_stop) {
+            const { stop_id, name, distance_meters } = json.nearest_stop;
+            const roundedDist = Math.round(Number(distance_meters));
+            const distText =
+              roundedDist < 1000
+                ? `${roundedDist} meter`
+                : `${(roundedDist / 1000).toFixed(1)} km`;
 
-        for (let i = 1; i < stopsWithCoords.length; i++) {
-          const s = stopsWithCoords[i];
-          const dist = calculateDistanceMeters(
+            setLocationId(stop_id);
+            setDetectedStopName(name || "");
+            setLocationNote(`Terdeteksi ± ${distText} dari posisi GPS Anda`);
+            setDetectedAddress(
+              json.address && json.address !== "Alamat tidak terdeteksi"
+                ? json.address
+                : json.nearest_stop.address || ""
+            );
+            return;
+          } else {
+            alert(json.message || "Tidak ada halte aktif dengan koordinat yang tersedia.");
+          }
+        } catch (err) {
+          console.error("Gagal menghubungi API nearest-stop, menggunakan fallback lokal:", err);
+          // Fallback menggunakan perhitungan Haversine di sisi client jika request ke API gagal
+          const stopsWithCoords = locationOptions.filter(
+            (s) =>
+              s.type === "stop" &&
+              s.latitude != null &&
+              s.longitude != null &&
+              !isNaN(Number(s.latitude)) &&
+              !isNaN(Number(s.longitude))
+          );
+
+          if (stopsWithCoords.length === 0) {
+            alert("Gagal mendeteksi halte terdekat dari server. Silakan pilih rute atau lokasi secara manual.");
+            return;
+          }
+
+          let nearestStop = stopsWithCoords[0];
+          let shortestDist = calculateDistanceMeters(
             userLat,
             userLng,
-            Number(s.latitude),
-            Number(s.longitude)
+            Number(nearestStop.latitude),
+            Number(nearestStop.longitude)
           );
-          if (dist < shortestDist) {
-            shortestDist = dist;
-            nearestStop = s;
-          }
-        }
 
-        setLocationId(nearestStop.id);
-        const distText = shortestDist < 1000 ? `${shortestDist} meter` : `${(shortestDist / 1000).toFixed(1)} km`;
-        setLocationNote(`Terdeteksi ± ${distText} dari posisi GPS Anda`);
+          for (let i = 1; i < stopsWithCoords.length; i++) {
+            const s = stopsWithCoords[i];
+            const dist = calculateDistanceMeters(
+              userLat,
+              userLng,
+              Number(s.latitude),
+              Number(s.longitude)
+            );
+            if (dist < shortestDist) {
+              shortestDist = dist;
+              nearestStop = s;
+            }
+          }
+
+          setLocationId(nearestStop.id);
+          setDetectedStopName(nearestStop.name);
+          const distText =
+            shortestDist < 1000
+              ? `${shortestDist} meter`
+              : `${(shortestDist / 1000).toFixed(1)} km`;
+          setLocationNote(`Terdeteksi ± ${distText} dari posisi GPS Anda`);
+        } finally {
+          setIsLocating(false);
+        }
       },
       (error) => {
         setIsLocating(false);
@@ -411,6 +457,8 @@ export default function Reporting() {
     setSelectedRouteId("");
     setLocationMode("route");
     setLocationNote("");
+    setDetectedAddress("");
+    setDetectedStopName("");
     setDescription("");
     setCustomPhone("");
     setPhoneOption(existingPhone ? "existing" : "new");
@@ -427,7 +475,6 @@ export default function Reporting() {
   const availableGuideSubscriptions = guideSubscriptions.filter(isReportableGuideSubscription);
   const selectedGuideSubscription = guideSubscriptions.find((subscription) => subscription.subs_id === selectedSubsId);
   const selectedRoute = routes.find((r) => r.id === selectedRouteId);
-  const selectedLocation = locationOptions.find((o) => o.id === locationId);
 
   const filteredReports = reports.filter(
     (r) =>
@@ -671,14 +718,16 @@ export default function Reporting() {
                           ) : (
                             <>
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                                <div className="flex items-start gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
                                     <MapPin size={20} />
                                   </div>
-                                  <div>
+                                  <div className="space-y-0.5">
                                     <div className="text-sm font-bold text-foreground">
                                       {locationId ? (
-                                        locationOptions.find((o) => o.id === locationId)?.name || "Halte Terdeteksi"
+                                        locationOptions.find((o) => o.id === locationId)?.name ||
+                                        detectedStopName ||
+                                        "Halte Terdeteksi"
                                       ) : (
                                         "Belum ada lokasi terdeteksi"
                                       )}
@@ -686,6 +735,11 @@ export default function Reporting() {
                                     <div className="text-xs text-muted-foreground">
                                       {locationNote || "Klik tombol di samping untuk mendeteksi halte terdekat dari posisi GPS Anda"}
                                     </div>
+                                    {detectedAddress && (
+                                      <div className="text-[11px] text-primary/80 font-medium pt-0.5">
+                                        📍 Sekitar: {detectedAddress}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
