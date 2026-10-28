@@ -5,6 +5,7 @@ import {
   useJsApiLoader,
   DirectionsService,
   DirectionsRenderer,
+  Marker,
 } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,8 @@ import {
   Users,
   Cloud,
   Car,
-  AlertTriangle, // Tambahan import icon untuk tombol lapor
+  AlertTriangle,
+  Crosshair,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -336,6 +338,37 @@ function RealTimeInfoCard({
 export default function RouteMap() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [userPos, setUserPos] = useState<google.maps.LatLngLiteral | null>(null);
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserPos({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Gagal mengambil posisi pengguna:", error.message);
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
+
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const onLoadMap = useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
+  }, []);
+  const handleCenterToUser = () => {
+    if (map && userPos) {
+      map.panTo(userPos);
+      map.setZoom(16);
+    } else {
+      alert("Lokasi kamu belum terdeteksi. Pastikan izin lokasi (GPS) sudah diaktifkan.");
+    }
+  };
+
   const selectedRoute = location.state?.selectedRoute as RouteResult | undefined;
   const filterCategory = location.state?.filterCategory || "";
 
@@ -807,17 +840,42 @@ export default function RouteMap() {
   const mapView = (
     <>
       {isLoaded ? (
-        <GoogleMap mapContainerStyle={containerStyle} center={{ lat: -6.2, lng: 106.816666 }} zoom={13}>
-          <DirectionsService
-            options={{
-              origin: mapOrigin,
-              destination: mapDestination,
-              travelMode: google.maps.TravelMode.TRANSIT,
-            }}
-            callback={directionsCallback}
-          />
-          {response && <DirectionsRenderer options={{ directions: response }} />}
-        </GoogleMap>
+        <div className="relative w-full h-full">
+          <GoogleMap mapContainerStyle={containerStyle} center={userPos || { lat: -6.2, lng: 106.816666 }} zoom={13} onLoad={onLoadMap}
+          options={{
+            cameraControl: false,
+          }}>
+            {userPos && (
+              <Marker
+                position={userPos}
+                title="Lokasi Anda Sekarang"
+                icon={{
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: "#3B82F6",
+                  fillOpacity: 1,
+                  strokeColor: "#FFFFFF", 
+                  strokeWeight: 3,
+                }}
+              />
+            )}
+            <DirectionsService
+              options={{
+                origin: mapOrigin,
+                destination: mapDestination,
+                travelMode: google.maps.TravelMode.TRANSIT,
+              }}
+              callback={directionsCallback}
+            />
+            {response && <DirectionsRenderer options={{ directions: response }} />}
+          </GoogleMap>
+          <button
+              onClick={handleCenterToUser}
+              title="Pusatkan ke lokasi saya"
+              className="absolute bottom-32 right-2 md:bottom-20 md:left-auto md:right-2 z-20 bg-card border border-border p-3 rounded-full shadow-lg hover:bg-muted transition-colors text-foreground">
+              <Crosshair size={20} className="text-primary" />        
+          </button>
+        </div>
       ) : (
         <div className="flex items-center justify-center h-full">
           <Loader2 className="animate-spin text-muted-foreground" size={32} />
@@ -845,7 +903,6 @@ export default function RouteMap() {
         <div className="relative flex-1 h-full">
           {mapView}
           
-          {/* Posisi dipindah ke pojok kiri bawah peta */}
           <div className="absolute bottom-8 left-4 z-10">
             <Button
               variant="destructive"
