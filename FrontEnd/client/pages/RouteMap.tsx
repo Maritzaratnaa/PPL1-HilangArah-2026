@@ -364,6 +364,25 @@ export default function RouteMap() {
     if (map && userPos) {
       map.panTo(userPos);
       map.setZoom(16);
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setUserPos(pos);
+          if (map) {
+            map.panTo(pos);
+            map.setZoom(16);
+          }
+        },
+        (error) => {
+          console.error("Gagal mengambil posisi pengguna:", error.message);
+          alert("Lokasi kamu belum terdeteksi. Pastikan izin lokasi (GPS) sudah diaktifkan.");
+        },
+        { enableHighAccuracy: true }
+      );
     } else {
       alert("Lokasi kamu belum terdeteksi. Pastikan izin lokasi (GPS) sudah diaktifkan.");
     }
@@ -373,6 +392,52 @@ export default function RouteMap() {
   const filterCategory = location.state?.filterCategory || "";
 
   const [response, setResponse] = useState<google.maps.DirectionsResult | null>(null);
+
+  const handleCenterToOrigin = () => {
+    if (!map) return;
+
+    // 1. Coba ambil dari start_location Google Directions response jika ada
+    const startLoc = response?.routes?.[0]?.legs?.[0]?.start_location;
+    if (startLoc) {
+      map.panTo(startLoc);
+      map.setZoom(16);
+      return;
+    }
+
+    // 2. Coba ambil dari koordinat halte awal pada data rute
+    const firstLeg = selectedRoute?.legs?.[0];
+    const originStopData =
+      firstLeg?.route_path?.find(
+        (s) => s.stop_name === firstLeg.origin_stop && s.latitude && s.longitude
+      ) ||
+      firstLeg?.route_path?.find((s) => s.latitude && s.longitude) ||
+      firstLeg?.route_path?.[0];
+
+    if (originStopData?.latitude && originStopData?.longitude) {
+      map.panTo({
+        lat: parseFloat(originStopData.latitude.toString()),
+        lng: parseFloat(originStopData.longitude.toString()),
+      });
+      map.setZoom(16);
+      return;
+    }
+
+    // 3. Fallback geocoding dengan Google Maps Geocoder jika nama halte awal tersedia
+    if (window.google?.maps?.Geocoder && firstLeg?.origin_stop) {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: `${firstLeg.origin_stop}, Jakarta` }, (results, status) => {
+        if (status === "OK" && results?.[0]?.geometry?.location) {
+          map.panTo(results[0].geometry.location);
+          map.setZoom(16);
+        } else {
+          alert("Titik asal rute tidak ditemukan.");
+        }
+      });
+      return;
+    }
+
+    alert("Titik asal rute tidak ditemukan.");
+  };
 
   const [isMobile, setIsMobile] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
@@ -425,7 +490,7 @@ export default function RouteMap() {
     return "Lancar";
   };
 
-  const fetchETA = async (leg: JourneyLeg, currentRealTimeInfo?: RealTimeInfo): Promise<number> => {
+  const fetchETA = async (leg: JourneyLeg, currentRealTimeInfo?: Partial<RealTimeInfo>): Promise<number> => {
     try {
       const token = localStorage.getItem("token");
       const statusLaluLintas = currentRealTimeInfo?.status_lalu_lintas 
@@ -869,12 +934,28 @@ export default function RouteMap() {
             />
             {response && <DirectionsRenderer options={{ directions: response }} />}
           </GoogleMap>
-          <button
+          <div
+            className={`absolute right-4 z-20 flex flex-col gap-2 transition-all duration-300 ease-out ${
+              showPanel ? "bottom-[calc(75vh+1rem)]" : "bottom-32"
+            } md:bottom-28 md:right-4`}
+          >
+            <button
+              onClick={handleCenterToOrigin}
+              title="Pusatkan ke titik asal"
+              aria-label="Pusatkan ke titik asal"
+              className="bg-card border border-border p-3 rounded-full shadow-lg hover:bg-muted transition-colors text-foreground"
+            >
+              <MapPin size={20} className="text-primary" />
+            </button>
+            <button
               onClick={handleCenterToUser}
               title="Pusatkan ke lokasi saya"
-              className="absolute bottom-32 right-2 md:bottom-20 md:left-auto md:right-2 z-20 bg-card border border-border p-3 rounded-full shadow-lg hover:bg-muted transition-colors text-foreground">
-              <Crosshair size={20} className="text-primary" />        
-          </button>
+              aria-label="Pusatkan ke lokasi saya"
+              className="bg-card border border-border p-3 rounded-full shadow-lg hover:bg-muted transition-colors text-foreground"
+            >
+              <Crosshair size={20} className="text-primary" />
+            </button>
+          </div>
         </div>
       ) : (
         <div className="flex items-center justify-center h-full">
