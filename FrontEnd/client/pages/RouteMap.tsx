@@ -5,6 +5,7 @@ import {
   useJsApiLoader,
   DirectionsService,
   DirectionsRenderer,
+  Marker,
 } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,8 @@ import {
   Users,
   Cloud,
   Car,
+  AlertTriangle,
+  Crosshair,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -271,7 +274,7 @@ function RealTimeInfoCard({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          Info Real-time
+          Prediksi Perjalanan
         </p>
         <button
           onClick={() => onRefresh(legIdx)}
@@ -289,9 +292,9 @@ function RealTimeInfoCard({
             <Clock size={12} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] text-muted-foreground">Waktu & ETA</p>
+            <p className="text-[10px] text-muted-foreground">ETA</p>
             <p className="text-xs font-bold truncate">
-              {info.waktu_tempuh_menit} mnt (ETA {info.eta_kedatangan_menit}m)
+              {info.eta_kedatangan_menit} menit
             </p>
           </div>
         </div>
@@ -335,10 +338,106 @@ function RealTimeInfoCard({
 export default function RouteMap() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [userPos, setUserPos] = useState<google.maps.LatLngLiteral | null>(null);
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserPos({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Gagal mengambil posisi pengguna:", error.message);
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
+
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const onLoadMap = useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
+  }, []);
+  const handleCenterToUser = () => {
+    if (map && userPos) {
+      map.panTo(userPos);
+      map.setZoom(16);
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setUserPos(pos);
+          if (map) {
+            map.panTo(pos);
+            map.setZoom(16);
+          }
+        },
+        (error) => {
+          console.error("Gagal mengambil posisi pengguna:", error.message);
+          alert("Lokasi kamu belum terdeteksi. Pastikan izin lokasi (GPS) sudah diaktifkan.");
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      alert("Lokasi kamu belum terdeteksi. Pastikan izin lokasi (GPS) sudah diaktifkan.");
+    }
+  };
+
   const selectedRoute = location.state?.selectedRoute as RouteResult | undefined;
   const filterCategory = location.state?.filterCategory || "";
 
   const [response, setResponse] = useState<google.maps.DirectionsResult | null>(null);
+
+  const handleCenterToOrigin = () => {
+    if (!map) return;
+
+    // 1. Coba ambil dari start_location Google Directions response jika ada
+    const startLoc = response?.routes?.[0]?.legs?.[0]?.start_location;
+    if (startLoc) {
+      map.panTo(startLoc);
+      map.setZoom(16);
+      return;
+    }
+
+    // 2. Coba ambil dari koordinat halte awal pada data rute
+    const firstLeg = selectedRoute?.legs?.[0];
+    const originStopData =
+      firstLeg?.route_path?.find(
+        (s) => s.stop_name === firstLeg.origin_stop && s.latitude && s.longitude
+      ) ||
+      firstLeg?.route_path?.find((s) => s.latitude && s.longitude) ||
+      firstLeg?.route_path?.[0];
+
+    if (originStopData?.latitude && originStopData?.longitude) {
+      map.panTo({
+        lat: parseFloat(originStopData.latitude.toString()),
+        lng: parseFloat(originStopData.longitude.toString()),
+      });
+      map.setZoom(16);
+      return;
+    }
+
+    // 3. Fallback geocoding dengan Google Maps Geocoder jika nama halte awal tersedia
+    if (window.google?.maps?.Geocoder && firstLeg?.origin_stop) {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: `${firstLeg.origin_stop}, Jakarta` }, (results, status) => {
+        if (status === "OK" && results?.[0]?.geometry?.location) {
+          map.panTo(results[0].geometry.location);
+          map.setZoom(16);
+        } else {
+          alert("Titik asal rute tidak ditemukan.");
+        }
+      });
+      return;
+    }
+
+    alert("Titik asal rute tidak ditemukan.");
+  };
 
   const [isMobile, setIsMobile] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
@@ -391,7 +490,7 @@ export default function RouteMap() {
     return "Lancar";
   };
 
-  const fetchETA = async (leg: JourneyLeg, currentRealTimeInfo?: RealTimeInfo): Promise<number> => {
+  const fetchETA = async (leg: JourneyLeg, currentRealTimeInfo?: Partial<RealTimeInfo>): Promise<number> => {
     try {
       const token = localStorage.getItem("token");
       const statusLaluLintas = currentRealTimeInfo?.status_lalu_lintas 
@@ -424,15 +523,15 @@ export default function RouteMap() {
   const fetchMLPredictions = async () => {
     if (!selectedRoute || !selectedRoute.legs) return null;
     try {
-      let cumulativeTime = 0; // Menghitung akumulasi waktu transit
+      let cumulativeTime = 0; 
       
       const legsPayload = selectedRoute.legs.map((leg) => {
         const currentOffset = cumulativeTime;
-        cumulativeTime += leg.estimated_time_minutes; // Tambah durasi leg saat ini untuk leg berikutnya
+        cumulativeTime += leg.estimated_time_minutes; 
         
         return {
           route_id: leg.route_name,
-          halte_id: leg.origin_stop, // DIKIRIM KE BACKEND (wajib untuk filter Node.js terbaru)
+          halte_id: leg.origin_stop, 
           offset_menit: currentOffset,
         };
       });
@@ -806,17 +905,58 @@ export default function RouteMap() {
   const mapView = (
     <>
       {isLoaded ? (
-        <GoogleMap mapContainerStyle={containerStyle} center={{ lat: -6.2, lng: 106.816666 }} zoom={13}>
-          <DirectionsService
-            options={{
-              origin: mapOrigin,
-              destination: mapDestination,
-              travelMode: google.maps.TravelMode.TRANSIT,
-            }}
-            callback={directionsCallback}
-          />
-          {response && <DirectionsRenderer options={{ directions: response }} />}
-        </GoogleMap>
+        <div className="relative w-full h-full">
+          <GoogleMap mapContainerStyle={containerStyle} center={userPos || { lat: -6.2, lng: 106.816666 }} zoom={13} onLoad={onLoadMap}
+          options={{
+            cameraControl: false,
+          }}>
+            {userPos && (
+              <Marker
+                position={userPos}
+                title="Lokasi Anda Sekarang"
+                icon={{
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: "#3B82F6",
+                  fillOpacity: 1,
+                  strokeColor: "#FFFFFF", 
+                  strokeWeight: 3,
+                }}
+              />
+            )}
+            <DirectionsService
+              options={{
+                origin: mapOrigin,
+                destination: mapDestination,
+                travelMode: google.maps.TravelMode.TRANSIT,
+              }}
+              callback={directionsCallback}
+            />
+            {response && <DirectionsRenderer options={{ directions: response }} />}
+          </GoogleMap>
+          <div
+            className={`absolute right-4 z-20 flex flex-col gap-2 transition-all duration-300 ease-out ${
+              showPanel ? "bottom-[calc(75vh+1rem)]" : "bottom-32"
+            } md:bottom-28 md:right-4`}
+          >
+            <button
+              onClick={handleCenterToOrigin}
+              title="Pusatkan ke titik asal"
+              aria-label="Pusatkan ke titik asal"
+              className="bg-card border border-border p-3 rounded-full shadow-lg hover:bg-muted transition-colors text-foreground"
+            >
+              <MapPin size={20} className="text-primary" />
+            </button>
+            <button
+              onClick={handleCenterToUser}
+              title="Pusatkan ke lokasi saya"
+              aria-label="Pusatkan ke lokasi saya"
+              className="bg-card border border-border p-3 rounded-full shadow-lg hover:bg-muted transition-colors text-foreground"
+            >
+              <Crosshair size={20} className="text-primary" />
+            </button>
+          </div>
+        </div>
       ) : (
         <div className="flex items-center justify-center h-full">
           <Loader2 className="animate-spin text-muted-foreground" size={32} />
@@ -840,7 +980,21 @@ export default function RouteMap() {
           className="w-1.5 cursor-col-resize bg-border hover:bg-primary/40 transition-colors shrink-0"
         />
 
-        <div className="relative flex-1 h-full">{mapView}</div>
+        {/* --- TOMBOL LAPOR DESKTOP --- */}
+        <div className="relative flex-1 h-full">
+          {mapView}
+          
+          <div className="absolute bottom-8 left-4 z-10">
+            <Button
+              variant="destructive"
+              className="shadow-lg font-bold"
+              onClick={() => navigate("/reporting")}
+            >
+              <AlertTriangle size={16} className="mr-2" />
+              Lapor
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -876,11 +1030,19 @@ export default function RouteMap() {
                 {selectedRoute.total_estimated_time} mnt • {firstStopName} → {finalStopName}
               </p>
             </div>
-            {showPanel ? (
-              <ChevronDown size={18} className="text-muted-foreground shrink-0 ml-2" />
-            ) : (
-              <ChevronUp size={18} className="text-muted-foreground shrink-0 ml-2" />
-            )}
+            
+            <Button
+              size="sm"
+              variant="destructive"
+              className="shrink-0 ml-2 h-8 px-3 rounded-full text-xs font-bold"
+              onClick={(e) => {
+                e.stopPropagation(); 
+                navigate("/reporting");
+              }}
+            >
+              <AlertTriangle size={14} className="mr-1.5" />
+              Lapor
+            </Button>
           </div>
         </button>
 

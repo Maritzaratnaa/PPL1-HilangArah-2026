@@ -11,7 +11,11 @@ import { toast } from "sonner";
 export interface Report {
   report_id: string;
   reporter_name: string;
+  user_phone: string | null;
   category: string;
+  guide_name: string | null;
+  guide_phone: string | null;
+  subs_id: string | null;
   stop_name: string | null;
   description: string;
   status: string;
@@ -173,7 +177,12 @@ function DetailModal({ report, onClose, onStatusChange }: {
             {[
               { label: 'ID Laporan', value: report.report_id },
               { label: 'Pelapor', value: report.reporter_name || 'Anonim' },
+              { label: 'Nomor Pelapor', value: report.user_phone || 'Tidak tersedia' },
               { label: 'Kategori', value: report.category || '-' },
+              ...(report.category === 'Pemandu' ? [
+                { label: 'Pemandu', value: report.guide_name || 'Tidak tersedia' },
+                { label: 'Nomor Pemandu', value: report.guide_phone || 'Tidak tersedia' },
+              ] : []),
               { label: 'Lokasi', value: report.stop_name || extractLocationFromDesc(report.description).location },
               { label: 'Tanggal', value: report.created_at || '-' },
               { label: 'Diselesaikan oleh', value: report.resolved_by || '-' },
@@ -348,10 +357,12 @@ export default function AdminReports() {
 
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
             <div className="overflow-x-auto w-full scrollbar-thin">
-              <table className="w-full min-w-[1100px]">
+              {/* min-w diperlebar menjadi 1250px agar ada ruang untuk kolom baru */}
+              <table className="w-full min-w-[1250px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
-                    {["Pelapor", "Kategori", "Lokasi", "Deskripsi", "Status", "Tanggal", "Aksi"].map((h) => (
+                    {/* Header dipisah antara Kategori dan Pemandu */}
+                    {["Pelapor", "Kategori", "Pemandu", "Lokasi", "Deskripsi", "Status", "Tanggal", "Aksi"].map((h) => (
                       <th key={h} className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 whitespace-nowrap">
                         {h}
                       </th>
@@ -360,44 +371,70 @@ export default function AdminReports() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {loading ? (
-                    <tr><td colSpan={7} className="px-6 py-12 text-center">
+                    <tr><td colSpan={8} className="px-6 py-12 text-center">
                       <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
                     </td></tr>
                   ) : paginatedReports.length === 0 ? (
-                    <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground text-sm">
+                    <tr><td colSpan={8} className="px-6 py-12 text-center text-muted-foreground text-sm">
                       Tidak ada laporan yang ditemukan.
                     </td></tr>
                   ) : paginatedReports.map((report) => {
                     const initials = (report.reporter_name || 'NN').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
                     return (
                       <tr key={report.report_id} className="hover:bg-muted/30 transition-colors">
+                        {/* Kolom Pelapor */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
                               {initials}
                             </div>
-                            <div className="text-sm font-semibold truncate max-w-[150px]">{report.reporter_name || 'Anonim'}</div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold truncate max-w-[150px]">{report.reporter_name || 'Anonim'}</span>
+                              <span className="text-[11px] text-muted-foreground">{report.user_phone || 'No. tidak tersedia'}</span>
+                            </div>
                           </div>
                         </td>
+                        
+                        {/* Kolom Kategori (Hanya Badge) */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${getCategoryColor(report.category)}`}>
                             {report.category || '-'}
                           </span>
                         </td>
+
+                        {/* Kolom Pemandu (Tinggi baris disamakan dengan Pelapor) */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {report.category === 'Pemandu' ? (
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium truncate max-w-[150px]">{report.guide_name || 'Tidak tersedia'}</span>
+                              <span className="text-[11px] text-muted-foreground">{report.guide_phone || 'No. tidak tersedia'}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </td>
+
+                        {/* Kolom Lokasi */}
                         <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
                           {report.stop_name || extractLocationFromDesc(report.description).location}
                         </td>
+                        
+                        {/* Kolom Deskripsi */}
                         <td className="px-6 py-4">
-                          <p className="text-sm text-muted-foreground truncate max-w-[200px]">
+                          <p className="text-sm text-muted-foreground truncate max-w-[180px]" title={extractLocationFromDesc(report.description).cleanDesc}>
                             {extractLocationFromDesc(report.description).cleanDesc}
                           </p>
                         </td>
 
+                        {/* Kolom Status */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <StatusDropdown report={report} onStatusChange={handleStatusChange} />
                         </td>
 
-                        <td className="px-6 py-4 text-[10px] text-muted-foreground whitespace-nowrap">{report.created_at}</td>
+                        {/* Kolom Tanggal */}
+                        <td className="px-6 py-4 text-[11px] text-muted-foreground whitespace-nowrap">{report.created_at}</td>
+                        
+                        {/* Kolom Aksi */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <Button size="sm" variant="outline" className="h-8 text-[10px] px-3"
@@ -415,6 +452,7 @@ export default function AdminReports() {
               </table>
             </div>
           </div>
+            
 
           <div className="mt-6">
             <Pagination currentPage={currentPage} totalItems={filtered.length}

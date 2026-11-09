@@ -2,6 +2,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -16,7 +17,8 @@ import { SearchableDropdown } from '@/components/ui/SearchableDropdown';
 import { useNavigate } from "react-router-dom";
 import {
   CheckCircle, AlertCircle, Clock, MessageSquare, Plus, ArrowRight,
-  ShieldAlert, Inbox, Sparkles, X, Calendar, Loader2,
+  ShieldAlert, Inbox, Sparkles, X, Calendar, Loader2, Phone,
+  MapPin, Navigation, Route, ListFilter,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -29,6 +31,9 @@ interface Report {
   stop_id: string | null;
   stop_name: string | null;
   subs_id: string | null;
+  guide_name: string | null;
+  guide_phone: string | null;
+  user_phone: string | null;
   resolved_by: string | null;
   created_at: string;
 }
@@ -38,6 +43,48 @@ interface LocationOption {
   name: string;
   type: "stop" | "trans";
   detail?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+interface RouteOption {
+  id: string;
+  name: string;
+  trans_name?: string;
+  trans_type?: string;
+}
+
+interface RouteStop {
+  route_id: string;
+  stop_id: string;
+  stop_name: string;
+  stop_detail?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  stop_order: number;
+}
+
+interface GuideSubscription {
+  subs_id: string;
+  user_phone: string | null;
+  employee_id: string | null;
+  guide_name: string | null;
+  guide_phone: string | null;
+}
+
+function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3;
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.round(R * c);
 }
 
 const reportCategories = [
@@ -67,21 +114,58 @@ export default function Reporting() {
   const [reports, setReports]         = useState<Report[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [selectedSubsId, setSelectedSubsId] = useState("");
   const [loading, setLoading]         = useState(true);
   const [submitting, setSubmitting]   = useState(false);
   const [errorMsg, setErrorMsg]       = useState("");
   const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [guideSubscriptions, setGuideSubscriptions] = useState<GuideSubscription[]>([]);
+  const [loadingGuideSubscriptions, setLoadingGuideSubscriptions] = useState(false);
+  const [guideSubscriptionError, setGuideSubscriptionError] = useState("");
 
   const [locationOptions, setLocationOptions]   = useState<LocationOption[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [locationError, setLocationError]       = useState("");
+
+  const [routes, setRoutes]                     = useState<RouteOption[]>([]);
+  const [routeStops, setRouteStops]             = useState<RouteStop[]>([]);
+  const [selectedRouteId, setSelectedRouteId]   = useState<string>("");
+  const [locationMode, setLocationMode]         = useState<"current" | "route" | "all">("route");
+  const [isLocating, setIsLocating]             = useState(false);
+  const [locationNote, setLocationNote]         = useState<string>("");
+  const [detectedAddress, setDetectedAddress]   = useState<string>("");
+  const [detectedStopName, setDetectedStopName] = useState<string>("");
+
+  const [existingPhone, setExistingPhone] = useState<string>("");
+  const [phoneOption, setPhoneOption]     = useState<"existing" | "new">("existing");
+  const [customPhone, setCustomPhone]     = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
     fetchReports();
     fetchLocations();
+    fetchGuideSubscriptions();
+    fetchUserProfile(); 
   }, [navigate]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res   = await fetch(`${BASE_URL}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (res.ok && json.data) {
+        const phone = json.data.phone_number || "";
+        setExistingPhone(phone);
+        if (!phone) {
+          setPhoneOption("new");
+        }
+      }
+    } catch {
+    }
+  };
 
   const fetchReports = async () => {
     setLoading(true);
@@ -105,22 +189,36 @@ export default function Reporting() {
   };
 
   const handleSubmit = async () => {
+    let phoneToSend = phoneOption === "existing" ? existingPhone : "";
+    if (phoneOption === "new") {
+      if (!customPhone.trim()) {
+        alert("Silakan masukkan nomor telepon kontak baru.");
+        return;
+      }
+      phoneToSend = `+62${customPhone.trim()}`;
+    }
+
     if (!category || !locationId || description.length < 10) return;
+    const selectedGuideSubscription = guideSubscriptions.find((subscription) => subscription.subs_id === selectedSubsId);
+    if (category === "Pemandu" && !isReportableGuideSubscription(selectedGuideSubscription)) return;
+
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
       const res   = await fetch(`${BASE_URL}/api/reports`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ category, description, stop_id: locationId }),
+        body: JSON.stringify({
+          category,
+          description,
+          stop_id: locationId,
+          ...(category === "Pemandu" ? { subs_id: selectedSubsId } : {}),
+        }),
       });
       const json = await res.json();
       if (res.ok) {
         setSuccessMessage(true);
-        setShowForm(false);
-        setCategory("");
-        setLocationId("");
-        setDescription("");
+        resetForm();
         setTimeout(() => setSuccessMessage(false), 4000);
         fetchReports();
       } else if (res.status === 403) {
@@ -132,6 +230,34 @@ export default function Reporting() {
       alert("Gagal menghubungi server.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const fetchGuideSubscriptions = async () => {
+    setLoadingGuideSubscriptions(true);
+    setGuideSubscriptionError("");
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BASE_URL}/api/reports/guide-options`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setGuideSubscriptionError(json.message || "Gagal memeriksa langganan pemandu.");
+        return;
+      }
+
+      const subscriptions: GuideSubscription[] = json.data ?? [];
+      setGuideSubscriptions(subscriptions);
+      setIsPremium(json.has_active_subscription === true);
+      const firstAvailable = subscriptions.find(isReportableGuideSubscription);
+      if (firstAvailable) setSelectedSubsId(firstAvailable.subs_id);
+    } catch (err) {
+      console.error("Gagal memeriksa langganan pemandu:", err);
+      setGuideSubscriptionError("Gagal memeriksa langganan dan kontak pemandu.");
+    } finally {
+      setLoadingGuideSubscriptions(false);
     }
   };
 
@@ -151,10 +277,12 @@ export default function Reporting() {
       }
 
       const stops: LocationOption[] = (json.data?.stops ?? []).map((s: any) => ({
-        id:     s.id,
-        name:   s.name,
-        type:   "stop" as const,
-        detail: s.detail || "",
+        id:        s.id,
+        name:      s.name,
+        type:      "stop" as const,
+        detail:    s.detail || "",
+        latitude:  s.latitude != null ? Number(s.latitude) : null,
+        longitude: s.longitude != null ? Number(s.longitude) : null,
       }));
 
       const trans: LocationOption[] = (json.data?.trans ?? []).map((t: any) => ({
@@ -167,6 +295,25 @@ export default function Reporting() {
       const combined = [...stops, ...trans];
       setLocationOptions(combined);
 
+      const rts: RouteOption[] = (json.data?.routes ?? []).map((r: any) => ({
+        id:         r.id,
+        name:       r.name,
+        trans_name: r.trans_name || "",
+        trans_type: r.trans_type || "",
+      }));
+      setRoutes(rts);
+
+      const rStops: RouteStop[] = (json.data?.routeStops ?? []).map((rs: any) => ({
+        route_id:    rs.route_id,
+        stop_id:     rs.stop_id,
+        stop_name:   rs.stop_name,
+        stop_detail: rs.stop_detail || "",
+        latitude:    rs.latitude != null ? Number(rs.latitude) : null,
+        longitude:   rs.longitude != null ? Number(rs.longitude) : null,
+        stop_order:  rs.stop_order,
+      }));
+      setRouteStops(rStops);
+
       if (combined.length === 0) {
         setLocationError("Belum ada data lokasi aktif. Silakan hubungi admin.");
       }
@@ -178,14 +325,156 @@ export default function Reporting() {
     }
   };
 
+  // --- INTEGRASI API DETEKSI LOKASI & HALTE TERDEKAT ---
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Perangkat Anda tidak mendukung fitur lokasi (Geolocation).");
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationNote("");
+    setDetectedAddress("");
+    setDetectedStopName("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+
+        try {
+          const token = localStorage.getItem("token");
+          const res = await fetch(`${BASE_URL}/api/location/nearest-stop`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ lat: userLat, lng: userLng }),
+          });
+
+          const json = await res.json();
+
+          if (res.ok && json.success && json.nearest_stop) {
+            const { stop_id, name, distance_meters } = json.nearest_stop;
+            const roundedDist = Math.round(Number(distance_meters));
+            const distText =
+              roundedDist < 1000
+                ? `${roundedDist} meter`
+                : `${(roundedDist / 1000).toFixed(1)} km`;
+
+            setLocationId(stop_id);
+            setDetectedStopName(name || "");
+            setLocationNote(`Terdeteksi ± ${distText} dari posisi GPS Anda`);
+            setDetectedAddress(
+              json.address && json.address !== "Alamat tidak terdeteksi"
+                ? json.address
+                : json.nearest_stop.address || ""
+            );
+            return;
+          } else {
+            alert(json.message || "Tidak ada halte aktif dengan koordinat yang tersedia.");
+          }
+        } catch (err) {
+          console.error("Gagal menghubungi API nearest-stop, menggunakan fallback lokal:", err);
+          // Fallback menggunakan perhitungan Haversine di sisi client jika request ke API gagal
+          const stopsWithCoords = locationOptions.filter(
+            (s) =>
+              s.type === "stop" &&
+              s.latitude != null &&
+              s.longitude != null &&
+              !isNaN(Number(s.latitude)) &&
+              !isNaN(Number(s.longitude))
+          );
+
+          if (stopsWithCoords.length === 0) {
+            alert("Gagal mendeteksi halte terdekat dari server. Silakan pilih rute atau lokasi secara manual.");
+            return;
+          }
+
+          let nearestStop = stopsWithCoords[0];
+          let shortestDist = calculateDistanceMeters(
+            userLat,
+            userLng,
+            Number(nearestStop.latitude),
+            Number(nearestStop.longitude)
+          );
+
+          for (let i = 1; i < stopsWithCoords.length; i++) {
+            const s = stopsWithCoords[i];
+            const dist = calculateDistanceMeters(
+              userLat,
+              userLng,
+              Number(s.latitude),
+              Number(s.longitude)
+            );
+            if (dist < shortestDist) {
+              shortestDist = dist;
+              nearestStop = s;
+            }
+          }
+
+          setLocationId(nearestStop.id);
+          setDetectedStopName(nearestStop.name);
+          const distText =
+            shortestDist < 1000
+              ? `${shortestDist} meter`
+              : `${(shortestDist / 1000).toFixed(1)} km`;
+          setLocationNote(`Terdeteksi ± ${distText} dari posisi GPS Anda`);
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        setIsLocating(false);
+        let errorMsg = "Gagal mendeteksi lokasi saat ini.";
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = "Izin akses lokasi ditolak oleh browser. Silakan aktifkan izin lokasi di browser atau pilih rute secara manual.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMsg = "Informasi lokasi tidak tersedia pada perangkat Anda.";
+        } else if (error.code === error.TIMEOUT) {
+          errorMsg = "Waktu permintaan lokasi habis. Silakan coba lagi.";
+        }
+        alert(errorMsg);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
+  const handleRouteChange = (routeId: string) => {
+    setSelectedRouteId(routeId);
+    const stopsInRoute = routeStops.filter((rs) => rs.route_id === routeId);
+    if (!stopsInRoute.some((rs) => rs.stop_id === locationId)) {
+      setLocationId("");
+    }
+  };
+
   const resetForm = () => {
     setShowForm(false);
     setCategory("");
+    setSelectedSubsId("");
     setLocationId("");
+    setSelectedRouteId("");
+    setLocationMode("route");
+    setLocationNote("");
+    setDetectedAddress("");
+    setDetectedStopName("");
     setDescription("");
+    setCustomPhone("");
+    setPhoneOption(existingPhone ? "existing" : "new");
   };
 
-  const selectedLocation = locationOptions.find((o) => o.id === locationId);
+  const isReportableGuideSubscription = (subscription?: GuideSubscription) =>
+    Boolean(
+      subscription?.employee_id &&
+      subscription.guide_name?.trim() &&
+      subscription.guide_phone?.trim() &&
+      subscription.user_phone?.trim(),
+    );
+
+  const availableGuideSubscriptions = guideSubscriptions.filter(isReportableGuideSubscription);
+  const selectedGuideSubscription = guideSubscriptions.find((subscription) => subscription.subs_id === selectedSubsId);
+  const selectedRoute = routes.find((r) => r.id === selectedRouteId);
 
   const filteredReports = reports.filter(
     (r) =>
@@ -305,36 +594,353 @@ export default function Reporting() {
                       })}
                     </SelectContent>
                   </Select>
+                  {category === "Pemandu" && (
+                    <div className="rounded-2xl border border-border bg-muted/20 p-4 text-[14px]">
+                      {loadingGuideSubscriptions ? (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 size={16} className="animate-spin" />
+                          Memeriksa langganan dan kontak...
+                        </div>
+                      ) : guideSubscriptionError ? (
+                        <p className="text-rose-600">{guideSubscriptionError}</p>
+                      ) : availableGuideSubscriptions.length === 0 ? (
+                        <p className="text-muted-foreground">
+                          {isPremium
+                            ? "Pemandu atau nomor kontak pengguna/pemandu belum tersedia pada langganan aktif."
+                            : "Pelaporan pemandu hanya tersedia jika Anda memiliki langganan aktif."}
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          <Label className="font-bold text-foreground">Pemandu dari langganan aktif</Label>
+                          <Select
+                            value={selectedSubsId}
+                            onValueChange={setSelectedSubsId}
+                            disabled={submitting}
+                          >
+                            <SelectTrigger className="h-12 rounded-xl bg-background">
+                              <SelectValue placeholder="Pilih pemandu langganan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {guideSubscriptions.map((subscription) => (
+                                <SelectItem
+                                  key={subscription.subs_id}
+                                  value={subscription.subs_id}
+                                  disabled={!isReportableGuideSubscription(subscription)}
+                                >
+                                  {subscription.guide_name || "Pemandu belum ditetapkan"}
+                                  {!isReportableGuideSubscription(subscription) && " (kontak belum tersedia)"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {isReportableGuideSubscription(selectedGuideSubscription) && (
+                            <div className="grid gap-2 text-muted-foreground sm:grid-cols-2">
+                              <p>Nomor pengguna: <span className="font-semibold text-foreground">{selectedGuideSubscription.user_phone}</span></p>
+                              <p>Nomor pemandu: <span className="font-semibold text-foreground">{selectedGuideSubscription.guide_phone}</span></p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-[15px] font-bold text-foreground ml-1">
-                    Lokasi Kejadian
-                  </Label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <Label className="text-[15px] font-bold text-foreground ml-1">
+                      Lokasi Kejadian
+                    </Label>
+
+                    <div className="flex flex-wrap gap-1.5 p-1 bg-muted/50 rounded-xl border border-border w-fit">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLocationMode("current");
+                          handleUseCurrentLocation();
+                        }}
+                        disabled={submitting || loadingLocations}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          locationMode === "current"
+                            ? "bg-card text-primary shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Navigation size={13} />
+                        Gunakan Lokasi Saat Ini
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLocationMode("route")}
+                        disabled={submitting || loadingLocations}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          locationMode === "route"
+                            ? "bg-card text-primary shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Route size={13} />
+                        Pilih Sesuai Rute
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLocationMode("all")}
+                        disabled={submitting || loadingLocations}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          locationMode === "all"
+                            ? "bg-card text-primary shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <ListFilter size={13} />
+                        Semua Lokasi
+                      </button>
+                    </div>
+                  </div>
 
                   {loadingLocations ? (
                     <div className="h-14 border border-border rounded-2xl px-4 flex items-center gap-3 text-muted-foreground">
                       <Loader2 size={18} className="animate-spin text-primary" />
-                      <span className="text-[15px]">Memuat daftar lokasi...</span>
+                      <span className="text-[15px]">Memuat daftar lokasi dan rute...</span>
+                    </div>
+                  ) : locationError ? (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm">
+                      {locationError}
                     </div>
                   ) : (
-                    <SearchableDropdown
-                      options={[
-                        ...locationOptions
-                          .filter((o) => o.type === "stop")
-                          .map((o) => ({ value: o.id, label: o.name, group: "Halte / Stasiun", detail: o.detail })),
-                        ...locationOptions
-                          .filter((o) => o.type === "trans")
-                          .map((o) => ({ value: o.id, label: o.name, group: "Transportasi", detail: o.detail })),
-                      ]}
-                      value={locationId}
-                      onChange={setLocationId}
-                      placeholder="Pilih halte atau transportasi..."
-                      searchPlaceholder="Cari lokasi..."
-                      disabled={submitting}
-                      triggerClassName="h-14 rounded-2xl text-[16px] font-medium"
-                      dropdownClassName="text-[16px]"
-                    />
+                    <>
+                      {locationMode === "current" && (
+                        <div className="space-y-3 p-4 rounded-2xl border border-border bg-card/60">
+                          {isLocating ? (
+                            <div className="h-20 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                              <Loader2 size={22} className="animate-spin text-primary" />
+                              <span className="text-sm font-medium">Mendeteksi koordinat GPS dan halte terdekat...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-start gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <MapPin size={20} />
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    <div className="text-sm font-bold text-foreground">
+                                      {locationId ? (
+                                        locationOptions.find((o) => o.id === locationId)?.name ||
+                                        detectedStopName ||
+                                        "Halte Terdeteksi"
+                                      ) : (
+                                        "Belum ada lokasi terdeteksi"
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {locationNote || "Klik tombol di samping untuk mendeteksi halte terdekat dari posisi GPS Anda"}
+                                    </div>
+                                    {detectedAddress && (
+                                      <div className="text-[11px] text-primary/80 font-medium pt-0.5">
+                                        📍 Sekitar: {detectedAddress}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleUseCurrentLocation}
+                                  disabled={isLocating || submitting}
+                                  className="gap-1.5 rounded-xl font-semibold flex-shrink-0 w-fit"
+                                >
+                                  <Navigation size={14} />
+                                  {locationId ? "Deteksi Ulang" : "Deteksi Lokasi"}
+                                </Button>
+                              </div>
+
+                              <div className="pt-3 border-t border-border/60">
+                                <Label className="text-xs text-muted-foreground block mb-1.5">
+                                  Bukan lokasi yang tepat? Ganti manual dengan halte lain:
+                                </Label>
+                                <SearchableDropdown
+                                  options={locationOptions
+                                    .filter((o) => o.type === "stop")
+                                    .map((o) => ({
+                                      value: o.id,
+                                      label: o.name,
+                                      detail: o.detail,
+                                    }))}
+                                  value={locationId}
+                                  onChange={(val) => {
+                                    setLocationId(val);
+                                    setLocationNote("Dipilih manual");
+                                  }}
+                                  placeholder="Cari atau ganti halte..."
+                                  searchPlaceholder="Ketik nama halte..."
+                                  disabled={submitting}
+                                  triggerClassName="h-11 rounded-xl text-[14px]"
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {locationMode === "route" && (
+                        <div className="space-y-3 p-4 rounded-2xl border border-border bg-card/60">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-muted-foreground">
+                              1. Pilih Rute Transportasi
+                            </Label>
+                            <SearchableDropdown
+                              options={routes.map((r) => ({
+                                value: r.id,
+                                label: r.name,
+                                group: r.trans_type || r.trans_name || "Rute",
+                                detail: [r.trans_name, r.trans_type].filter(Boolean).join(" • "),
+                              }))}
+                              value={selectedRouteId}
+                              onChange={handleRouteChange}
+                              placeholder="Pilih rute perjalanan..."
+                              searchPlaceholder="Cari rute (misal: Koridor 1, MRT, LRT)..."
+                              disabled={submitting}
+                              triggerClassName="h-12 rounded-xl text-[15px]"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-muted-foreground">
+                              2. Pilih Halte / Stasiun pada Rute
+                            </Label>
+                            <SearchableDropdown
+                              options={
+                                selectedRouteId
+                                  ? routeStops
+                                      .filter((rs) => rs.route_id === selectedRouteId)
+                                      .sort((a, b) => a.stop_order - b.stop_order)
+                                      .map((rs) => ({
+                                        value: rs.stop_id,
+                                        label: `${rs.stop_order}. ${rs.stop_name}`,
+                                        detail: rs.stop_detail,
+                                      }))
+                                  : []
+                              }
+                              value={locationId}
+                              onChange={(val) => {
+                                setLocationId(val);
+                                setLocationNote("");
+                              }}
+                              placeholder={
+                                selectedRouteId
+                                  ? "Pilih halte di sepanjang rute ini..."
+                                  : "Pilih rute di atas terlebih dahulu"
+                              }
+                              searchPlaceholder="Cari nama halte pada rute ini..."
+                              disabled={submitting || !selectedRouteId}
+                              triggerClassName="h-12 rounded-xl text-[15px]"
+                            />
+                            {selectedRoute && (
+                              <p className="text-xs text-muted-foreground ml-1">
+                                Menampilkan halte yang dilayani oleh rute <span className="font-semibold text-foreground">{selectedRoute.name}</span>.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {locationMode === "all" && (
+                        <div className="space-y-2">
+                          <SearchableDropdown
+                            options={[
+                              ...locationOptions
+                                .filter((o) => o.type === "stop")
+                                .map((o) => ({ value: o.id, label: o.name, group: "Halte / Stasiun", detail: o.detail })),
+                              ...locationOptions
+                                .filter((o) => o.type === "trans")
+                                .map((o) => ({ value: o.id, label: o.name, group: "Transportasi", detail: o.detail })),
+                            ]}
+                            value={locationId}
+                            onChange={(val) => {
+                              setLocationId(val);
+                              setLocationNote("");
+                            }}
+                            placeholder="Pilih halte atau transportasi..."
+                            searchPlaceholder="Cari langsung semua halte atau transportasi..."
+                            disabled={submitting}
+                            triggerClassName="h-14 rounded-2xl text-[16px] font-medium"
+                            dropdownClassName="text-[16px]"
+                          />
+                          <p className="text-xs text-muted-foreground ml-1">
+                            Cari langsung dari seluruh halte, stasiun, atau armada transportasi yang terdaftar.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-[15px] font-bold text-foreground ml-1">
+                    Nomor yang Dapat Dihubungi
+                  </Label>
+
+                  <div className="flex flex-wrap gap-2 p-1 bg-muted/50 rounded-xl border border-border w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setPhoneOption("existing")}
+                      disabled={!existingPhone}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                        phoneOption === "existing"
+                          ? "bg-card text-primary shadow-sm"
+                          : "text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                      }`}>
+                      Gunakan Kontak Terdaftar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhoneOption("new")}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                        phoneOption === "new"
+                          ? "bg-card text-primary shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}>
+                      Masukkan Kontak Baru
+                    </button>
+                  </div>
+
+                  {phoneOption === "existing" ? (
+                    existingPhone ? (
+                      <div className="h-14 border border-border rounded-2xl px-5 flex items-center justify-between bg-muted/20">
+                        <span className="text-[16px] font-semibold text-foreground">{existingPhone}</span>
+                        <span className="text-xs text-muted-foreground">dari profil Anda</span>
+                      </div>
+                    ) : (
+                      <div className="h-14 border border-dashed border-border rounded-2xl px-5 flex items-center text-muted-foreground">
+                        <span className="text-[14px]">Nomor telepon belum diisi di profil. Gunakan kontak baru.</span>
+                      </div>
+                    )
+                  ) : (
+                    <div className="relative">
+                      <span
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold border-r border-border pr-3 flex items-center h-5 select-none"
+                        style={{ fontSize: "16px" }}
+                      >
+                        +62
+                      </span>
+                      <Input
+                        type="tel"
+                        inputMode="numeric"
+                        value={customPhone}
+                        onChange={(e) => {
+                          let val = e.target.value.replace(/\D/g, "");
+                          if (val.startsWith("0")) val = val.substring(1);
+                          setCustomPhone(val);
+                        }}
+                        placeholder="812xxxxxxx"
+                        className="h-14 border-border rounded-2xl font-medium text-[16px] md:text-[16px] placeholder:text-[16px]"
+                        style={{ fontSize: "16px", paddingLeft: "68px" }}
+                        maxLength={13}
+                        disabled={submitting}
+                      />
+                    </div>
                   )}
                 </div>
 
@@ -361,7 +967,13 @@ export default function Reporting() {
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={submitting || !category || !locationId || description.length < 10}
+                    disabled={
+                      submitting ||
+                      !category ||
+                      !locationId ||
+                      description.length < 10 ||
+                      (category === "Pemandu" && (!isReportableGuideSubscription(selectedGuideSubscription) || loadingGuideSubscriptions))
+                    }
                     className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold">
                     {submitting
                       ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Mengirim...</>
@@ -471,7 +1083,7 @@ export default function Reporting() {
       </main>
 
       <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
-        <DialogContent className="max-w-2xl rounded-[32px] p-8 lg:p-10 border-border bg-card font-['Atkinson_Hyperlegible']">
+        <DialogContent className="max-w-2xl rounded-[32px] p-8 lg:p-10 border-border bg-card font-['Atkinson_Hyperlegible'] [&>button:last-child]:hidden">
           {selectedReport && (() => {
             const cat    = reportCategories.find((c) => c.value === selectedReport.category);
             const status = statusConfig[selectedReport.status] || statusConfig["Pending"];
@@ -523,6 +1135,20 @@ export default function Reporting() {
                     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/15">
                       <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">Lokasi Kejadian</p>
                       <p className="font-bold text-foreground text-[15px]">{locationDisplay}</p>
+                    </div>
+                  )}
+
+                  {selectedReport.category === "Pemandu" && (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="p-4 bg-muted/30 rounded-2xl border border-border">
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">Pemandu</p>
+                        <p className="font-bold text-foreground text-[15px]">{selectedReport.guide_name || "Tidak tersedia"}</p>
+                        <p className="text-[13px] text-muted-foreground mt-1">{selectedReport.guide_phone || "Nomor tidak tersedia"}</p>
+                      </div>
+                      <div className="p-4 bg-muted/30 rounded-2xl border border-border">
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">Nomor Pengguna</p>
+                        <p className="font-bold text-foreground text-[15px]">{selectedReport.user_phone || "Tidak tersedia"}</p>
+                      </div>
                     </div>
                   )}
 
