@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test": "jest --runInBand",
+    "test:coverage": "jest --coverage --runInBand"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -29,7 +29,9 @@
       "controllers/**/*.js",
       "middleware/**/*.js",
       "routes/**/*.js",
-      "utils/**/*.js"
+      "utils/**/*.js",
+      "repositories/**/*.js",
+      "services/**/*.js"
     ],
     "coverageThreshold": {
       "global": {

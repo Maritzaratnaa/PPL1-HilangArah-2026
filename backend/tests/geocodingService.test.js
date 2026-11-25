@@ -50,6 +50,20 @@ describe('geocodingService', () => {
         errorSpy.mockRestore();
     });
 
+    it('should return fallback when HTTP response is not ok', async () => {
+        global.fetch.mockResolvedValueOnce({
+            ok: false,
+            status: 500
+        });
+        const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        await expect(getAddressFromCoordinates(-6.8915, 107.6102))
+            .resolves.toBe(FALLBACK_ADDRESS);
+
+        expect(errorSpy).toHaveBeenCalledWith('Google Geocoding API returned HTTP 500.');
+        errorSpy.mockRestore();
+    });
+
     it('should return the fallback when the API request fails', async () => {
         global.fetch.mockRejectedValueOnce(new Error('network error'));
         const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -58,6 +72,29 @@ describe('geocodingService', () => {
             .resolves.toBe(FALLBACK_ADDRESS);
 
         errorSpy.mockRestore();
+    });
+
+    it('should abort request on timeout', async () => {
+        jest.useFakeTimers();
+        global.fetch.mockImplementationOnce((url, options) => {
+            return new Promise((resolve, reject) => {
+                options.signal.addEventListener('abort', () => {
+                    const abortErr = new Error('The operation was aborted');
+                    abortErr.name = 'AbortError';
+                    reject(abortErr);
+                });
+            });
+        });
+        const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        const promise = getAddressFromCoordinates(-6.8915, 107.6102);
+        jest.advanceTimersByTime(5000);
+
+        await expect(promise).resolves.toBe(FALLBACK_ADDRESS);
+        expect(errorSpy).toHaveBeenCalledWith('Google reverse geocoding failed: AbortError.');
+
+        errorSpy.mockRestore();
+        jest.useRealTimers();
     });
 
     it('should return the fallback when Google does not provide an address', async () => {

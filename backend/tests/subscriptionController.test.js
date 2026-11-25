@@ -88,6 +88,45 @@ describe('subscriptionController', () => {
             });
         });
 
+        it('menambah data subscription baru dengan default specific_needs dan duration', async () => {
+            req.user.user_id = 'u1';
+            req.body = {
+                phone_number: '08123',
+                emergency_contact_name: 'Contact A',
+                emergency_contact_phone: '08124',
+                domicile: 'Jakarta'
+            };
+            pool.query.mockResolvedValueOnce([[]]); 
+            uuidv4.mockReturnValueOnce('mock-sub-uuid-default');
+            pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]); 
+
+            await createSubscription(req, res);
+
+            expect(pool.query).toHaveBeenLastCalledWith(
+                expect.stringContaining('INSERT INTO subs'),
+                ['mock-sub-uuid-default', 'u1', '08123', 'Contact A', '08124', 'Jakarta', null, 'Monthly']
+            );
+            expect(res.status).toHaveBeenCalledWith(201);
+        });
+
+        it('mengembalikan status 500 jika terjadi database error', async () => {
+            req.user.user_id = 'u1';
+            req.body = {
+                phone_number: '08123',
+                emergency_contact_name: 'Contact A',
+                emergency_contact_phone: '08124',
+                domicile: 'Jakarta'
+            };
+            pool.query.mockRejectedValueOnce(new Error('DB Error'));
+
+            await createSubscription(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Terjadi kesalahan pada server saat membuat langganan."
+            });
+        });
+
     });
 
     describe('getMySubscription', () => {
@@ -148,6 +187,18 @@ describe('subscriptionController', () => {
             });
         });
 
+        it('mengembalikan status 500 jika terjadi database error', async () => {
+            req.user.user_id = 'u1';
+            pool.query.mockRejectedValueOnce(new Error('DB Error'));
+
+            await getMySubscription(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Terjadi kesalahan pada server saat mengambil data langganan."
+            });
+        });
+
     });
 
     describe('cancelSubscription', () => {
@@ -174,6 +225,18 @@ describe('subscriptionController', () => {
             await cancelSubscription(req, res);
 
             expect(res.status).toHaveBeenCalledWith(404);
+        });
+
+        it('mengembalikan status 500 jika terjadi database error', async () => {
+            req.user.user_id = 'u1';
+            pool.query.mockRejectedValueOnce(new Error('DB Error'));
+
+            await cancelSubscription(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Terjadi kesalahan pada server saat membatalkan langganan."
+            });
         });
 
     });
@@ -243,6 +306,19 @@ describe('subscriptionController', () => {
             });
         });
 
+        it('mengembalikan status 500 jika terjadi database error', async () => {
+            req.user.user_id = 'u1';
+            req.body = { subs_id: 's1' };
+            pool.query.mockRejectedValueOnce(new Error('DB Error'));
+
+            await activateSubscription(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Terjadi kesalahan saat memproses pembayaran."
+            });
+        });
+
     });
 
     describe('getPaymentToken', () => {
@@ -269,6 +345,35 @@ describe('subscriptionController', () => {
                 token: 'midtrans-token-xyz'
             });
             spy.mockRestore();
+        });
+
+        it('menggunakan fallback username atau User dan email default jika nama kosong', async () => {
+            req.body = { subs_id: 's2', amount: 50000 };
+            req.user = { username: 'alice_user' };
+            const spy = jest.spyOn(midtransClient.Snap.prototype, 'createTransaction').mockResolvedValueOnce({ token: 'midtrans-token-123' });
+
+            await getPaymentToken(req, res);
+
+            expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+                customer_details: {
+                    first_name: 'alice_user',
+                    email: 'user@example.com'
+                }
+            }));
+            expect(res.status).toHaveBeenCalledWith(200);
+            spy.mockRestore();
+
+            // When user has no full_name and no username
+            req.user = {};
+            const spy2 = jest.spyOn(midtransClient.Snap.prototype, 'createTransaction').mockResolvedValueOnce({ token: 'midtrans-token-456' });
+            await getPaymentToken(req, res);
+            expect(spy2).toHaveBeenCalledWith(expect.objectContaining({
+                customer_details: {
+                    first_name: 'User',
+                    email: 'user@example.com'
+                }
+            }));
+            spy2.mockRestore();
         });
 
         it('bypass pembayaran jika email adalah akun tester', async () => {
