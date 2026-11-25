@@ -224,6 +224,248 @@ describe('searchController', () => {
             }));
         });
 
+        it('menghitung tarif MRT dan LRT dengan berbagai variasi jarak dan jenis kendaraan', async () => {
+            req.user.user_id = 'u1';
+            req.query = { origin: 'Stasiun MRT A', destination: 'Stasiun MRT B' };
+
+            const mockProfile = [{ category_status: 'Umum' }];
+            const mockDirectRoutes = [
+                {
+                    r_id: 'RT-MRT-1',
+                    route_name: 'MRT Lebak Bulus',
+                    origin_stop_name: 'Stasiun MRT A',
+                    destination_stop_name: 'Stasiun MRT B',
+                    o_lat: -6.2,
+                    o_lng: 106.8,
+                    d_lat: -6.25,
+                    d_lng: 106.85,
+                    total_stops: 3,
+                    total_time: 10,
+                    trans_name: 'MRT Jakarta',
+                    trans_type: 'MRT',
+                    trans_fare_type: 'distance',
+                    trans_boarding_fee: 1500,
+                    trans_fare_per_km: 850,
+                    trans_low: 1,
+                    trans_wheel: 1,
+                    trans_prio: 1,
+                    trans_women: 1,
+                    r_start: 1,
+                    r_end: 3
+                },
+                {
+                    r_id: 'RT-MRT-DEFAULT',
+                    route_name: 'MRT Default Fare',
+                    origin_stop_name: 'Stasiun MRT A',
+                    destination_stop_name: 'Stasiun MRT B',
+                    o_lat: -6.2,
+                    o_lng: 106.8,
+                    d_lat: -6.25,
+                    d_lng: 106.85,
+                    total_stops: 3,
+                    total_time: 15,
+                    trans_name: 'MRT Jakarta 2',
+                    trans_type: 'MRT',
+                    trans_fare_type: 'distance',
+                    trans_boarding_fee: null,
+                    trans_fare_per_km: null,
+                    trans_low: 1,
+                    trans_wheel: 1,
+                    trans_prio: 1,
+                    trans_women: 1,
+                    r_start: 1,
+                    r_end: 3
+                },
+                {
+                    r_id: 'RT-LRT-SHORT',
+                    route_name: 'LRT Jarak Dekat',
+                    origin_stop_name: 'Stasiun MRT A',
+                    destination_stop_name: 'Stasiun MRT B',
+                    o_lat: -6.2,
+                    o_lng: 106.8,
+                    d_lat: -6.2001,
+                    d_lng: 106.8001,
+                    total_stops: 2,
+                    total_time: 5,
+                    trans_name: 'LRT Jabodebek',
+                    trans_type: 'LRT',
+                    trans_fare_type: 'distance',
+                    trans_boarding_fee: 5000,
+                    trans_fare_per_km: 700,
+                    trans_low: 1,
+                    trans_wheel: 1,
+                    trans_prio: 1,
+                    trans_women: 1,
+                    r_start: 1,
+                    r_end: 2
+                },
+                {
+                    r_id: 'RT-LRT-LONG-DEFAULT',
+                    route_name: 'LRT Jarak Jauh Default',
+                    origin_stop_name: 'Stasiun MRT A',
+                    destination_stop_name: 'Stasiun MRT B',
+                    o_lat: -6.2,
+                    o_lng: 106.8,
+                    d_lat: -6.35,
+                    d_lng: 106.95,
+                    total_stops: 8,
+                    total_time: 25,
+                    trans_name: 'LRT Default',
+                    trans_type: 'LRT',
+                    trans_fare_type: 'distance',
+                    trans_boarding_fee: null,
+                    trans_fare_per_km: null,
+                    trans_low: 1,
+                    trans_wheel: 1,
+                    trans_prio: 1,
+                    trans_women: 1,
+                    r_start: 1,
+                    r_end: 8
+                },
+                {
+                    r_id: 'RT-UNKNOWN',
+                    route_name: 'Armada Khusus',
+                    origin_stop_name: 'Stasiun MRT A',
+                    destination_stop_name: 'Stasiun MRT B',
+                    o_lat: -6.2,
+                    o_lng: 106.8,
+                    d_lat: -6.25,
+                    d_lng: 106.85,
+                    total_stops: 3,
+                    total_time: 30,
+                    trans_name: 'Kapal Ferry',
+                    trans_type: 'Ferry',
+                    trans_fare_type: 'distance',
+                    trans_boarding_fee: 1000,
+                    trans_fare_per_km: 500,
+                    trans_low: 0,
+                    trans_wheel: 0,
+                    trans_prio: 0,
+                    trans_women: 0,
+                    r_start: 1,
+                    r_end: 3
+                }
+            ];
+
+            pool.query
+                .mockResolvedValueOnce([mockProfile])
+                .mockResolvedValueOnce([[{ stop_id: 's1' }]])
+                .mockResolvedValueOnce([[{ stop_id: 's2' }]])
+                .mockResolvedValueOnce([mockDirectRoutes])
+                .mockResolvedValueOnce([[]])
+                .mockResolvedValueOnce([[]])
+                .mockResolvedValueOnce([[]])
+                .mockResolvedValueOnce([[]])
+                .mockResolvedValueOnce([[]]);
+
+            await searchRoutes(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            const data = res.json.mock.calls[0][0].data;
+            expect(data.length).toBe(5);
+            // Verify MRT fare calculated
+            expect(data[0].total_cost).toBeGreaterThan(0);
+            // Verify best route marked
+            expect(data[0].is_best).toBe(true);
+        });
+
+        it('menguji rekomendasi untuk user kategori lansia/elderly dan pengurutan rekomendasi serta biaya', async () => {
+            req.user.user_id = 'u1';
+            req.query = { origin: 'Halte A', destination: 'Halte B' };
+
+            const mockProfile = [{ category_status: 'lansia' }];
+            const mockDirectRoutes = [
+                {
+                    r_id: 'RT-NO-PRIO',
+                    route_name: 'Bus Non-Prioritas',
+                    origin_stop_name: 'Halte A',
+                    destination_stop_name: 'Halte B',
+                    o_lat: -6.2,
+                    o_lng: 106.8,
+                    d_lat: -6.21,
+                    d_lng: 106.81,
+                    total_stops: 3,
+                    total_time: 10,
+                    trans_name: 'Bus A',
+                    trans_type: 'BRT',
+                    trans_fare_type: 'flat',
+                    trans_base_fare: 3500,
+                    trans_low: 0,
+                    trans_wheel: 0,
+                    trans_prio: 0,
+                    trans_women: 0,
+                    r_start: 1,
+                    r_end: 3
+                },
+                {
+                    r_id: 'RT-WITH-PRIO-CHEAP',
+                    route_name: 'Bus Prioritas Murah',
+                    origin_stop_name: 'Halte A',
+                    destination_stop_name: 'Halte B',
+                    o_lat: -6.2,
+                    o_lng: 106.8,
+                    d_lat: -6.21,
+                    d_lng: 106.81,
+                    total_stops: 3,
+                    total_time: 12,
+                    trans_name: 'Bus B',
+                    trans_type: 'BRT',
+                    trans_fare_type: 'flat',
+                    trans_base_fare: 2000,
+                    trans_low: 0,
+                    trans_wheel: 0,
+                    trans_prio: 1,
+                    trans_women: 0,
+                    r_start: 1,
+                    r_end: 3
+                },
+                {
+                    r_id: 'RT-WITH-PRIO-EXPENSIVE',
+                    route_name: 'Bus Prioritas Mahal',
+                    origin_stop_name: 'Halte A',
+                    destination_stop_name: 'Halte B',
+                    o_lat: -6.2,
+                    o_lng: 106.8,
+                    d_lat: -6.21,
+                    d_lng: 106.81,
+                    total_stops: 3,
+                    total_time: 12,
+                    trans_name: 'Bus C',
+                    trans_type: 'BRT',
+                    trans_fare_type: 'flat',
+                    trans_base_fare: 5000,
+                    trans_low: 0,
+                    trans_wheel: 0,
+                    trans_prio: 1,
+                    trans_women: 0,
+                    r_start: 1,
+                    r_end: 3
+                }
+            ];
+
+            pool.query
+                .mockResolvedValueOnce([mockProfile])
+                .mockResolvedValueOnce([[{ stop_id: 's1' }]])
+                .mockResolvedValueOnce([[{ stop_id: 's2' }]])
+                .mockResolvedValueOnce([mockDirectRoutes])
+                .mockResolvedValueOnce([[]])
+                .mockResolvedValueOnce([[]])
+                .mockResolvedValueOnce([[]]);
+
+            await searchRoutes(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            const data = res.json.mock.calls[0][0].data;
+            // The two recommended routes come first before non-recommended
+            expect(data[0].is_recommended).toBe(true);
+            expect(data[1].is_recommended).toBe(true);
+            expect(data[2].is_recommended).toBe(false);
+            // Between the two recommended with equal total_time 12, cheaper one comes first
+            expect(data[0].legs[0].route_name).toBe('Bus Prioritas Murah');
+            expect(data[1].legs[0].route_name).toBe('Bus Prioritas Mahal');
+            expect(data[2].legs[0].route_name).toBe('Bus Non-Prioritas');
+        });
+
         it('should return 404 if no routes are found at all', async () => {
             req.user.user_id = 'u1';
             req.query = { origin: 'Halte A', destination: 'Halte D' };

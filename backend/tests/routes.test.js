@@ -29,7 +29,16 @@ jest.mock('../controllers/searchController', () => ({
 jest.mock('../controllers/reportController', () => ({
     createReport: jest.fn(),
     getMyReports: jest.fn(),
-    getLocationOptions: jest.fn()
+    getLocationOptions: jest.fn(),
+    getGuideOptions: jest.fn()
+}));
+
+jest.mock('../controllers/locationController', () => ({
+    getNearestStop: jest.fn()
+}));
+
+jest.mock('../controllers/predictionController', () => ({
+    getRoutePrediction: jest.fn()
 }));
 
 jest.mock('../controllers/subscriptionController', () => ({
@@ -147,7 +156,20 @@ describe('Router Registration Tests', () => {
         const router = require('../routes/reportRoutes');
         const meta = getRoutesMeta(router);
         expect(meta).toContainEqual({ path: '/locations', methods: 'GET' });
+        expect(meta).toContainEqual({ path: '/guide-options', methods: 'GET' });
         expect(meta).toContainEqual({ path: '/my-reports', methods: 'GET' });
+        expect(meta).toContainEqual({ path: '/', methods: 'POST' });
+    });
+
+    it('locationRoutes registers expected endpoints', () => {
+        const router = require('../routes/locationRoutes');
+        const meta = getRoutesMeta(router);
+        expect(meta).toContainEqual({ path: '/nearest-stop', methods: 'POST' });
+    });
+
+    it('predictionRoutes registers expected endpoints', () => {
+        const router = require('../routes/predictionRoutes');
+        const meta = getRoutesMeta(router);
         expect(meta).toContainEqual({ path: '/', methods: 'POST' });
     });
 

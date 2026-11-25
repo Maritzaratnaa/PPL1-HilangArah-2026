@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { isTesterEmail, resetUserGuides } from "@/lib/stepGuide";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -32,10 +33,17 @@ export default function Login() {
       const json = await res.json();
 
       if (res.ok) {
+        const loggedEmail = json.user?.email || email;
         localStorage.setItem("token", json.token);
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("userName", json.user.full_name);
-        localStorage.setItem("userEmail", json.user.email);
+        localStorage.setItem("userEmail", loggedEmail);
+
+        // SPESIALISASI AKUN TESTER:
+        // Setiap kali login, reset progres step guide agar selalu memunculkan fitur step guide di setiap modul
+        if (isTesterEmail(loggedEmail)) {
+          resetUserGuides(loggedEmail);
+        }
 
         const userRole = json.user.role || json.user.category;
         localStorage.setItem('userCategory', userRole);

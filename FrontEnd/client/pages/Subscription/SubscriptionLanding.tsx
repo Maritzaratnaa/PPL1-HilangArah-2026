@@ -5,6 +5,7 @@ import { ChevronDown, Check, Star, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsHighContrast } from "@/hooks/useTheme";
+import { StepGuide } from '@/components/StepGuide';
 
 export default function SubscriptionLanding() {
   const navigate = useNavigate();
@@ -29,10 +30,34 @@ export default function SubscriptionLanding() {
         });
         
         if (res.ok) {
-          setHasSubs(true);
+          const json = await res.json();
+          const subs = json.data;
+          let daysLeft = 0;
+          if (subs?.end_date) {
+            const end = new Date(subs.end_date).getTime();
+            const now = new Date().getTime();
+            daysLeft = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+          } else if (subs?.days_left !== undefined) {
+            daysLeft = Number(subs.days_left);
+          }
+
+          const isActive = subs && (
+            (subs.status === 'Active' && daysLeft > 0) ||
+            subs.status === 'Pending'
+          );
+          setHasSubs(Boolean(isActive));
+          if (!isActive) {
+            localStorage.removeItem('subscriptionStatus');
+            localStorage.removeItem('activePlanLabel');
+            localStorage.removeItem('activePlanPeriod');
+          }
+        } else {
+          setHasSubs(false);
+          localStorage.removeItem('subscriptionStatus');
         }
       } catch (error) {
         console.error("Gagal mengecek status langganan:", error);
+        setHasSubs(false);
       } finally {
         setIsChecking(false);
       }
@@ -153,7 +178,7 @@ export default function SubscriptionLanding() {
   return (
     <div className={`min-h-screen flex flex-col font-['Atkinson_Hyperlegible',_sans-serif] transition-colors ${isHC ? "bg-black" : "bg-white dark:bg-gray-950"}`}>
       <Navbar />
-      <section className="relative overflow-hidden pt-20 pb-28 px-6 lg:px-10" style={heroStyle}>
+      <section data-guide="subscription-header-banner" className="relative overflow-hidden pt-20 pb-28 px-6 lg:px-10" style={heroStyle}>
         {!isHC && (
           <>
             <div className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full bg-white/5 pointer-events-none" />
@@ -301,7 +326,7 @@ export default function SubscriptionLanding() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
+          <div data-guide="subscription-package-list" className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
             {(Object.entries(plans) as [keyof typeof plans, typeof plans[keyof typeof plans]][]).map(([key, plan]) => {
               const isActive = selectedPlan === key;
               const isPopular = key === 'monthly';
@@ -374,6 +399,7 @@ export default function SubscriptionLanding() {
                   </div>
 
                   <button
+                    data-guide={key === 'monthly' ? 'subscription-cta-btn' : undefined}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (hasSubs) {
@@ -489,6 +515,9 @@ export default function SubscriptionLanding() {
       </section>
 
       <Footer />
+
+      {/* Step Guide Modul Langganan Pemandu */}
+      <StepGuide moduleName="subscription" />
     </div>
   );
 }

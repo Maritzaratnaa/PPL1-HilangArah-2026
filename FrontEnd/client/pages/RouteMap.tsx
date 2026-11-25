@@ -9,6 +9,11 @@ import {
 } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import {
+  StepGuide,
+  ROUTE_MAP_MOBILE_STEPS,
+  ROUTE_MAP_DESKTOP_STEPS,
+} from "@/components/StepGuide";
+import {
   ArrowLeft,
   Loader2,
   MapPin,
@@ -267,7 +272,7 @@ function RealTimeInfoCard({
   onRefresh: (legIdx: number) => void;
 }) {
   return (
-    <div className="mt-3 pt-3 border-t border-border">
+    <div data-guide="realtime-prediction-container" className="mt-3 pt-3 border-t border-border">
       <div className="flex items-center justify-between mb-2.5">
         <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
           <span className="relative flex h-2 w-2">
@@ -277,6 +282,7 @@ function RealTimeInfoCard({
           Prediksi Perjalanan
         </p>
         <button
+          data-guide="prediction-refresh-btn"
           onClick={() => onRefresh(legIdx)}
           disabled={isRefreshing}
           className="flex items-center gap-1.5 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-md transition-colors disabled:opacity-50"
@@ -286,48 +292,52 @@ function RealTimeInfoCard({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
-          <div className="rounded-full bg-blue-100 dark:bg-blue-950/40 p-1.5 shrink-0">
-            <Clock size={12} className="text-blue-600 dark:text-blue-400" />
+      <div className="space-y-2">
+        <div data-guide="prediction-eta-traffic" className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
+            <div className="rounded-full bg-blue-100 dark:bg-blue-950/40 p-1.5 shrink-0">
+              <Clock size={12} className="text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground">ETA</p>
+              <p className="text-xs font-bold truncate">
+                {info.eta_kedatangan_menit} menit
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-muted-foreground">ETA</p>
-            <p className="text-xs font-bold truncate">
-              {info.eta_kedatangan_menit} menit
-            </p>
+
+          <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
+            <div className="rounded-full bg-orange-100 dark:bg-orange-950/40 p-1.5 shrink-0">
+              <Car size={12} className="text-orange-600 dark:text-orange-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground">Lalu Lintas</p>
+              <p className="text-xs font-bold truncate">{info.status_lalu_lintas}</p>
+            </div>
           </div>
         </div>
 
-        <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
-          <div className="rounded-full bg-orange-100 dark:bg-orange-950/40 p-1.5 shrink-0">
-            <Car size={12} className="text-orange-600 dark:text-orange-400" />
+        <div data-guide="prediction-crowd-weather" className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
+            <div className="rounded-full bg-purple-100 dark:bg-purple-950/40 p-1.5 shrink-0">
+              <Users size={12} className="text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground">Kursi Terisi</p>
+              <p className="text-xs font-bold leading-tight mt-0.5 whitespace-pre-wrap">
+                {info.kepadatan_penumpang}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-muted-foreground">Lalu Lintas</p>
-            <p className="text-xs font-bold truncate">{info.status_lalu_lintas}</p>
-          </div>
-        </div>
 
-        <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
-          <div className="rounded-full bg-purple-100 dark:bg-purple-950/40 p-1.5 shrink-0">
-            <Users size={12} className="text-purple-600 dark:text-purple-400" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-muted-foreground">Kursi Terisi</p>
-            <p className="text-xs font-bold leading-tight mt-0.5 whitespace-pre-wrap">
-              {info.kepadatan_penumpang}
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
-          <div className="rounded-full bg-sky-100 dark:bg-sky-950/40 p-1.5 shrink-0">
-            <Cloud size={12} className="text-sky-600 dark:text-sky-400" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-muted-foreground">Cuaca</p>
-            <p className="text-xs font-bold truncate">{info.cuaca}</p>
+          <div className="rounded-lg bg-muted/50 border border-border/60 p-2.5 flex items-start gap-2">
+            <div className="rounded-full bg-sky-100 dark:bg-sky-950/40 p-1.5 shrink-0">
+              <Cloud size={12} className="text-sky-600 dark:text-sky-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground">Cuaca</p>
+              <p className="text-xs font-bold truncate">{info.cuaca}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -631,6 +641,16 @@ export default function RouteMap() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  const handleGuideStepChange = (stepIdx: number) => {
+    if (isMobile) {
+      // Langkah 1-5 adalah komponen di dalam panel (detail rute & prediksi)
+      // Buka panel secara otomatis agar elemen target dapat dilihat dan disorot
+      if (stepIdx >= 1 && stepIdx <= 5) {
+        setShowPanel(true);
+      }
+    }
+  };
+
   const onMouseDown = (e: React.MouseEvent) => {
     isDragging.current = true;
     startX.current = e.clientX;
@@ -831,14 +851,20 @@ export default function RouteMap() {
                       </div>
                     )}
 
-                    {info && (
-                      <RealTimeInfoCard
-                        info={info}
-                        legIdx={legIdx}
-                        isRefreshing={!!isRefreshing[legIdx]}
-                        onRefresh={handleRefreshRealtime}
-                      />
-                    )}
+                    <RealTimeInfoCard
+                      info={
+                        info || {
+                          eta_kedatangan_menit: leg.estimated_time_minutes,
+                          status_lalu_lintas: "Normal",
+                          kepadatan_penumpang: "Tersedia",
+                          cuaca: "Cerah Berawan",
+                          waktu_tempuh_menit: leg.estimated_time_minutes,
+                        }
+                      }
+                      legIdx={legIdx}
+                      isRefreshing={!info || !!isRefreshing[legIdx]}
+                      onRefresh={handleRefreshRealtime}
+                    />
                   </div>
                 ))}
 
@@ -935,6 +961,7 @@ export default function RouteMap() {
             {response && <DirectionsRenderer options={{ directions: response }} />}
           </GoogleMap>
           <div
+            data-guide="map-controls"
             className={`absolute right-4 z-20 flex flex-col gap-2 transition-all duration-300 ease-out ${
               showPanel ? "bottom-[calc(75vh+1rem)]" : "bottom-32"
             } md:bottom-28 md:right-4`}
@@ -969,6 +996,7 @@ export default function RouteMap() {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background">
         <div
+          data-guide="route-summary-panel"
           style={{ width: panelWidth }}
           className="h-full overflow-y-auto border-r border-border bg-card p-4 shrink-0"
         >
@@ -995,6 +1023,12 @@ export default function RouteMap() {
             </Button>
           </div>
         </div>
+
+        {/* Step Guide Modul Rute & Prediksi Perjalanan (Desktop) */}
+        <StepGuide
+          moduleName="route-map"
+          customSteps={ROUTE_MAP_DESKTOP_STEPS}
+        />
       </div>
     );
   }
@@ -1016,6 +1050,7 @@ export default function RouteMap() {
         }`}
       >
         <button
+          data-guide="mobile-panel-handle"
           onClick={() => setShowPanel(!showPanel)}
           className="shrink-0 pt-2.5 pb-2 px-4 text-left"
         >
@@ -1047,9 +1082,16 @@ export default function RouteMap() {
         </button>
 
         {showPanel && (
-          <div className="flex-1 overflow-y-auto px-4 pb-6">{sidebarContent}</div>
+          <div data-guide="route-summary-panel" className="flex-1 overflow-y-auto px-4 pb-6">{sidebarContent}</div>
         )}
       </div>
+
+      {/* Step Guide Modul Rute & Prediksi Perjalanan (Mobile) */}
+      <StepGuide
+        moduleName="route-map"
+        customSteps={ROUTE_MAP_MOBILE_STEPS}
+        onStepChange={handleGuideStepChange}
+      />
     </div>
   );
 }

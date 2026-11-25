@@ -226,9 +226,30 @@ export function Navbar() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Jika response OK berarti dia punya data langganan (Active / Pending)
+      // Jika response OK, cek apakah statusnya masih aktif atau sudah expired
       if (res.ok) {
-        navigate("/subscription/Profile");
+        const json = await res.json();
+        const subs = json.data;
+        let daysLeft = 0;
+        if (subs?.end_date) {
+          const end = new Date(subs.end_date).getTime();
+          const now = new Date().getTime();
+          daysLeft = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+        } else if (subs?.days_left !== undefined) {
+          daysLeft = Number(subs.days_left);
+        }
+
+        const isActive = subs && (
+          (subs.status === 'Active' && daysLeft > 0) ||
+          subs.status === 'Pending'
+        );
+
+        if (isActive) {
+          navigate("/subscription/Profile");
+        } else {
+          // Durasi sudah habis / Expired -> tampilkan landing page paket semula
+          navigate("/subscription");
+        }
       } else {
         // Jika 404 (tidak ketemu), berarti belum langganan sama sekali
         navigate("/subscription");
@@ -262,6 +283,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
+              data-guide="btn-profile"
               className="h-10 w-10 high-contrast:border-2 high-contrast:border-primary"
               aria-label="Profile"
               onClick={handleProfileClick}
@@ -272,6 +294,7 @@ export function Navbar() {
               <Button
                 variant="ghost"
                 size="icon"
+                data-guide="btn-reports"
                 className="h-10 w-10 high-contrast:border-2 high-contrast:border-primary"
                 aria-label="Reports"
               >
@@ -291,8 +314,10 @@ export function Navbar() {
             </Button>
 
             <InstallAppButton />
-            <ThemeToggle />
-            <FontSizeControl />
+            <div data-guide="btn-accessibility" className="flex items-center gap-1">
+              <ThemeToggle />
+              <FontSizeControl />
+            </div>
           </div>
         </div>
       </div>

@@ -20,12 +20,21 @@ const createSubscription = async (req, res) => {
             return res.status(400).json({ message: "Semua kolom yang wajib harus diisi!" });
         }
 
-        const checkQuery = `SELECT status FROM subs WHERE user_id = ? AND status IN ('Pending', 'Active')`;
+        const checkQuery = `SELECT subs_id, status, end_date FROM subs WHERE user_id = ? AND status IN ('Pending', 'Active')`;
         const [existingSubs] = await pool.query(checkQuery, [userId]);
 
-        if (existingSubs.length > 0) {
+        const activeSubs = [];
+        for (const sub of existingSubs) {
+            if (sub.status === 'Active' && sub.end_date && new Date(sub.end_date) < new Date()) {
+                await pool.query(`UPDATE subs SET status = 'Expired' WHERE subs_id = ?`, [sub.subs_id]);
+            } else {
+                activeSubs.push(sub);
+            }
+        }
+
+        if (activeSubs.length > 0) {
             return res.status(400).json({
-                message: `Anda sudah memiliki langganan dengan status: ${existingSubs[0].status}. Selesaikan atau tunggu langganan sebelumnya.`
+                message: `Anda sudah memiliki langganan dengan status: ${activeSubs[0].status}. Selesaikan atau tunggu langganan sebelumnya.`
             });
         }
 
@@ -95,7 +104,7 @@ const getMySubscription = async (req, res) => {
 
         const subscription = subs[0];
 
-        if (subscription.status === 'Active' && subscription.days_left <= 0) {
+        if (subscription.status === 'Active' && (subscription.days_left <= 0 || (subscription.end_date && new Date(subscription.end_date) < new Date()))) {
             subscription.status = 'Expired';
             await pool.query(`UPDATE subs SET status = 'Expired' WHERE subs_id = ?`, [subscription.subs_id]);
         }

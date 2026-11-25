@@ -80,7 +80,7 @@ describe('reportController', () => {
 
             expect(pool.query).toHaveBeenLastCalledWith(
                 expect.stringContaining('INSERT INTO reports'),
-                ['mock-report-uuid', 'u1', 'Pemandu', null, 'sub1', 'Guide was late']
+                ['mock-report-uuid', 'u1', 'Pemandu', null, 'sub1', null, 'Guide was late']
             );
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith({
@@ -150,12 +150,31 @@ describe('reportController', () => {
 
             expect(pool.query).toHaveBeenCalledWith(
                 expect.stringContaining('INSERT INTO reports'),
-                ['mock-report-uuid', 'u1', 'Infrastructure', 's1', null, 'Broken ramp']
+                ['mock-report-uuid', 'u1', 'Infrastructure', 's1', null, null, 'Broken ramp']
             );
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith({
                 message: "Laporan berhasil dikirim dan menunggu antrean.",
                 report_id: 'mock-report-uuid'
+            });
+        });
+
+        it('should create report successfully with custom phone_number', async () => {
+            req.user.user_id = 'u1';
+            req.body = { category: 'Infrastructure', stop_id: 's1', description: 'Broken ramp', phone_number: '0812999999' };
+            jest.spyOn(crypto, 'randomUUID').mockReturnValue('mock-report-uuid-2');
+            pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+            await createReport(req, res);
+
+            expect(pool.query).toHaveBeenCalledWith(
+                expect.stringContaining('INSERT INTO reports'),
+                ['mock-report-uuid-2', 'u1', 'Infrastructure', 's1', null, '0812999999', 'Broken ramp']
+            );
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Laporan berhasil dikirim dan menunggu antrean.",
+                report_id: 'mock-report-uuid-2'
             });
         });
 
@@ -207,6 +226,18 @@ describe('reportController', () => {
                 message: "Data pemandu langganan berhasil diambil.",
                 has_active_subscription: false,
                 data: []
+            });
+        });
+
+        it('should handle db error in getGuideOptions and return 500', async () => {
+            req.user.user_id = 'u1';
+            pool.query.mockRejectedValueOnce(new Error('DB Error'));
+
+            await getGuideOptions(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Terjadi kesalahan saat mengambil data pemandu langganan."
             });
         });
     });
@@ -280,6 +311,17 @@ describe('reportController', () => {
                     routes: mockRoutes,
                     routeStops: mockRouteStops
                 }
+            });
+        });
+
+        it('should handle db error in getLocationOptions and return 500', async () => {
+            pool.query.mockRejectedValueOnce(new Error('DB Error'));
+
+            await getLocationOptions(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Terjadi kesalahan saat mengambil daftar lokasi."
             });
         });
     });

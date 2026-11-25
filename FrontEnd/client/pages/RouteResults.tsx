@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useIsHighContrast } from "@/hooks/useTheme";
+import { StepGuide } from "@/components/StepGuide";
 import {
   ArrowLeft, Clock, Loader2, ChevronDown, ChevronUp, AlertCircle,
 } from "lucide-react";
@@ -190,7 +191,7 @@ export default function RouteResults() {
             </button>
           </Link>
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">Hasil Rekomendasi</h1>
-          <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" }}>
+          <div data-guide="results-search-bar" className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.18)" }}>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <div className="flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5" style={{ background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.2)" }}>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
@@ -252,9 +253,13 @@ export default function RouteResults() {
                   const isBest = route.is_best ?? (routeIndex === 0 && route.is_recommended);
 
                   return (
-                    <div key={routeIndex} className={`bg-card rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden ${
-                      isBest ? 'border-primary/40 ring-1 ring-primary/20' : 'border-border'
-                    }`}>
+                    <div
+                      key={routeIndex}
+                      data-guide={routeIndex === 0 ? "results-route-card" : undefined}
+                      className={`bg-card rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden ${
+                        isBest ? 'border-primary/40 ring-1 ring-primary/20' : 'border-border'
+                      }`}
+                    >
 
                       {isBest && (
                         <div className={`px-5 py-2 flex items-center gap-2 text-xs font-bold ${
@@ -352,7 +357,12 @@ export default function RouteResults() {
                             <button onClick={() => setExpandedCard(isExpanded ? null : routeIndex)} className="flex items-center gap-1 text-xs text-primary font-bold hover:underline">
                               {isExpanded ? <><ChevronUp className="h-4 w-4" />Tutup Detail</> : <><ChevronDown className="h-4 w-4" />Lihat Detail</>}
                             </button>
-                            <Button onClick={() => handleSelectRoute(route)} size="sm" className="h-9 px-6 text-sm font-bold rounded-lg shadow-sm">
+                            <Button
+                              onClick={() => handleSelectRoute(route)}
+                              data-guide={routeIndex === 0 ? "results-view-map-btn" : undefined}
+                              size="sm"
+                              className="h-9 px-6 text-sm font-bold rounded-lg shadow-sm"
+                            >
                               Pilih Rute
                             </Button>
                           </div>
@@ -444,6 +454,9 @@ export default function RouteResults() {
           )}
         </div>
       </main>
+
+      {/* Step Guide Hasil Rekomendasi Rute */}
+      <StepGuide moduleName="route-results" />
     </div>
   );
 }
