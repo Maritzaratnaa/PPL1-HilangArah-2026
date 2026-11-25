@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { AlertCircle, Star, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsHighContrast } from "@/hooks/useTheme";
+import { StepGuide } from "@/components/StepGuide";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -157,20 +158,42 @@ export default function Home() {
         });
         const json = await res.json();
         if (res.ok && json.data) {
-          setHasSubs(true);
-          setSubsStatus(json.data.status);
-          setSubsDuration(json.data.duration || "");
-          if (json.data.end_date) {
-            const end = new Date(json.data.end_date).getTime();
+          const subs = json.data;
+          let daysLeft = 0;
+          if (subs.end_date) {
+            const end = new Date(subs.end_date).getTime();
             const today = new Date().getTime();
             const diff = end - today;
-            setSubsDays(Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))));
-            setSubsEndDate(
-              new Date(json.data.end_date).toLocaleDateString("id-ID", {
-                day: "numeric", month: "short", year: "numeric",
-              }),
-            );
+            daysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+          } else if (subs.days_left !== undefined) {
+            daysLeft = Number(subs.days_left);
           }
+
+          const isActive = (subs.status === "Active" && daysLeft > 0) || subs.status === "Pending";
+
+          if (isActive) {
+            setHasSubs(true);
+            setSubsStatus(subs.status);
+            setSubsDuration(subs.duration || "");
+            setSubsDays(daysLeft);
+            if (subs.end_date) {
+              setSubsEndDate(
+                new Date(subs.end_date).toLocaleDateString("id-ID", {
+                  day: "numeric", month: "short", year: "numeric",
+                }),
+              );
+            }
+          } else {
+            setHasSubs(false);
+            setSubsStatus("");
+            setSubsDays(0);
+            setSubsEndDate("");
+          }
+        } else {
+          setHasSubs(false);
+          setSubsStatus("");
+          setSubsDays(0);
+          setSubsEndDate("");
         }
       } catch (error) {
         console.error("Gagal mengecek subscription di Home:", error);
@@ -255,7 +278,7 @@ export default function Home() {
               <div className="rounded-xl p-3 mb-0 relative z-20" style={searchBoxStyle}>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   
-                  <div ref={originRef} className="relative flex-1">
+                  <div ref={originRef} data-guide="input-origin" className="relative flex-1">
                     <div className="flex items-center gap-2 rounded-lg px-3 py-2.5" style={searchInputStyle}>
                       <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
                       <input
@@ -297,7 +320,7 @@ export default function Home() {
                     )}
                   </div>
 
-                  <div ref={destRef} className="relative flex-1">
+                  <div ref={destRef} data-guide="input-destination" className="relative flex-1">
                     <div className="flex items-center gap-2 rounded-lg px-3 py-2.5" style={searchInputStyle}>
                       <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
                       <input
@@ -342,6 +365,7 @@ export default function Home() {
                   <Button
                     onClick={handleSearch}
                     disabled={!origin || !destination}
+                    data-guide="btn-search-route"
                     className={`font-bold text-sm px-5 h-10 rounded-lg transition-all disabled:opacity-50 w-full sm:w-auto ${isHC ? "bg-[#ffff00] text-black border-2 border-[#ffff00] hover:bg-[#ffff00]/90" : "bg-white hover:bg-white/90 shadow-sm"}`}
                     style={isHC ? {} : { color: "hsl(186 100% 27%)" }}
                   >
@@ -421,7 +445,12 @@ export default function Home() {
           <h2 className="text-lg font-bold mb-5">Akses Cepat</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {quickActions.map((qa, i) => (
-              <Link key={i} to={qa.href} className="w-full">
+              <Link
+                key={i}
+                to={qa.href}
+                className="w-full"
+                data-guide={i === 0 ? "btn-quick-report" : "btn-quick-subscription"}
+              >
                 <div className="bg-background rounded-xl border border-border p-5 hover:shadow-md hover:-translate-y-0.5 transition-all text-center high-contrast:border-2 high-contrast:border-white h-full">
                   <div className={`w-12 h-12 rounded-xl ${qa.bg} ${qa.color} flex items-center justify-center mx-auto mb-3 high-contrast:bg-black high-contrast:border-2 high-contrast:border-white`}>
                     {qa.icon}
@@ -434,6 +463,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Step Guide Pengenalan Tombol Halaman Utama */}
+      <StepGuide moduleName="home" />
     </div>
   );
 }
