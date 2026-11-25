@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { StepGuide } from "@/components/StepGuide";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -326,6 +327,14 @@ export default function Reporting() {
   };
 
   // --- INTEGRASI API DETEKSI LOKASI & HALTE TERDEKAT ---
+  const handleGuideStepChange = (stepIdx: number) => {
+    if (stepIdx === 0) {
+      setShowForm(false);
+    } else {
+      setShowForm(true);
+    }
+  };
+
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
       alert("Perangkat Anda tidak mendukung fitur lokasi (Geolocation).");
@@ -527,6 +536,7 @@ export default function Reporting() {
             </div>
             {!showForm && (
               <Button
+                data-guide="btn-add-report"
                 onClick={() => setShowForm(true)}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 px-8 rounded-2xl font-bold text-[16px] shadow-lg shadow-primary/20 flex items-center gap-2 transition-all active:scale-95">
                 <Plus size={20} strokeWidth={3} /> Buat Laporan
@@ -559,7 +569,7 @@ export default function Reporting() {
 
               <div className="space-y-6">
 
-                <div className="space-y-3">
+                <div data-guide="reporting-form-category" className="space-y-3">
                   <Label className="text-[15px] font-bold text-foreground ml-1">Kategori Masalah</Label>
                   <Select value={category} onValueChange={setCategory} disabled={submitting}>
                     <SelectTrigger className="h-14 border-border rounded-2xl font-medium text-[16px]">
@@ -645,7 +655,7 @@ export default function Reporting() {
                   )}
                 </div>
 
-                <div className="space-y-3">
+                <div data-guide="reporting-form-stop" className="space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <Label className="text-[15px] font-bold text-foreground ml-1">
                       Lokasi Kejadian
@@ -944,7 +954,7 @@ export default function Reporting() {
                   )}
                 </div>
 
-                <div className="space-y-3">
+                <div data-guide="reporting-form-desc" className="space-y-3">
                   <Label className="text-[15px] font-bold text-foreground ml-1">Deskripsi Masalah</Label>
                   <Textarea
                     value={description}
@@ -965,20 +975,22 @@ export default function Reporting() {
                     disabled={submitting}>
                     Batal
                   </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={
-                      submitting ||
-                      !category ||
-                      !locationId ||
-                      description.length < 10 ||
-                      (category === "Pemandu" && (!isReportableGuideSubscription(selectedGuideSubscription) || loadingGuideSubscriptions))
-                    }
-                    className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold">
-                    {submitting
-                      ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Mengirim...</>
-                      : "Kirim Laporan"}
-                  </Button>
+                  <div data-guide="reporting-submit-btn">
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={
+                        submitting ||
+                        !category ||
+                        !locationId ||
+                        description.length < 10 ||
+                        (category === "Pemandu" && (!isReportableGuideSubscription(selectedGuideSubscription) || loadingGuideSubscriptions))
+                      }
+                      className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold">
+                      {submitting
+                        ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Mengirim...</>
+                        : "Kirim Laporan"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -1190,6 +1202,12 @@ export default function Reporting() {
       </Dialog>
 
       <Footer />
+
+      {/* Step Guide Modul Pelaporan Kendala */}
+      <StepGuide
+        moduleName="reporting"
+        onStepChange={handleGuideStepChange}
+      />
     </div>
   );
 }

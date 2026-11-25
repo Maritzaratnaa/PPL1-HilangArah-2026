@@ -2,6 +2,7 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useRef, useState, useEffect } from "react";
+import { StepGuide } from "@/components/StepGuide";
 import {
   Pencil,
   Mail,
@@ -120,6 +121,7 @@ export default function Profile() {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("userName");
     localStorage.removeItem("userCategory");
+    localStorage.removeItem("userEmail");
     navigate("/login");
   };
 
@@ -203,7 +205,7 @@ export default function Profile() {
                 Profil Saya
               </h1>
             </div>
-            <Link to="/profile/edit" className="shrink-0">
+            <Link to="/profile/edit" data-guide="profile-edit-btn" className="shrink-0">
               <Button
                 variant="outline"
                 className="gap-2 high-contrast:border-2 high-contrast:border-primary whitespace-nowrap"
@@ -215,6 +217,7 @@ export default function Profile() {
           </div>
 
           <div
+            data-guide="profile-info-card"
             className="rounded-2xl border border-border bg-card overflow-hidden mb-5
             high-contrast:border-2 high-contrast:border-primary"
           >
@@ -346,16 +349,21 @@ export default function Profile() {
               atas.
             </p>
           </div>
-          <Button
-            variant="outline"
-            className="mt-6 gap-2 text-rose-600 border-rose-200 hover:bg-rose-50 high-contrast:border-2 high-contrast:border-primary"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Keluar
-          </Button>
+          <div data-guide="profile-logout-btn" className="w-fit">
+            <Button
+              variant="outline"
+              className="mt-6 gap-2 text-rose-600 border-rose-200 hover:bg-rose-50 high-contrast:border-2 high-contrast:border-primary"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+              Keluar
+            </Button>
+          </div>
         </div>
       </main>
+
+      {/* Step Guide Modul Profil */}
+      <StepGuide moduleName="profile" />
     </div>
   );
 }

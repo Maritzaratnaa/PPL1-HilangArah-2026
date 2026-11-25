@@ -74,6 +74,30 @@ export default function SubscriptionProfile() {
         const json = await res.json();
 
         if (res.ok) {
+          const subs = json.data;
+          let daysLeft = 0;
+          if (subs?.end_date) {
+            const end = new Date(subs.end_date).getTime();
+            const now = new Date().getTime();
+            daysLeft = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+          } else if (subs?.days_left !== undefined) {
+            daysLeft = Number(subs.days_left);
+          }
+
+          const isActive = subs && (
+            (subs.status === 'Active' && daysLeft > 0) ||
+            subs.status === 'Pending'
+          );
+
+          if (!isActive) {
+            // Jika durasi langganan sudah habis atau expired, bersihkan data dan kembalikan ke tampilan awal langganan
+            localStorage.removeItem('subscriptionStatus');
+            localStorage.removeItem('activePlanLabel');
+            localStorage.removeItem('activePlanPeriod');
+            navigate("/subscription", { replace: true });
+            return;
+          }
+
           setSubscriptionData(json.data);
         } else {
           setErrorMsg(json.message);
@@ -104,8 +128,11 @@ export default function SubscriptionProfile() {
       const data = await res.json();
 
       if (res.ok) {
+        localStorage.removeItem('subscriptionStatus');
+        localStorage.removeItem('activePlanLabel');
+        localStorage.removeItem('activePlanPeriod');
         setShowCancelModal(false);
-        navigate("/subscription"); // Balik ke halaman Landing Page Subs
+        navigate("/subscription", { replace: true }); // Balik ke halaman Landing Page Subs
       } else {
         alert(data.message || "Gagal membatalkan langganan.");
       }
